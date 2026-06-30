@@ -1,0 +1,10 @@
+{
+  "name": "ecc-analytics-dashboard",
+  "builds": [
+    { "src": "dashboard.html", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "/$1" },
+    { "src": "/", "dest": "/dashboard.html" }
+  ]
+}
