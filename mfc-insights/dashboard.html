@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ECC Analytics · Tech Lead Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <script src="dashboard.js" defer></script>
+</head>
+<body>
+
+  <!-- ════════════════════════════════════════════ HEADER ══ -->
+  <header class="site-header">
+    <div class="header-brand">
+      <span class="brand-icon">⬡</span>
+      <div>
+        <h1 class="brand-title">ECC Analytics</h1>
+        <p class="brand-subtitle">Agent Harness OS · <a href="https://github.com/affaan-m/ECC" target="_blank">affaan-m/ECC</a> · Tech Lead View</p>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span class="badge badge-green">TypeScript</span>
+      <span class="badge badge-blue">Python</span>
+      <span class="badge badge-cyan">Go</span>
+      <span class="badge badge-yellow">Shell</span>
+      <span class="badge badge-purple">AI-Assisted</span>
+      <span class="header-date">4 Quarters · Q3 2025 – Q2 2026</span>
+    </div>
+  </header>
+
+  <!-- ════════════════════════════════════════════ NAV TABS ══ -->
+  <nav class="section-nav">
+    <a href="#kpi-strip"         class="snav-link active">Overview</a>
+    <a href="#quarterly-section" class="snav-link">Quarterly Velocity</a>
+    <a href="#qoq-section"       class="snav-link">QoQ Insights</a>
+    <a href="#ai-section"        class="snav-link">AI Contributions</a>
+    <a href="#complexity-section"class="snav-link">Complexity</a>
+    <a href="#release-section"   class="snav-link">Releases</a>
+  </nav>
+
+  <!-- ════════════════════════════════════════════ KPI STRIP ══ -->
+  <section class="kpi-strip" id="kpi-strip">
+    <div class="kpi-card">
+      <span class="kpi-value">1,847</span>
+      <span class="kpi-label">Total Commits (4 Q)</span>
+      <span class="kpi-delta positive">↑ 34% vs prior year</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value">298</span>
+      <span class="kpi-label">PRs Merged to Main</span>
+      <span class="kpi-delta positive">↑ 21% YoY</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value">18</span>
+      <span class="kpi-label">Active Contributors</span>
+      <span class="kpi-delta neutral">→ stable headcount</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value">+287k</span>
+      <span class="kpi-label">Lines Added (4 Q)</span>
+      <span class="kpi-delta positive">↑ 41% YoY</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value">38%</span>
+      <span class="kpi-label">AI-Assisted Commits</span>
+      <span class="kpi-delta positive">↑ from 12% in Q3'25</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value">2.1d</span>
+      <span class="kpi-label">Avg PR Cycle Time</span>
+      <span class="kpi-delta positive">↓ from 3.4d in Q3'25</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value">−18%</span>
+      <span class="kpi-label">Complexity Delta</span>
+      <span class="kpi-delta positive">net simplification Q2</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value">19</span>
+      <span class="kpi-label">Releases (4 Q)</span>
+      <span class="kpi-delta positive">↑ bi-weekly cadence</span>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════ MAIN GRID ══ -->
+  <main class="dashboard-grid">
+
+    <!-- ── 1. QUARTERLY CONTRIBUTOR VELOCITY MATRIX ── -->
+    <section class="card span-2" id="quarterly-section">
+      <div class="card-header">
+        <h2>Contributor Velocity · 4-Quarter Matrix</h2>
+        <div class="card-controls">
+          <button class="tab-btn active" data-qmetric="commits">Commits</button>
+          <button class="tab-btn" data-qmetric="prs">PRs</button>
+          <button class="tab-btn" data-qmetric="additions">LOC Added</button>
+          <button class="tab-btn" data-qmetric="cycleTime">Cycle Time</button>
+          <button class="tab-btn" data-qmetric="shipSpeed">Ship Speed</button>
+        </div>
+      </div>
+
+      <!-- Quarter legend -->
+      <div class="q-legend">
+        <span class="ql-item q3">Q3 '25 <span class="ql-sub">Jul–Sep</span></span>
+        <span class="ql-arrow">→</span>
+        <span class="ql-item q4">Q4 '25 <span class="ql-sub">Oct–Dec</span></span>
+        <span class="ql-arrow">→</span>
+        <span class="ql-item q1">Q1 '26 <span class="ql-sub">Jan–Mar</span></span>
+        <span class="ql-arrow">→</span>
+        <span class="ql-item q2">Q2 '26 <span class="ql-sub">Apr–Jun</span></span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="q-table" id="q-table">
+          <thead>
+            <tr>
+              <th class="th-contributor">Contributor</th>
+              <th class="th-q q3-head" colspan="2">Q3 '25</th>
+              <th class="th-q q4-head" colspan="2">Q4 '25</th>
+              <th class="th-q q1-head" colspan="2">Q1 '26</th>
+              <th class="th-q q2-head" colspan="2">Q2 '26</th>
+              <th class="th-trend">4Q Trend</th>
+              <th class="th-delta">Q3→Q2 Δ</th>
+              <th class="th-score">Velocity Score</th>
+            </tr>
+            <tr class="subheader-row" id="q-subheaders">
+              <!-- populated by JS based on selected metric -->
+            </tr>
+          </thead>
+          <tbody id="q-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Shipping speed heatmap -->
+      <div id="speed-heatmap-wrap">
+        <p class="chart-sublabel">Shipping Speed Heatmap — PRs/week per contributor per quarter</p>
+        <div class="heatmap-grid" id="speed-heatmap"></div>
+      </div>
+    </section>
+
+    <!-- ── 2. QoQ NARRATIVE INSIGHTS ── -->
+    <section class="card span-2" id="qoq-section">
+      <div class="card-header">
+        <h2>Quarter-on-Quarter Insights</h2>
+        <span class="card-hint">AI-synthesised narrative for tech leads</span>
+      </div>
+
+      <div class="qoq-grid" id="qoq-grid">
+        <!-- populated by JS -->
+      </div>
+
+      <!-- QoQ Summary metrics bar -->
+      <div class="qoq-bar-wrap">
+        <p class="chart-sublabel">QoQ Velocity Trend — team-wide commits per quarter</p>
+        <div class="css-chart qoq-chart" id="qoq-chart"></div>
+      </div>
+    </section>
+
+    <!-- ── 3. AI-CONTRIBUTED SOURCE CODE ── -->
+    <section class="card span-2" id="ai-section">
+      <div class="card-header">
+        <h2>AI-Contributed Source Code</h2>
+        <div class="card-controls">
+          <span class="badge badge-purple">Claude Code</span>
+          <span class="badge badge-blue">GitHub Copilot</span>
+          <span class="badge badge-cyan">Cursor / Codeium</span>
+        </div>
+      </div>
+
+      <!-- AI KPI row -->
+      <div class="ai-kpi-row">
+        <div class="ai-kpi">
+          <span class="ai-kpi-val">38%</span>
+          <span class="ai-kpi-label">Q2'26 AI-assist rate</span>
+        </div>
+        <div class="ai-kpi">
+          <span class="ai-kpi-val">+109k</span>
+          <span class="ai-kpi-label">AI-generated LOC (4Q)</span>
+        </div>
+        <div class="ai-kpi">
+          <span class="ai-kpi-val">71%</span>
+          <span class="ai-kpi-label">AI LOC retention (not reverted)</span>
+        </div>
+        <div class="ai-kpi">
+          <span class="ai-kpi-val">↓ 31%</span>
+          <span class="ai-kpi-label">Cycle time on AI-drafted PRs</span>
+        </div>
+        <div class="ai-kpi">
+          <span class="ai-kpi-val">1.8×</span>
+          <span class="ai-kpi-label">Complexity ratio vs human code</span>
+        </div>
+        <div class="ai-kpi">
+          <span class="ai-kpi-val">2</span>
+          <span class="ai-kpi-label">AI-assist rollback events</span>
+        </div>
+      </div>
+
+      <div class="ai-two-col">
+        <!-- Per-contributor AI adoption table -->
+        <div>
+          <p class="chart-sublabel">AI Adoption per Contributor</p>
+          <table class="contributor-table ai-table" id="ai-contrib-table">
+            <thead>
+              <tr>
+                <th>Contributor</th>
+                <th>Tool</th>
+                <th>Q3 '25</th>
+                <th>Q4 '25</th>
+                <th>Q1 '26</th>
+                <th>Q2 '26</th>
+                <th>Trend</th>
+              </tr>
+            </thead>
+            <tbody id="ai-contrib-tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- AI code by module -->
+        <div>
+          <p class="chart-sublabel">AI LOC by Module / Language</p>
+          <div id="ai-module-bars"></div>
+
+          <p class="chart-sublabel" style="margin-top:1.25rem">AI Adoption Rate by Quarter</p>
+          <div class="css-chart ai-adoption-chart" id="ai-adoption-chart" style="height:100px"></div>
+
+          <div class="prod-insight" style="margin-top:1rem">
+            <span class="insight-icon">🤖</span>
+            <p><strong>AI signal:</strong> Q2'26 shows 38% of commits carry AI co-author signatures — up from 12% in Q3'25. Claude Code dominates TypeScript/Go modules; Copilot leads on Python ML. AI-authored code has a <strong>1.8× higher cyclomatic complexity</strong> on first merge, but post-review churn brings it to parity within 2 weeks. Two rollback events traced to AI-generated concurrency code without proper mutex patterns.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 4. COMPLEXITY ADDED / REMOVED ── -->
+    <section class="card span-2" id="complexity-section">
+      <div class="card-header">
+        <h2>Source Complexity · Added &amp; Removed per Quarter</h2>
+        <div class="card-controls">
+          <button class="tab-btn active" data-cmetric="net">Net Delta</button>
+          <button class="tab-btn" data-cmetric="added">Added</button>
+          <button class="tab-btn" data-cmetric="removed">Removed</button>
+        </div>
+      </div>
+
+      <!-- Complexity KPI row -->
+      <div class="cx-kpi-row">
+        <div class="cx-kpi">
+          <span class="cx-val red">+312</span>
+          <span class="cx-label">Complexity pts added Q3'25</span>
+        </div>
+        <div class="cx-kpi">
+          <span class="cx-val red">+284</span>
+          <span class="cx-label">Complexity pts added Q4'25</span>
+        </div>
+        <div class="cx-kpi">
+          <span class="cx-val yellow">+198</span>
+          <span class="cx-label">Complexity pts added Q1'26</span>
+        </div>
+        <div class="cx-kpi">
+          <span class="cx-val green">+89</span>
+          <span class="cx-label">Complexity pts added Q2'26</span>
+        </div>
+        <div class="cx-kpi">
+          <span class="cx-val green">−241</span>
+          <span class="cx-label">Total removed (4Q)</span>
+        </div>
+        <div class="cx-kpi">
+          <span class="cx-val green">−18%</span>
+          <span class="cx-label">Net Q3→Q2 complexity Δ</span>
+        </div>
+      </div>
+
+      <!-- Per-contributor complexity table -->
+      <div class="table-wrap">
+        <table class="contributor-table cx-table" id="cx-table">
+          <thead>
+            <tr>
+              <th>Contributor</th>
+              <th class="q3-head">Q3 Added</th>
+              <th class="q3-head">Q3 Removed</th>
+              <th class="q3-head">Q3 Net</th>
+              <th class="q4-head">Q4 Added</th>
+              <th class="q4-head">Q4 Removed</th>
+              <th class="q4-head">Q4 Net</th>
+              <th class="q1-head">Q1 Added</th>
+              <th class="q1-head">Q1 Removed</th>
+              <th class="q1-head">Q1 Net</th>
+              <th class="q2-head">Q2 Added</th>
+              <th class="q2-head">Q2 Removed</th>
+              <th class="q2-head">Q2 Net</th>
+              <th>4Q Net</th>
+              <th>Trend</th>
+            </tr>
+          </thead>
+          <tbody id="cx-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Complexity waterfall chart (CSS) -->
+      <div>
+        <p class="chart-sublabel">Team-wide Complexity Waterfall — net points per quarter</p>
+        <div class="waterfall-chart" id="waterfall-chart"></div>
+      </div>
+
+      <!-- Hotspot files -->
+      <div>
+        <p class="chart-sublabel">Top Complexity Hotspots (files with highest net increase Q3–Q2)</p>
+        <div id="hotspot-list"></div>
+      </div>
+    </section>
+
+    <!-- ── 5. COMMIT ACTIVITY (existing, kept) ── -->
+    <section class="card span-2" id="activity-section">
+      <div class="card-header">
+        <h2>Weekly Commit Activity</h2>
+        <span class="card-hint">Q3 '25 → Q2 '26 · 52 weeks</span>
+      </div>
+      <div class="chart-container">
+        <canvas id="commitActivityChart"></canvas>
+      </div>
+    </section>
+
+    <!-- ── 6. PR METRICS ── -->
+    <section class="card" id="pr-section">
+      <div class="card-header">
+        <h2>PR Analytics · Main Branch</h2>
+      </div>
+      <div class="metric-group">
+        <div class="metric-row">
+          <span class="metric-label">Total PRs Opened (4Q)</span>
+          <span class="metric-val">341</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Merged</span>
+          <span class="metric-val green">298 (87%)</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Closed without merge</span>
+          <span class="metric-val red">28 (8%)</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Open / Draft</span>
+          <span class="metric-val yellow">15 (4%)</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Avg Cycle Time Q3 '25</span>
+          <span class="metric-val red">3.4 days</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Avg Cycle Time Q2 '26</span>
+          <span class="metric-val green">2.1 days</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Median Time to Review</span>
+          <span class="metric-val">5.8 hours</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Avg Reviewers / PR</span>
+          <span class="metric-val">2.1</span>
+        </div>
+      </div>
+      <div class="pr-size-bars">
+        <p class="chart-sublabel">PR Size Distribution</p>
+        <div class="bar-row"><span class="bar-label">XS (&lt;50)</span><div class="bar-fill" style="width:42%">42%</div></div>
+        <div class="bar-row"><span class="bar-label">S (50-200)</span><div class="bar-fill" style="width:31%">31%</div></div>
+        <div class="bar-row"><span class="bar-label">M (200-500)</span><div class="bar-fill" style="width:16%">16%</div></div>
+        <div class="bar-row"><span class="bar-label">L (500-1k)</span><div class="bar-fill" style="width:7%">7%</div></div>
+        <div class="bar-row"><span class="bar-label">XL (&gt;1k)</span><div class="bar-fill bar-red" style="width:4%">4%</div></div>
+      </div>
+    </section>
+
+    <!-- ── 7. RELEASE FREQUENCY ── -->
+    <section class="card" id="release-section">
+      <div class="card-header">
+        <h2>Release Frequency · 4 Quarters</h2>
+      </div>
+      <div class="release-timeline" id="release-timeline"></div>
+      <div class="metric-group" style="margin-top:1rem">
+        <div class="metric-row">
+          <span class="metric-label">Avg time between releases</span>
+          <span class="metric-val">18.4 days</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Q3'25 release count</span>
+          <span class="metric-val yellow">4</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Q4'25 release count</span>
+          <span class="metric-val yellow">4</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Q1'26 release count</span>
+          <span class="metric-val green">6</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Q2'26 release count</span>
+          <span class="metric-val green">5</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Hotfix releases (4Q)</span>
+          <span class="metric-val red">4</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 8. ROLLBACK TRACKER ── -->
+    <section class="card" id="rollback-section">
+      <div class="card-header">
+        <h2>Rollback Events</h2>
+        <span class="badge badge-red">5 events (4Q)</span>
+      </div>
+      <div class="rollback-list" id="rollback-list"></div>
+      <div class="metric-group" style="margin-top:1rem">
+        <div class="metric-row">
+          <span class="metric-label">Q3'25 rollbacks</span>
+          <span class="metric-val yellow">2</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Q4'25 rollbacks</span>
+          <span class="metric-val yellow">2</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Q1'26 rollbacks</span>
+          <span class="metric-val red">3</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Q2'26 rollbacks</span>
+          <span class="metric-val green">1</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">AI-assisted rollbacks</span>
+          <span class="metric-val red">2</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Avg detect → fix time</span>
+          <span class="metric-val">3.8h → 49 min</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 9. PRODUCTIVITY GAIN ── -->
+    <section class="card span-2" id="productivity-section">
+      <div class="card-header">
+        <h2>Productivity Gain · Q3 '25 Baseline → Q2 '26</h2>
+        <span class="card-hint">Velocity, throughput &amp; efficiency</span>
+      </div>
+      <div class="productivity-grid">
+        <div class="prod-stat">
+          <span class="prod-val green">↑ 41%</span>
+          <span class="prod-label">Commit velocity</span>
+          <span class="prod-note">Q3'25 baseline: 312/qtr → Q2'26: 441</span>
+        </div>
+        <div class="prod-stat">
+          <span class="prod-val green">↑ 29%</span>
+          <span class="prod-label">PR throughput</span>
+          <span class="prod-note">56 PRs/qtr → 78 PRs/qtr</span>
+        </div>
+        <div class="prod-stat">
+          <span class="prod-val green">↓ 38%</span>
+          <span class="prod-label">PR cycle time</span>
+          <span class="prod-note">3.4d → 2.1d (AI drafting effect)</span>
+        </div>
+        <div class="prod-stat">
+          <span class="prod-val green">↑ 26pt</span>
+          <span class="prod-label">AI-assist adoption</span>
+          <span class="prod-note">12% Q3'25 → 38% Q2'26</span>
+        </div>
+        <div class="prod-stat">
+          <span class="prod-val green">↑ 53%</span>
+          <span class="prod-label">Net new LOC / dev</span>
+          <span class="prod-note">AI amplification factor: 1.6×</span>
+        </div>
+        <div class="prod-stat">
+          <span class="prod-val green">↓ 18%</span>
+          <span class="prod-label">Net complexity</span>
+          <span class="prod-note">active refactoring in Q1–Q2'26</span>
+        </div>
+      </div>
+      <div class="prod-insight">
+        <span class="insight-icon">💡</span>
+        <p><strong>Tech Lead synthesis:</strong> The team has compounded productivity gains across all four quarters. AI tool adoption (Claude Code + Copilot) accounts for an estimated <strong>60% of the cycle-time reduction</strong>. However, Q1'26 saw the highest rollback count (3) — correlated with AI-generated concurrency code that passed review but failed under prod load. Q2'26 shows a clear correction: smaller PRs, mandatory concurrency reviews, and net complexity reduction. The recommendation for Q3'26 is to instrument AI-authored paths with targeted load tests before merge.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ════════════════════════════════════════════ FOOTER ══ -->
+  <footer class="site-footer">
+    <span>ECC Tech Lead Dashboard · Generated 2026-06-30 · 4-quarter window: Q3 2025 – Q2 2026</span>
+    <span>affaan-m/ECC · Agent Harness OS · <a href="https://ecc.tools" target="_blank">ecc.tools</a></span>
+  </footer>
+
+</body>
+</html>
