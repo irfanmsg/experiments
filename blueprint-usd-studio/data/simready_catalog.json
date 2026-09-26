@@ -1,0 +1,115 @@
+{
+  "asset_root": "/home/ovqa/Repos/OmniverseAssets/SimReady_Furniture_Misc_01",
+  "assets": [
+    {
+      "name": "Crestwood Sofa",
+      "category": "Living room",
+      "usd_path": "Assets/simready_content/common_assets/props/crestwood_sofa/crestwood_sofa.usd",
+      "size_xyz_m": [
+        0.977,
+        2.438,
+        0.787
+      ]
+    },
+    {
+      "name": "Armchair",
+      "category": "Living room",
+      "usd_path": "Assets/simready_content/common_assets/props/armchair/armchair.usd",
+      "size_xyz_m": [
+        1.118,
+        0.963,
+        0.856
+      ]
+    },
+    {
+      "name": "Appleseed Coffee Table",
+      "category": "Living room",
+      "usd_path": "Assets/simready_content/common_assets/props/appleseed_coffeetable/appleseed_coffeetable.usd",
+      "size_xyz_m": [
+        0.749,
+        1.319,
+        0.45
+      ]
+    },
+    {
+      "name": "Dellwood Dining Table",
+      "category": "Dining",
+      "usd_path": "Assets/simready_content/common_assets/props/dellwood_diningtable/dellwood_diningtable.usd",
+      "size_xyz_m": [
+        1.073,
+        1.833,
+        0.737
+      ]
+    },
+    {
+      "name": "Dellwood Dining Chair",
+      "category": "Dining",
+      "usd_path": "Assets/simready_content/common_assets/props/dellwood_diningchair/dellwood_diningchair.usd",
+      "size_xyz_m": [
+        0.635,
+        0.635,
+        0.902
+      ]
+    },
+    {
+      "name": "Bar Stool",
+      "category": "Dining",
+      "usd_path": "Assets/simready_content/common_assets/props/bar_stool/bar_stool.usd",
+      "size_xyz_m": [
+        0.416,
+        0.488,
+        0.869
+      ]
+    },
+    {
+      "name": "Desk",
+      "category": "Study",
+      "usd_path": "Assets/simready_content/common_assets/props/desk_01/desk_01.usd",
+      "size_xyz_m": [
+        0.639,
+        1.912,
+        0.781
+      ]
+    },
+    {
+      "name": "Cabinet",
+      "category": "Storage",
+      "usd_path": "Assets/simready_content/common_assets/props/cabinet_b01/cabinet_b01.usd",
+      "size_xyz_m": [
+        0.341,
+        1.074,
+        2.005
+      ]
+    },
+    {
+      "name": "Corner Shelf",
+      "category": "Storage",
+      "usd_path": "Assets/simready_content/common_assets/props/cornershelf_square/cornershelf_square.usd",
+      "size_xyz_m": [
+        0.229,
+        0.229,
+        0.635
+      ]
+    },
+    {
+      "name": "Small Garden Planter",
+      "category": "Decor",
+      "usd_path": "Assets/simready_content/common_assets/props/gardenplanter_small/gardenplanter_small.usd",
+      "size_xyz_m": [
+        0.305,
+        0.305,
+        0.305
+      ]
+    },
+    {
+      "name": "Serving Bowl",
+      "category": "Kitchen",
+      "usd_path": "Assets/simready_content/common_assets/props/serving_bowl/serving_bowl.usd",
+      "size_xyz_m": [
+        0.16,
+        0.16,
+        0.052
+      ]
+    }
+  ]
+}

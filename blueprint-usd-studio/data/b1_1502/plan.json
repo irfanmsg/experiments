@@ -1,0 +1,2640 @@
+{
+  "schema_version": "1.0",
+  "id": "b1_1502",
+  "name": "PWC Miami B1-1502",
+  "units": "m",
+  "room_height_m": 2.8,
+  "height_status": "assumed from visualization; not on approved drawing",
+  "coordinate_system": {
+    "x": "right in upright approved drawing",
+    "y": "up in upright approved drawing",
+    "origin": "approved crop pixel (742, 1681), near south-west balcony corner",
+    "z": "floor plane; elevation and storey height not given in source"
+  },
+  "source": {
+    "approved_plan": "/home/ovqa/Repos/PWC_Flat_Blueprints/B1-Building-3.pdf#page=1",
+    "agreement_highlight": "/home/ovqa/Repos/PWC_Flat_Blueprints/Miami PWC House Documents.pdf#page=35",
+    "area_schedule": "/home/ovqa/Repos/PWC_Flat_Blueprints/B1-Building-1.pdf#page=1",
+    "approved_crop": "approved_crop.jpg",
+    "agreement_unit_crop": "agreement_unit_crop.jpg",
+    "approved_sheet_number": "63/69",
+    "approved_sheet_date": "2024-04-22",
+    "approved_plan_scale": "1:100 (printed); raster re-calibrated with dimensions",
+    "floor": 15,
+    "unit": "02"
+  },
+  "calibration": {
+    "approved_image_size_px": [
+      4962,
+      3658
+    ],
+    "crop_image_size_px": [
+      1700,
+      1750
+    ],
+    "crop_origin_in_approved_image_px": [
+      2500,
+      1550
+    ],
+    "origin_in_crop_px": [
+      742,
+      1681
+    ],
+    "pixels_per_metre": 60.4,
+    "reference_dimensions": [
+      {
+        "space": "kitchen",
+        "printed_m": 2.75,
+        "raster_span_px": 164,
+        "axis": "x"
+      },
+      {
+        "space": "kitchen",
+        "printed_m": 4.12,
+        "raster_span_px": 250,
+        "axis": "y"
+      },
+      {
+        "space": "bedroom_outer_south",
+        "printed_m": 4.65,
+        "raster_span_px": 283,
+        "axis": "x"
+      },
+      {
+        "space": "bedroom_south",
+        "printed_m": 4.55,
+        "raster_span_px": 273,
+        "axis": "y"
+      },
+      {
+        "space": "living_dining",
+        "printed_m": 9.83,
+        "raster_span_px": 590,
+        "axis": "x"
+      }
+    ],
+    "scan_uncertainty": "folds and mild scan skew; vertex positions approximately ±0.15–0.25 m"
+  },
+  "area_schedule_m2": {
+    "carpet": 172.0,
+    "balcony": 32.72,
+    "dry_balcony": 3.05,
+    "total": 207.77,
+    "provenance": "printed RERA schedule on B1-Building-1.pdf"
+  },
+  "footprint": {
+    "polygon": [
+      [
+        0.0,
+        22.053
+      ],
+      [
+        2.368,
+        22.003
+      ],
+      [
+        2.368,
+        19.868
+      ],
+      [
+        7.434,
+        19.57
+      ],
+      [
+        7.434,
+        17.732
+      ],
+      [
+        8.576,
+        17.715
+      ],
+      [
+        8.593,
+        18.543
+      ],
+      [
+        11.175,
+        18.427
+      ],
+      [
+        11.192,
+        17.219
+      ],
+      [
+        12.848,
+        16.656
+      ],
+      [
+        13.543,
+        15.513
+      ],
+      [
+        14.189,
+        14.04
+      ],
+      [
+        14.669,
+        12.55
+      ],
+      [
+        14.868,
+        11.093
+      ],
+      [
+        14.752,
+        9.652
+      ],
+      [
+        14.437,
+        8.262
+      ],
+      [
+        13.791,
+        6.821
+      ],
+      [
+        12.748,
+        5.414
+      ],
+      [
+        11.291,
+        5.48
+      ],
+      [
+        11.209,
+        3.874
+      ],
+      [
+        8.659,
+        3.874
+      ],
+      [
+        8.659,
+        2.765
+      ],
+      [
+        7.07,
+        2.765
+      ],
+      [
+        7.07,
+        5.281
+      ],
+      [
+        5.861,
+        5.281
+      ],
+      [
+        5.861,
+        2.732
+      ],
+      [
+        4.106,
+        1.026
+      ],
+      [
+        0.215,
+        0.0
+      ],
+      [
+        0.215,
+        2.103
+      ],
+      [
+        0.464,
+        2.103
+      ],
+      [
+        0.464,
+        7.533
+      ],
+      [
+        2.566,
+        7.533
+      ],
+      [
+        2.566,
+        9.685
+      ],
+      [
+        1.192,
+        9.685
+      ],
+      [
+        1.192,
+        12.467
+      ],
+      [
+        2.732,
+        12.467
+      ],
+      [
+        2.732,
+        13.858
+      ],
+      [
+        1.192,
+        13.858
+      ],
+      [
+        1.192,
+        16.722
+      ],
+      [
+        1.209,
+        18.063
+      ],
+      [
+        0.0,
+        18.063
+      ]
+    ],
+    "includes_balconies": true,
+    "confidence": "agreement outline corroborated; approximate raster trace",
+    "geometry_provenance": "agreement unit red outline registered to approved sheet",
+    "geometry_uncertainty_m": 0.2,
+    "traced_area_m2": 207.96
+  },
+  "rooms": [
+    {
+      "id": "service_wc",
+      "name": "Service toilet",
+      "category": "bathroom",
+      "polygon": [
+        [
+          0.033,
+          22.003
+        ],
+        [
+          2.301,
+          21.97
+        ],
+        [
+          2.285,
+          20.762
+        ],
+        [
+          0.017,
+          20.778
+        ]
+      ],
+      "dimensions_m": [
+        2.14,
+        1.22
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.15
+    },
+    {
+      "id": "service_room",
+      "name": "Service room",
+      "category": "service",
+      "polygon": [
+        [
+          0.017,
+          20.712
+        ],
+        [
+          2.268,
+          20.712
+        ],
+        [
+          2.268,
+          18.129
+        ],
+        [
+          0.0,
+          18.146
+        ]
+      ],
+      "dimensions_m": [
+        2.14,
+        2.51
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.15
+    },
+    {
+      "id": "dry_balcony",
+      "name": "Dry balcony",
+      "category": "balcony",
+      "polygon": [
+        [
+          2.334,
+          19.785
+        ],
+        [
+          4.123,
+          19.685
+        ],
+        [
+          4.106,
+          18.03
+        ],
+        [
+          2.301,
+          18.096
+        ]
+      ],
+      "dimensions_m": [
+        1.93,
+        1.7
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.25
+    },
+    {
+      "id": "kitchen_balcony",
+      "name": "Kitchen balcony",
+      "category": "balcony",
+      "polygon": [
+        [
+          4.189,
+          19.685
+        ],
+        [
+          7.334,
+          19.553
+        ],
+        [
+          7.301,
+          17.93
+        ],
+        [
+          4.156,
+          18.03
+        ]
+      ],
+      "dimensions_m": [
+        2.98,
+        1.7
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.25
+    },
+    {
+      "id": "kitchen",
+      "name": "Kitchen",
+      "category": "kitchen",
+      "polygon": [
+        [
+          1.242,
+          17.914
+        ],
+        [
+          3.924,
+          17.848
+        ],
+        [
+          3.907,
+          13.858
+        ],
+        [
+          1.242,
+          13.907
+        ]
+      ],
+      "dimensions_m": [
+        2.75,
+        4.12
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.15
+    },
+    {
+      "id": "bedroom_north",
+      "name": "Bedroom beside kitchen",
+      "category": "bedroom",
+      "polygon": [
+        [
+          3.99,
+          17.831
+        ],
+        [
+          7.053,
+          17.765
+        ],
+        [
+          7.02,
+          13.758
+        ],
+        [
+          3.94,
+          13.825
+        ]
+      ],
+      "dimensions_m": [
+        3.05,
+        4.03
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.15
+    },
+    {
+      "id": "bathroom_north",
+      "name": "Toilet beside upper bedroom",
+      "category": "bathroom",
+      "polygon": [
+        [
+          7.136,
+          17.765
+        ],
+        [
+          8.543,
+          17.715
+        ],
+        [
+          8.493,
+          15.281
+        ],
+        [
+          7.103,
+          15.315
+        ]
+      ],
+      "dimensions_m": [
+        1.39,
+        2.46
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.15
+    },
+    {
+      "id": "bathroom_outer_north",
+      "name": "Outer upper toilet",
+      "category": "bathroom",
+      "polygon": [
+        [
+          8.692,
+          18.493
+        ],
+        [
+          11.175,
+          18.427
+        ],
+        [
+          11.142,
+          16.904
+        ],
+        [
+          8.659,
+          16.97
+        ]
+      ],
+      "dimensions_m": [
+        2.4,
+        1.52
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.15
+    },
+    {
+      "id": "bedroom_outer_north",
+      "name": "Outer upper bedroom",
+      "category": "bedroom",
+      "polygon": [
+        [
+          8.609,
+          16.772
+        ],
+        [
+          12.566,
+          16.556
+        ],
+        [
+          12.467,
+          13.444
+        ],
+        [
+          8.543,
+          13.56
+        ]
+      ],
+      "dimensions_m": [
+        3.96,
+        3.4
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.15
+    },
+    {
+      "id": "entry",
+      "name": "Entry lobby",
+      "category": "entry",
+      "polygon": [
+        [
+          1.209,
+          12.417
+        ],
+        [
+          2.831,
+          12.368
+        ],
+        [
+          2.765,
+          9.752
+        ],
+        [
+          1.209,
+          9.818
+        ]
+      ],
+      "dimensions_m": [
+        1.65,
+        2.676
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.15
+    },
+    {
+      "id": "living_dining",
+      "name": "Living and dining",
+      "category": "living",
+      "polygon": [
+        [
+          2.732,
+          13.56
+        ],
+        [
+          8.427,
+          13.51
+        ],
+        [
+          12.467,
+          13.295
+        ],
+        [
+          12.235,
+          9.47
+        ],
+        [
+          2.699,
+          9.735
+        ]
+      ],
+      "dimensions_m": [
+        9.83,
+        4.03
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.15,
+      "dimension_note": "open plan; polygon follows visible bounding walls"
+    },
+    {
+      "id": "balcony_curved",
+      "name": "Curved living balcony",
+      "category": "balcony",
+      "polygon": [
+        [
+          12.533,
+          16.556
+        ],
+        [
+          12.848,
+          16.656
+        ],
+        [
+          13.543,
+          15.513
+        ],
+        [
+          14.189,
+          14.04
+        ],
+        [
+          14.669,
+          12.55
+        ],
+        [
+          14.868,
+          11.093
+        ],
+        [
+          14.752,
+          9.652
+        ],
+        [
+          14.437,
+          8.262
+        ],
+        [
+          13.791,
+          6.821
+        ],
+        [
+          12.748,
+          5.414
+        ],
+        [
+          12.086,
+          5.563
+        ],
+        [
+          12.235,
+          9.47
+        ],
+        [
+          12.467,
+          13.295
+        ]
+      ],
+      "dimensions_m": [
+        2.4,
+        11.07
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.25,
+      "dimension_note": "2.40 m is marked average balcony depth"
+    },
+    {
+      "id": "passage",
+      "name": "Interior passage",
+      "category": "corridor",
+      "polygon": [
+        [
+          2.632,
+          9.636
+        ],
+        [
+          4.238,
+          9.586
+        ],
+        [
+          4.238,
+          7.616
+        ],
+        [
+          2.583,
+          7.616
+        ]
+      ],
+      "dimensions_m": [
+        1.78,
+        2.13
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.15
+    },
+    {
+      "id": "wfh",
+      "name": "Work from home room",
+      "category": "work",
+      "polygon": [
+        [
+          4.305,
+          9.52
+        ],
+        [
+          7.334,
+          9.454
+        ],
+        [
+          7.334,
+          5.911
+        ],
+        [
+          4.272,
+          5.977
+        ]
+      ],
+      "dimensions_m": [
+        3.05,
+        3.58
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.15,
+      "dimension_note": "called theatre/den on agreement copy"
+    },
+    {
+      "id": "bedroom_outer_south",
+      "name": "Outer lower bedroom",
+      "category": "bedroom",
+      "polygon": [
+        [
+          7.434,
+          9.404
+        ],
+        [
+          12.202,
+          9.321
+        ],
+        [
+          12.086,
+          5.695
+        ],
+        [
+          7.401,
+          5.844
+        ]
+      ],
+      "dimensions_m": [
+        4.65,
+        3.65
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.15
+    },
+    {
+      "id": "bathroom_outer_south",
+      "name": "Outer lower toilet",
+      "category": "bathroom",
+      "polygon": [
+        [
+          8.709,
+          5.497
+        ],
+        [
+          11.175,
+          5.464
+        ],
+        [
+          11.159,
+          3.957
+        ],
+        [
+          8.675,
+          3.974
+        ]
+      ],
+      "dimensions_m": [
+        2.38,
+        1.52
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.15
+    },
+    {
+      "id": "walk_in",
+      "name": "Walk-in closet",
+      "category": "closet",
+      "polygon": [
+        [
+          7.152,
+          5.596
+        ],
+        [
+          8.642,
+          5.48
+        ],
+        [
+          8.642,
+          2.848
+        ],
+        [
+          7.152,
+          2.93
+        ]
+      ],
+      "dimensions_m": [
+        1.45,
+        2.9
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.15
+    },
+    {
+      "id": "bathroom_south",
+      "name": "Lower internal toilet",
+      "category": "bathroom",
+      "polygon": [
+        [
+          4.288,
+          5.861
+        ],
+        [
+          5.844,
+          5.778
+        ],
+        [
+          5.828,
+          2.93
+        ],
+        [
+          4.272,
+          3.013
+        ]
+      ],
+      "dimensions_m": [
+        1.52,
+        2.9
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.15
+    },
+    {
+      "id": "bedroom_south",
+      "name": "Lower internal bedroom",
+      "category": "bedroom",
+      "polygon": [
+        [
+          0.596,
+          7.467
+        ],
+        [
+          4.238,
+          7.417
+        ],
+        [
+          4.255,
+          3.03
+        ],
+        [
+          0.596,
+          2.997
+        ]
+      ],
+      "dimensions_m": [
+        3.58,
+        4.55
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.15
+    },
+    {
+      "id": "balcony_south",
+      "name": "Lower bedroom balcony",
+      "category": "balcony",
+      "polygon": [
+        [
+          0.215,
+          2.103
+        ],
+        [
+          0.613,
+          2.947
+        ],
+        [
+          4.106,
+          2.93
+        ],
+        [
+          4.106,
+          1.026
+        ],
+        [
+          0.215,
+          0.0
+        ]
+      ],
+      "dimensions_m": [
+        3.58,
+        2.45
+      ],
+      "confidence": "printed dimensions; approximate raster geometry",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
+      "geometry_uncertainty_m": 0.25,
+      "dimension_note": "2.45 m is marked average balcony depth"
+    }
+  ],
+  "wall_segments": [
+    {
+      "id": "service_toilet_divider",
+      "start": [
+        0.0,
+        20.728
+      ],
+      "end": [
+        1.407,
+        20.712
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "service_kitchen_upper",
+      "start": [
+        2.268,
+        20.712
+      ],
+      "end": [
+        2.268,
+        19.735
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "service_kitchen_lower",
+      "start": [
+        2.268,
+        18.874
+      ],
+      "end": [
+        2.268,
+        18.146
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "dry_balcony_divider",
+      "start": [
+        4.139,
+        19.685
+      ],
+      "end": [
+        4.123,
+        17.997
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "kitchen_north_left",
+      "start": [
+        1.192,
+        17.98
+      ],
+      "end": [
+        2.318,
+        17.947
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "kitchen_north_right",
+      "start": [
+        3.278,
+        17.914
+      ],
+      "end": [
+        3.94,
+        17.897
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "kitchen_bedroom",
+      "start": [
+        3.94,
+        17.848
+      ],
+      "end": [
+        3.907,
+        13.858
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "bedroom_toilet_upper",
+      "start": [
+        7.07,
+        17.765
+      ],
+      "end": [
+        7.086,
+        15.315
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "bedroom_east_above_door",
+      "start": [
+        7.086,
+        15.315
+      ],
+      "end": [
+        7.036,
+        14.785
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "bedroom_east_below_door",
+      "start": [
+        7.036,
+        13.924
+      ],
+      "end": [
+        7.036,
+        13.709
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "north_toilet_south",
+      "start": [
+        7.086,
+        15.315
+      ],
+      "end": [
+        7.699,
+        15.281
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "north_toilet_east",
+      "start": [
+        8.543,
+        17.715
+      ],
+      "end": [
+        8.526,
+        16.805
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "outer_north_toilet_south",
+      "start": [
+        9.52,
+        16.854
+      ],
+      "end": [
+        11.175,
+        16.772
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "upper_bedroom_south",
+      "start": [
+        3.94,
+        13.758
+      ],
+      "end": [
+        7.036,
+        13.709
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "outer_upper_bedroom_south_1",
+      "start": [
+        8.543,
+        13.51
+      ],
+      "end": [
+        10.0,
+        13.46
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "outer_upper_bedroom_south_2",
+      "start": [
+        11.026,
+        13.411
+      ],
+      "end": [
+        12.467,
+        13.328
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "outer_upper_bedroom_west",
+      "start": [
+        8.526,
+        16.805
+      ],
+      "end": [
+        8.477,
+        14.47
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "living_south_left",
+      "start": [
+        2.699,
+        9.735
+      ],
+      "end": [
+        3.593,
+        9.685
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "living_south_mid",
+      "start": [
+        4.52,
+        9.636
+      ],
+      "end": [
+        6.556,
+        9.603
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "living_south_right",
+      "start": [
+        8.427,
+        9.52
+      ],
+      "end": [
+        12.252,
+        9.421
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "passage_wfh",
+      "start": [
+        4.255,
+        9.553
+      ],
+      "end": [
+        4.272,
+        6.242
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "wfh_bedroom",
+      "start": [
+        7.368,
+        9.421
+      ],
+      "end": [
+        7.351,
+        6.424
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "south_bedroom_bath",
+      "start": [
+        4.255,
+        5.844
+      ],
+      "end": [
+        4.255,
+        2.997
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "wfh_bath",
+      "start": [
+        4.272,
+        5.894
+      ],
+      "end": [
+        5.861,
+        5.844
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "walkin_bedroom",
+      "start": [
+        7.103,
+        5.712
+      ],
+      "end": [
+        8.626,
+        5.563
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "walkin_bath",
+      "start": [
+        8.659,
+        5.563
+      ],
+      "end": [
+        8.659,
+        2.848
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "outer_lower_bedroom_bath",
+      "start": [
+        8.692,
+        5.53
+      ],
+      "end": [
+        11.175,
+        5.497
+      ],
+      "kind": "partition",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.15,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "living_balcony_glazing_upper",
+      "start": [
+        12.483,
+        16.54
+      ],
+      "end": [
+        12.434,
+        12.848
+      ],
+      "kind": "glazed_exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.1,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "living_balcony_glazing_mid",
+      "start": [
+        12.368,
+        10.894
+      ],
+      "end": [
+        12.268,
+        8.593
+      ],
+      "kind": "glazed_exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.1,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "living_balcony_glazing_lower",
+      "start": [
+        12.202,
+        7.119
+      ],
+      "end": [
+        12.086,
+        5.579
+      ],
+      "kind": "glazed_exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.1,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "south_balcony_glazing_left",
+      "start": [
+        0.613,
+        2.997
+      ],
+      "end": [
+        1.838,
+        2.98
+      ],
+      "kind": "glazed_exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.1,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "south_balcony_glazing_right",
+      "start": [
+        3.394,
+        2.964
+      ],
+      "end": [
+        4.106,
+        2.93
+      ],
+      "kind": "glazed_exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.1,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "kitchen_balcony_glazing",
+      "start": [
+        4.172,
+        18.03
+      ],
+      "end": [
+        5.43,
+        17.997
+      ],
+      "kind": "glazed_exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.1,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "curved_balcony_guard_1",
+      "start": [
+        12.848,
+        16.656
+      ],
+      "end": [
+        13.543,
+        15.513
+      ],
+      "kind": "balcony_guard",
+      "confidence": "approximate raster trace",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "curved_balcony_guard_2",
+      "start": [
+        13.543,
+        15.513
+      ],
+      "end": [
+        14.189,
+        14.04
+      ],
+      "kind": "balcony_guard",
+      "confidence": "approximate raster trace",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "curved_balcony_guard_3",
+      "start": [
+        14.189,
+        14.04
+      ],
+      "end": [
+        14.669,
+        12.55
+      ],
+      "kind": "balcony_guard",
+      "confidence": "approximate raster trace",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "curved_balcony_guard_4",
+      "start": [
+        14.669,
+        12.55
+      ],
+      "end": [
+        14.868,
+        11.093
+      ],
+      "kind": "balcony_guard",
+      "confidence": "approximate raster trace",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "curved_balcony_guard_5",
+      "start": [
+        14.868,
+        11.093
+      ],
+      "end": [
+        14.752,
+        9.652
+      ],
+      "kind": "balcony_guard",
+      "confidence": "approximate raster trace",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "curved_balcony_guard_6",
+      "start": [
+        14.752,
+        9.652
+      ],
+      "end": [
+        14.437,
+        8.262
+      ],
+      "kind": "balcony_guard",
+      "confidence": "approximate raster trace",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "curved_balcony_guard_7",
+      "start": [
+        14.437,
+        8.262
+      ],
+      "end": [
+        13.791,
+        6.821
+      ],
+      "kind": "balcony_guard",
+      "confidence": "approximate raster trace",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "curved_balcony_guard_8",
+      "start": [
+        13.791,
+        6.821
+      ],
+      "end": [
+        12.748,
+        5.414
+      ],
+      "kind": "balcony_guard",
+      "confidence": "approximate raster trace",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "south_balcony_guard_1",
+      "start": [
+        0.215,
+        0.0
+      ],
+      "end": [
+        4.106,
+        1.026
+      ],
+      "kind": "balcony_guard",
+      "confidence": "approximate raster trace",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "south_balcony_guard_2",
+      "start": [
+        4.106,
+        1.026
+      ],
+      "end": [
+        4.106,
+        2.93
+      ],
+      "kind": "balcony_guard",
+      "confidence": "approximate raster trace",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "service_top_exterior",
+      "start": [
+        0.0,
+        22.053
+      ],
+      "end": [
+        2.368,
+        22.003
+      ],
+      "kind": "exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "service_east_exterior",
+      "start": [
+        2.368,
+        22.003
+      ],
+      "end": [
+        2.368,
+        19.868
+      ],
+      "kind": "exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "service_balcony_guard",
+      "start": [
+        2.368,
+        19.868
+      ],
+      "end": [
+        7.434,
+        19.57
+      ],
+      "kind": "balcony_guard",
+      "confidence": "approximate raster trace",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "balcony_duct_edge",
+      "start": [
+        7.434,
+        19.57
+      ],
+      "end": [
+        7.434,
+        17.732
+      ],
+      "kind": "exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "north_toilet_notch_1",
+      "start": [
+        7.434,
+        17.732
+      ],
+      "end": [
+        8.576,
+        17.715
+      ],
+      "kind": "exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "north_toilet_notch_2",
+      "start": [
+        8.576,
+        17.715
+      ],
+      "end": [
+        8.593,
+        18.543
+      ],
+      "kind": "exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "north_toilet_outer_1",
+      "start": [
+        8.593,
+        18.543
+      ],
+      "end": [
+        11.175,
+        18.427
+      ],
+      "kind": "exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "north_toilet_outer_2",
+      "start": [
+        11.175,
+        18.427
+      ],
+      "end": [
+        11.192,
+        17.219
+      ],
+      "kind": "exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "north_balcony_transition",
+      "start": [
+        11.192,
+        17.219
+      ],
+      "end": [
+        12.848,
+        16.656
+      ],
+      "kind": "balcony_guard",
+      "confidence": "approximate raster trace",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "south_balcony_transition",
+      "start": [
+        12.748,
+        5.414
+      ],
+      "end": [
+        11.291,
+        5.48
+      ],
+      "kind": "balcony_guard",
+      "confidence": "approximate raster trace",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "south_toilet_outer_1",
+      "start": [
+        11.291,
+        5.48
+      ],
+      "end": [
+        11.209,
+        3.874
+      ],
+      "kind": "exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "south_toilet_outer_2",
+      "start": [
+        11.209,
+        3.874
+      ],
+      "end": [
+        8.659,
+        3.874
+      ],
+      "kind": "exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "walkin_outer_1",
+      "start": [
+        8.659,
+        3.874
+      ],
+      "end": [
+        8.659,
+        2.765
+      ],
+      "kind": "exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "walkin_outer_2",
+      "start": [
+        8.659,
+        2.765
+      ],
+      "end": [
+        7.07,
+        2.765
+      ],
+      "kind": "exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "south_void_east",
+      "start": [
+        7.07,
+        2.765
+      ],
+      "end": [
+        7.07,
+        5.281
+      ],
+      "kind": "exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "south_void_north",
+      "start": [
+        7.07,
+        5.281
+      ],
+      "end": [
+        5.861,
+        5.281
+      ],
+      "kind": "exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "south_void_west",
+      "start": [
+        5.861,
+        5.281
+      ],
+      "end": [
+        5.861,
+        2.732
+      ],
+      "kind": "exterior",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "south_void_diagonal",
+      "start": [
+        5.861,
+        2.732
+      ],
+      "end": [
+        4.106,
+        1.026
+      ],
+      "kind": "balcony_guard",
+      "confidence": "approximate raster trace",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "south_balcony_west_guard",
+      "start": [
+        0.215,
+        0.0
+      ],
+      "end": [
+        0.215,
+        2.103
+      ],
+      "kind": "balcony_guard",
+      "confidence": "approximate raster trace",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "south_balcony_north_guard",
+      "start": [
+        0.215,
+        2.103
+      ],
+      "end": [
+        0.464,
+        2.103
+      ],
+      "kind": "balcony_guard",
+      "confidence": "approximate raster trace",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "south_party_1",
+      "start": [
+        0.464,
+        2.103
+      ],
+      "end": [
+        0.464,
+        7.533
+      ],
+      "kind": "party_wall",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "south_party_2",
+      "start": [
+        0.464,
+        7.533
+      ],
+      "end": [
+        2.566,
+        7.533
+      ],
+      "kind": "party_wall",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "south_party_3",
+      "start": [
+        2.566,
+        7.533
+      ],
+      "end": [
+        2.566,
+        9.685
+      ],
+      "kind": "party_wall",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "entry_party_south",
+      "start": [
+        2.566,
+        9.685
+      ],
+      "end": [
+        1.192,
+        9.685
+      ],
+      "kind": "party_wall",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "entry_party_west_lower",
+      "start": [
+        1.192,
+        9.685
+      ],
+      "end": [
+        1.192,
+        10.944
+      ],
+      "kind": "party_wall",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "entry_party_west_upper",
+      "start": [
+        1.192,
+        11.871
+      ],
+      "end": [
+        1.192,
+        12.467
+      ],
+      "kind": "party_wall",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "entry_party_north",
+      "start": [
+        1.192,
+        12.467
+      ],
+      "end": [
+        2.732,
+        12.467
+      ],
+      "kind": "party_wall",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "lv_duct_east",
+      "start": [
+        2.732,
+        12.467
+      ],
+      "end": [
+        2.732,
+        13.858
+      ],
+      "kind": "party_wall",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "lv_duct_north",
+      "start": [
+        2.732,
+        13.858
+      ],
+      "end": [
+        1.192,
+        13.858
+      ],
+      "kind": "party_wall",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "kitchen_party_west",
+      "start": [
+        1.192,
+        13.858
+      ],
+      "end": [
+        1.192,
+        16.722
+      ],
+      "kind": "party_wall",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "gc_party_east",
+      "start": [
+        1.192,
+        16.722
+      ],
+      "end": [
+        1.209,
+        18.063
+      ],
+      "kind": "party_wall",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "gc_party_north",
+      "start": [
+        1.209,
+        18.063
+      ],
+      "end": [
+        0.0,
+        18.063
+      ],
+      "kind": "party_wall",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    },
+    {
+      "id": "service_party_west",
+      "start": [
+        0.0,
+        18.063
+      ],
+      "end": [
+        0.0,
+        22.053
+      ],
+      "kind": "party_wall",
+      "confidence": "approximate raster trace",
+      "height_m": 2.8,
+      "thickness_m": 0.2,
+      "geometry_provenance": "manual trace of approved raster",
+      "geometry_uncertainty_m": 0.2,
+      "height_thickness_provenance": "visualization assumption; not specified by the plan"
+    }
+  ],
+  "openings": [
+    {
+      "id": "service_wc_door",
+      "type": "door",
+      "start": [
+        1.407,
+        20.712
+      ],
+      "end": [
+        2.268,
+        20.712
+      ],
+      "center": [
+        1.838,
+        20.712
+      ],
+      "space_id": "service_wc",
+      "width_m": 0.86,
+      "free_opening": true,
+      "confidence": "estimated from D/SD symbol",
+      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
+      "geometry_uncertainty_m": 0.2
+    },
+    {
+      "id": "service_room_door",
+      "type": "door",
+      "start": [
+        2.268,
+        19.735
+      ],
+      "end": [
+        2.268,
+        18.874
+      ],
+      "center": [
+        2.268,
+        19.305
+      ],
+      "space_id": "service_room",
+      "width_m": 0.86,
+      "free_opening": true,
+      "confidence": "estimated from D/SD symbol",
+      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
+      "geometry_uncertainty_m": 0.2
+    },
+    {
+      "id": "kitchen_dry_balcony_door",
+      "type": "door",
+      "start": [
+        2.318,
+        17.947
+      ],
+      "end": [
+        3.278,
+        17.914
+      ],
+      "center": [
+        2.798,
+        17.93
+      ],
+      "space_id": "dry_balcony",
+      "width_m": 0.96,
+      "free_opening": true,
+      "confidence": "estimated from D/SD symbol",
+      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
+      "geometry_uncertainty_m": 0.2
+    },
+    {
+      "id": "north_toilet_door",
+      "type": "door",
+      "start": [
+        7.699,
+        15.281
+      ],
+      "end": [
+        8.493,
+        15.248
+      ],
+      "center": [
+        8.096,
+        15.265
+      ],
+      "space_id": "bathroom_north",
+      "width_m": 0.79,
+      "free_opening": true,
+      "confidence": "estimated from D/SD symbol",
+      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
+      "geometry_uncertainty_m": 0.2
+    },
+    {
+      "id": "outer_north_toilet_door",
+      "type": "door",
+      "start": [
+        8.659,
+        16.904
+      ],
+      "end": [
+        9.52,
+        16.854
+      ],
+      "center": [
+        9.089,
+        16.887
+      ],
+      "space_id": "bathroom_outer_north",
+      "width_m": 0.86,
+      "free_opening": true,
+      "confidence": "estimated from D/SD symbol",
+      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
+      "geometry_uncertainty_m": 0.2
+    },
+    {
+      "id": "main_entry",
+      "type": "door",
+      "start": [
+        1.192,
+        11.871
+      ],
+      "end": [
+        1.192,
+        10.944
+      ],
+      "center": [
+        1.192,
+        11.407
+      ],
+      "space_id": "entry",
+      "width_m": 0.93,
+      "free_opening": true,
+      "confidence": "estimated from D/SD symbol",
+      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
+      "geometry_uncertainty_m": 0.2
+    },
+    {
+      "id": "north_bedroom_door",
+      "type": "door",
+      "start": [
+        7.036,
+        14.785
+      ],
+      "end": [
+        7.036,
+        13.924
+      ],
+      "center": [
+        7.036,
+        14.354
+      ],
+      "space_id": "bedroom_north",
+      "width_m": 0.86,
+      "free_opening": true,
+      "confidence": "estimated from D/SD symbol",
+      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
+      "geometry_uncertainty_m": 0.2
+    },
+    {
+      "id": "outer_north_bedroom_door",
+      "type": "door",
+      "start": [
+        10.0,
+        13.46
+      ],
+      "end": [
+        11.026,
+        13.411
+      ],
+      "center": [
+        10.513,
+        13.444
+      ],
+      "space_id": "bedroom_outer_north",
+      "width_m": 1.03,
+      "free_opening": true,
+      "confidence": "estimated from D/SD symbol",
+      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
+      "geometry_uncertainty_m": 0.2
+    },
+    {
+      "id": "passage_to_south_bedroom",
+      "type": "opening",
+      "start": [
+        2.566,
+        7.533
+      ],
+      "end": [
+        4.238,
+        7.45
+      ],
+      "center": [
+        3.394,
+        7.5
+      ],
+      "space_id": "bedroom_south",
+      "width_m": 1.67,
+      "free_opening": true,
+      "confidence": "estimated from D/SD symbol",
+      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
+      "geometry_uncertainty_m": 0.2
+    },
+    {
+      "id": "passage_opening",
+      "type": "opening",
+      "start": [
+        3.593,
+        9.685
+      ],
+      "end": [
+        4.52,
+        9.636
+      ],
+      "center": [
+        4.056,
+        9.669
+      ],
+      "space_id": "passage",
+      "width_m": 0.93,
+      "free_opening": true,
+      "confidence": "estimated from D/SD symbol",
+      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
+      "geometry_uncertainty_m": 0.2
+    },
+    {
+      "id": "wfh_door",
+      "type": "door",
+      "start": [
+        6.556,
+        9.603
+      ],
+      "end": [
+        7.5,
+        9.553
+      ],
+      "center": [
+        7.02,
+        9.586
+      ],
+      "space_id": "wfh",
+      "width_m": 0.94,
+      "free_opening": true,
+      "confidence": "estimated from D/SD symbol",
+      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
+      "geometry_uncertainty_m": 0.2
+    },
+    {
+      "id": "outer_lower_bedroom_door",
+      "type": "door",
+      "start": [
+        7.5,
+        9.553
+      ],
+      "end": [
+        8.427,
+        9.52
+      ],
+      "center": [
+        7.964,
+        9.536
+      ],
+      "space_id": "bedroom_outer_south",
+      "width_m": 0.93,
+      "free_opening": true,
+      "confidence": "estimated from D/SD symbol",
+      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
+      "geometry_uncertainty_m": 0.2
+    },
+    {
+      "id": "living_balcony_slider",
+      "type": "sliding_door",
+      "start": [
+        12.434,
+        12.848
+      ],
+      "end": [
+        12.368,
+        10.894
+      ],
+      "center": [
+        12.401,
+        11.871
+      ],
+      "space_id": "balcony_curved",
+      "width_m": 1.96,
+      "free_opening": true,
+      "confidence": "estimated from D/SD symbol",
+      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
+      "geometry_uncertainty_m": 0.2
+    },
+    {
+      "id": "lower_balcony_slider",
+      "type": "sliding_door",
+      "start": [
+        1.838,
+        2.98
+      ],
+      "end": [
+        3.394,
+        2.964
+      ],
+      "center": [
+        2.616,
+        2.98
+      ],
+      "space_id": "balcony_south",
+      "width_m": 1.56,
+      "free_opening": true,
+      "confidence": "estimated from D/SD symbol",
+      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
+      "geometry_uncertainty_m": 0.2
+    },
+    {
+      "id": "kitchen_balcony_slider",
+      "type": "sliding_door",
+      "start": [
+        5.43,
+        17.997
+      ],
+      "end": [
+        7.103,
+        17.93
+      ],
+      "center": [
+        6.258,
+        17.964
+      ],
+      "space_id": "kitchen_balcony",
+      "width_m": 1.67,
+      "free_opening": true,
+      "confidence": "estimated from D/SD symbol",
+      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
+      "geometry_uncertainty_m": 0.2
+    }
+  ],
+  "unmeasured": [
+    "floor elevation",
+    "ceiling height",
+    "wall build-up and true thickness",
+    "door widths",
+    "window/slider widths",
+    "structural column sizes",
+    "facade glass specification",
+    "balcony railing height"
+  ]
+}

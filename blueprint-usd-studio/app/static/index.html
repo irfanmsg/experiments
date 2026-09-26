@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111a2b">
+  <title>Blueprint Studio · From drawing to 3D</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Blueprint Studio home"><span class="brand-mark">▧</span><span>Blueprint <strong>Studio</strong></span></a>
+    <span class="top-caption">Your space, ready to explore</span>
+    <span id="connection" class="connection"><span class="status-dot"></span> Ready on this laptop</span>
+  </header>
+
+  <main class="app-shell">
+    <aside class="sidebar">
+      <div class="intro">
+        <div class="eyebrow">FROM PLAN TO PLACE</div>
+        <h1>See what your space could become.</h1>
+        <p>Upload a floor plan, check the measurements, and explore it in 3D. No design software experience needed.</p>
+      </div>
+
+      <ol class="steps" aria-label="Workflow">
+        <li class="active" id="step-upload"><span>1</span><div><strong>Bring your plan</strong><small>PDF or image</small></div></li>
+        <li id="step-measure"><span>2</span><div><strong>Check the scale</strong><small>One known distance</small></div></li>
+        <li id="step-outline"><span>3</span><div><strong>Review the spaces</strong><small>Rooms, perimeter, openings</small></div></li>
+        <li id="step-create"><span>4</span><div><strong>Create and explore</strong><small>Style, USD and live view</small></div></li>
+      </ol>
+
+      <section class="card source-card">
+        <div class="card-heading"><span class="icon">↥</span><div><h2>Start with a drawing</h2><p>PDF, PNG, JPG, WebP or TIFF</p></div></div>
+        <label class="upload-target" for="fileInput"><span class="upload-illustration">⌁</span><strong>Choose a file</strong><small>or drop it here · up to 200 MB</small></label>
+        <input id="fileInput" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.tif,.tiff" hidden>
+        <button id="exampleButton" type="button" class="text-button">Open the B1-1502 flat example <span>→</span></button>
+        <p id="sourceNote" class="source-note" hidden></p>
+        <div id="pageControls" class="field-row" hidden><label for="pageSelect">PDF page</label><select id="pageSelect"></select></div>
+      </section>
+
+      <section class="card" id="measureCard">
+        <div class="card-heading"><span class="icon">↔</span><div><h2>Make it true to size</h2><p>Click two ends of a printed dimension</p></div></div>
+        <div class="field-row"><label for="distanceInput">Known distance</label><div class="unit-input"><input id="distanceInput" type="number" min="0.01" step="0.01" value="4.03"><span>metres</span></div></div>
+        <button id="calibrateButton" type="button" class="secondary-button" disabled>Mark the two points</button>
+        <p id="scaleSummary" class="helper">Upload a drawing to begin.</p>
+      </section>
+
+      <section class="card" id="outlineCard">
+        <div class="card-heading"><span class="icon">◇</span><div><h2>Show the spaces</h2><p>Trace only what you want to model</p></div></div>
+        <div class="field-row"><label for="roomName">Space name</label><input id="roomName" type="text" placeholder="e.g. Living room"></div>
+        <div class="tool-grid">
+          <button class="tool" data-tool="room-rectangle" disabled>▭<span>Room rectangle</span></button>
+          <button class="tool" data-tool="room-polygon" disabled>⬠<span>Room outline</span></button>
+          <button class="tool" data-tool="perimeter" disabled>▱<span>Outer edge</span></button>
+          <button class="tool" data-tool="balcony" disabled>▣<span>Balcony</span></button>
+          <button class="tool" data-tool="door" disabled>◩<span>Door</span></button>
+          <button class="tool" data-tool="window" disabled>▤<span>Window</span></button>
+        </div>
+        <button id="finishOutline" type="button" class="secondary-button" hidden>Finish this outline</button>
+        <div id="openingWidthRow" class="field-row" hidden><label for="openingWidth">Opening width</label><div class="unit-input"><input id="openingWidth" type="number" min="0.2" max="6" step="0.05" value="0.9"><span>metres</span></div></div>
+        <button id="suggestButton" type="button" class="subtle-button" disabled>Find likely rooms in the image</button>
+        <p class="helper">Suggestions always need your review. You can edit the plan before creating 3D.</p>
+        <div id="suggestions" class="suggestions" hidden></div>
+        <div id="roomList" class="room-list"></div>
+      </section>
+
+      <section class="card" id="detailCard">
+        <div class="card-heading"><span class="icon">⌂</span><div><h2>Building details</h2><p>Change what the drawing cannot tell us</p></div></div>
+        <div class="field-row"><label for="structureType">This is a</label><select id="structureType"><option value="home">Home</option><option value="factory">Factory</option><option value="office">Office</option><option value="showroom">Showroom</option><option value="other">Other structure</option></select></div>
+        <div class="field-row"><label for="heightInput">Wall height</label><div class="unit-input"><input id="heightInput" type="number" min="1.5" max="15" step="0.05" value="2.9"><span>metres</span></div></div>
+        <p id="heightStatus" class="helper">Wall height defaults to 2.9 m until you confirm it.</p>
+        <details class="assets-panel"><summary>Add SimReady objects</summary><button id="starterFurniture" type="button" class="secondary-button" hidden>Add sample B1-1502 layout</button><div id="assetList" class="asset-list">The asset library is being prepared.</div><div id="placementList" class="room-list"></div><p class="helper">Choose an item, then click where it belongs on the plan. Source materials stay linked. To see an object fall, mark it movable, give it a starting height, and enable physics in the live view.</p></details>
+      </section>
+    </aside>
+
+    <section class="workspace">
+      <div class="workspace-header">
+        <div><div class="eyebrow">WORKSPACE</div><h2 id="projectTitle">Your drawing will appear here</h2><p id="projectSubtitle">Start with your own blueprint or explore the B1-1502 example.</p></div>
+        <div class="workspace-actions"><span id="saveState" class="save-state"></span><button id="clearTool" type="button" class="subtle-button" hidden>Exit tool</button></div>
+      </div>
+      <div id="emptyState" class="empty-state"><div class="empty-graphic"><span class="plan-line"></span><span class="plan-line second"></span><span class="plan-line third"></span><span class="plan-door"></span></div><h3>Picture the space before it is built.</h3><p>Open the B1-1502 example to see a real, measured flat plan.</p><button id="emptyExample" class="primary-button" type="button">Explore B1-1502 <span>→</span></button></div>
+      <div id="canvasArea" class="canvas-area" hidden><div class="canvas-toolbar"><span id="toolHint">Review the traced plan, or choose a tool on the left.</span><label class="canvas-toggle"><input id="showLabels" type="checkbox" checked> Show labels</label><span id="canvasScale"></span></div><div class="canvas-scroll"><canvas id="planCanvas" aria-label="Blueprint editor"></canvas></div><div class="canvas-footer"><span><i class="legend-swatch perimeter"></i> Perimeter</span><span><i class="legend-swatch room"></i> Spaces</span><span><i class="legend-swatch opening"></i> Openings</span><span>Click a space in the list to remove it</span></div></div>
+      <div id="drawingInfo" class="drawing-info" hidden><div class="info-title">Measurements and source</div><div id="measurementBadges" class="measurement-badges"></div><p id="provenanceText"></p></div>
+
+      <section class="create-panel" id="createPanel">
+        <div class="create-copy"><div class="eyebrow">MAKE IT YOURS</div><h2>Choose a look for the same measured space.</h2><p>Styles change finishes and lighting. The traced floor plan stays in metres.</p></div>
+        <div id="styleChoices" class="style-choices" role="radiogroup" aria-label="Architectural style"></div>
+        <div class="create-actions"><button id="generateButton" type="button" class="primary-button" disabled>Create 3D scene <span>→</span></button><button id="allStylesButton" type="button" class="secondary-button" disabled>Export all styles</button><span id="generateStatus" class="helper"></span></div>
+        <div id="resultPanel" class="result-panel" hidden><div><strong>Your USD scene is ready.</strong><p id="resultDetails"></p></div><div class="result-actions"><a id="downloadLink" class="secondary-button" href="#" download>Download USD</a><select id="streamQuality" aria-label="Stream quality"><option value="hd">HD · clearer detail</option><option value="standard">Standard · lower bandwidth</option></select><label class="physics-option"><input id="streamPhysics" type="checkbox"> Simulate physics</label><button id="streamButton" class="primary-button" type="button">Explore live on another screen <span>↗</span></button></div></div>
+        <div id="streamPanel" class="stream-panel" hidden><div><strong>Live RTX view</strong><p>Open this address on this laptop or another machine on the same network. The view connects automatically. Drag to rotate and scroll to zoom.</p><a id="streamLink" href="#" target="_blank" rel="noopener"></a></div><button id="stopStreamButton" type="button" class="subtle-button">Stop stream</button></div>
+      </section>
+    </section>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

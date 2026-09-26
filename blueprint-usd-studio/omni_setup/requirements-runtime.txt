@@ -1,0 +1,6 @@
+# Optional RTX rendering, WebRTC streaming, and PhysX simulation.
+# ovphysx resolves its matching ovstage version.
+ovrtx==0.5.0.377615
+ovstream==0.4.5
+ovphysx==0.6.3
+warp-lang==1.17.0
