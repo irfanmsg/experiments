@@ -1,0 +1,20 @@
+{
+  "primary_geometry_source": "B1-Building-3.pdf, page 1 (approved sheet 63/69, 22 April 2024)",
+  "secondary_source": "Sales Presenter Mergred Web.pdf",
+  "secondary_page_review": {
+    "32": "Detailed B Building 4.5 BHK; flat types 02/05. Room labels use feet and inches.",
+    "33": "B Building typical floor. Use for unit-02 layout context on floor 15.",
+    "34": "First-floor plan; not the floor-15 layout.",
+    "35": "Refuge floors 8, 13, 18; not floor 15."
+  },
+  "conversion": "meters = feet * 0.3048 + inches * 0.0254",
+  "measurements": [
+    {"room_id":"kitchen", "brochure_feet_inches":[[9,0],[13,5]], "brochure_m":[2.7432,4.0894], "approved_m":[2.75,4.12]},
+    {"room_id":"bedroom_outer_north", "brochure_feet_inches":[[13,0],[11,0]], "brochure_m":[3.9624,3.3528], "approved_m":[3.96,3.4]},
+    {"room_id":"bedroom_north", "brochure_feet_inches":[[10,0],[13,3]], "brochure_m":[3.048,4.0386], "approved_m":[3.05,4.03]},
+    {"room_id":"wfh", "brochure_feet_inches":[[10,0],[11,9]], "brochure_m":[3.048,3.5814], "approved_m":[3.05,3.58]},
+    {"room_id":"bedroom_south", "brochure_feet_inches":[[11,9],[14,11]], "brochure_m":[3.5814,4.5466], "approved_m":[3.58,4.55]}
+  ],
+  "source_policy": "Use approved metric dimensions for geometry. Brochure dimensions are a separate cross-check; do not mix values from different drawings or interpret feet/inches as decimal meters.",
+  "area_policy": "Retain the approved area schedule as source metadata. Do not equate the generated gross slab area with the printed net-area schedule or force the model to fit it by global scaling."
+}

@@ -24,7 +24,7 @@ cd /home/ovqa/Repos/GitHub/blueprint-usd-studio
 ./run.sh
 ```
 
-The dependencies are already installed on this laptop. On a fresh machine, run `./omni_setup/setup.sh runtime` first. Open `http://127.0.0.1:8000`. For the measured flat example, click **Open the B1-1502 flat example**, or open `http://127.0.0.1:8000/?example=b1-1502`. The editor can be made available to other machines on the local network with `./run.sh --lan`; it has no login yet, so use that option only on a network you trust. The RTX browser view launched from the app binds to the laptop's LAN address and streams with WebRTC. HD (1280×720) is the default; the viewer fits the workspace without stretching and offers an original-size mode. Standard quality (640×360) remains available for lower bandwidth. The first shader build may take several minutes. **Simulate physics** is optional in the live view; authored static colliders remain fixed, while dynamic objects can move.
+The dependencies are already installed on this laptop. On a fresh machine, run `./omni_setup/setup.sh runtime` first. Open `http://127.0.0.1:8000`. For the dimensioned flat example, click **Open the B1-1502 flat example**, or open `http://127.0.0.1:8000/?example=b1-1502`. The editor can be made available to other machines on the local network with `./run.sh --lan`; it has no login yet, so use that option only on a network you trust. The RTX browser view launched from the app binds to the laptop's LAN address and streams with WebRTC. HD (1280×720) is the default; the viewer fits the workspace without stretching and offers an original-size mode. Standard quality (640×360) remains available for lower bandwidth. The first shader build may take several minutes. **Simulate physics** is optional in the live view; authored static colliders remain fixed, while dynamic objects can move.
 
 Asset downloads are optional for basic USD export. `./omni_setup/fetch_simready.sh` retrieves NVIDIA's Furniture & Misc pack, and `./omni_setup/fetch_simready_warehouse.sh` retrieves Warehouse 01, both outside this Git repository. This laptop has both extracted packs and lightweight RTX-compatible overlays. The **Add SimReady objects** gallery offers 11 home/office furnishings and 14 factory/warehouse items, with measured model bounds. Placements keep NVIDIA's source materials; the app selects authored collision variants where available and builds a bounds collider where needed. Select **Movable in simulation**, set a starting height, and enable **Simulate physics** to see an object move. Referenced assets need the local pack and overlay when the authored USD is moved to another machine. [omni_setup/README.md](omni_setup/README.md) describes the asset setup.
 
@@ -32,19 +32,34 @@ For Internet viewing, the current LAN stream needs HTTPS, authentication, networ
 
 ## B1-1502 deliverables
 
-**Known issue: room geometry does not yet enforce the printed dimensions.**
-The USD uses `metersPerUnit = 1.0` (one scene unit is one meter), but the scan
-was traced using a single calibration of 60.4 pixels per meter. Printed room
-dimensions are metadata, not geometric constraints. For example, the kitchen's
-traced polygon averages approximately 2.674 × 3.999 m across opposite edges,
-versus the printed 2.75 × 4.12 m; the outer upper bedroom averages
-3.944 × 3.163 m, versus 3.96 × 3.40 m. These are polygon measurements, not
-verified clear distances between finished wall faces. Dimension-driven
-reconstruction remains outstanding; changing the USD unit setting alone will
-not fix these discrepancies. Existing tests verify units and selected source
-labels, not dimensional agreement of every modeled room.
+The B1-1502 example uses **one USD unit = one meter**. Printed dimensions
+now drive its geometry: 18 rectangular spaces have exact clear floor spans,
+and the two irregular balconies enforce their printed span and average depth.
+For example, the kitchen is 2.75 × 4.12 m and the outer upper bedroom is
+3.96 × 3.40 m. Walls are placed outside the clear spaces, shared wall solids
+are deduplicated, and door openings are cut through those solids. Export
+validation rejects a dimensioned room whose vertices disagree with its labels.
 
-`data/b1_1502/plan.json` is a trace of the 15th-floor B1 unit 02. The approved architectural sheet labels the rooms, the registered agreement marks this unit's perimeter, and the area schedule prints 172.00 m² carpet, 32.72 m² balcony, and 3.05 m² dry balcony: 207.77 m² total. The raster-traced perimeter measures 207.96 m², a 0.19 m² difference. Printed room dimensions are retained exactly as text metadata in USD. Traced vertices have approximately 0.15–0.25 m uncertainty because the source is a scanned sheet; the 2.8 m wall height and wall thicknesses are visualization assumptions that the app lets you change.
+`data/b1_1502/trace.py` preserves the old pixel trace as `raster_trace.json`,
+then rebuilds `plan.json` through the dimension-driven layout. Changing the
+60.4 pixels/meter raster calibration no longer changes the reconstructed room
+sizes. Existing unedited B1 example projects migrate when loaded; geometry
+edits are preserved and require opening the updated example instead.
+
+The approved metric plan remains the dimensional source. Pages 32–35 of
+`Sales Presenter Mergred Web.pdf` were reviewed: page 32 is the detailed 02/05
+unit, page 33 the typical floor, page 34 the first floor, and page 35 refuge
+floors 8/13/18. Brochure feet/inches are converted with 0.3048 m/ft and
+0.0254 m/in. Differences from the approved drawing are recorded in
+[`source_comparison.json`](data/b1_1502/source_comparison.json).
+
+Wall thickness (0.15 m), height (2.8 m), orthogonal alignment and detailed
+balcony curves remain assumptions. Printed average balcony depths do not
+uniquely determine the curved boundary. The modeled gross slab is approximately
+222.45 m²; the approved 207.77 m² net-area schedule remains separate source
+metadata. The published area schedule and room/average-depth labels do not
+establish a single exact surveyed perimeter; we do not globally shrink rooms
+to force these different measurements to agree.
 
 Regenerate the ready-to-open binary USD and five home style variants:
 
@@ -69,7 +84,7 @@ cameras, mouse rotation and zoom, and full screen. Screenshots are written to
 `output/qa/`. Geometry and camera regression checks run with
 `.venv/bin/python -m pytest -q`.
 
-The scene is a traced architectural visualization with illustrative furnishings,
+The scene is a dimension-driven architectural visualization with illustrative furnishings,
 not a finished photorealistic interior or a construction-verified model. It has
 no ceilings or fully detailed kitchen/bathroom fit-out. Room camera movement
-does not yet stop at walls. The scanned-plan uncertainty remains 0.15–0.25 m.
+does not yet stop at walls. Room spans are constrained; exact wall construction, relative offsets and balcony profiles still need field confirmation.

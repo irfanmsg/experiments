@@ -8,7 +8,7 @@
   "coordinate_system": {
     "x": "right in upright approved drawing",
     "y": "up in upright approved drawing",
-    "origin": "approved crop pixel (742, 1681), near south-west balcony corner",
+    "origin": "metric layout origin; source pixel registration is only for source traces",
     "z": "floor plane; elevation and storey height not given in source"
   },
   "source": {
@@ -85,175 +85,282 @@
   "footprint": {
     "polygon": [
       [
-        0.0,
-        22.053
+        0.899999999999998,
+        7.670000000000001
       ],
       [
-        2.368,
-        22.003
+        2.699999999999998,
+        7.670000000000001
       ],
       [
-        2.368,
-        19.868
+        2.699999999999998,
+        9.65
       ],
       [
-        7.434,
-        19.57
+        0.9999999999999999,
+        9.65
       ],
       [
-        7.434,
-        17.732
+        0.9999999999999999,
+        10.940600000000002
       ],
       [
-        8.576,
-        17.715
+        0.9249999999999999,
+        10.940600000000002
       ],
       [
-        8.593,
-        18.543
+        0.9249999999999999,
+        11.870600000000001
       ],
       [
-        11.175,
-        18.427
+        0.9999999999999999,
+        11.870600000000001
       ],
       [
-        11.192,
-        17.219
+        0.9999999999999999,
+        12.626000000000001
       ],
       [
-        12.848,
-        16.656
+        2.65,
+        12.626000000000001
       ],
       [
-        13.543,
-        15.513
+        2.65,
+        13.830000000000002
       ],
       [
-        14.189,
-        14.04
+        0.879999999999998,
+        13.830000000000002
       ],
       [
-        14.669,
-        12.55
+        0.879999999999998,
+        18.1
       ],
       [
-        14.868,
-        11.093
+        -0.44000000000000206,
+        18.1
       ],
       [
-        14.752,
-        9.652
+        -0.44000000000000206,
+        20.759999999999998
       ],
       [
-        14.437,
-        8.262
+        -0.44000000000000206,
+        20.909999999999997
       ],
       [
-        13.791,
-        6.821
+        -0.44000000000000206,
+        22.279999999999994
       ],
       [
-        12.748,
-        5.414
+        1.999999999999998,
+        22.279999999999994
       ],
       [
-        11.291,
-        5.48
+        1.999999999999998,
+        20.909999999999997
       ],
       [
-        11.209,
-        3.874
+        1.999999999999998,
+        20.759999999999998
       ],
       [
-        8.659,
-        3.874
+        1.999999999999998,
+        19.95
       ],
       [
-        8.659,
-        2.765
+        3.929999999999998,
+        19.95
       ],
       [
-        7.07,
-        2.765
+        3.929999999999998,
+        18.25
       ],
       [
-        7.07,
-        5.281
+        3.929999999999998,
+        18.16
       ],
       [
-        5.861,
-        5.281
+        4.079999999999998,
+        18.16
       ],
       [
-        5.861,
-        2.732
+        4.079999999999998,
+        19.86
       ],
       [
-        4.106,
-        1.026
+        7.059999999999999,
+        19.86
       ],
       [
-        0.215,
-        0.0
+        7.059999999999999,
+        18.16
       ],
       [
-        0.215,
-        2.103
+        7.129999999999998,
+        18.16
       ],
       [
-        0.464,
-        2.103
+        8.519999999999998,
+        18.16
       ],
       [
-        0.464,
-        7.533
+        8.519999999999998,
+        19.2
       ],
       [
-        2.566,
-        7.533
+        11.219999999999999,
+        19.2
       ],
       [
-        2.566,
-        9.685
+        11.219999999999999,
+        17.53
       ],
       [
-        1.192,
-        9.685
+        12.78,
+        17.53
       ],
       [
-        1.192,
-        12.467
+        12.78,
+        17.380000000000003
       ],
       [
-        2.732,
-        12.467
+        12.78,
+        17.225
       ],
       [
-        2.732,
-        13.858
+        13.280221237811274,
+        17.225
       ],
       [
-        1.192,
-        13.858
+        14.057021936473163,
+        16.302500000000002
       ],
       [
-        1.192,
-        16.722
+        14.780884951245095,
+        15.380000000000003
       ],
       [
-        1.209,
-        18.063
+        15.402480213910556,
+        14.457500000000001
       ],
       [
-        0.0,
-        18.063
+        15.879447034553635,
+        13.535000000000002
+      ],
+      [
+        16.179280912572445,
+        12.6125
+      ],
+      [
+        16.28154866467892,
+        11.690000000000001
+      ],
+      [
+        16.179280912572445,
+        10.767500000000002
+      ],
+      [
+        15.879447034553635,
+        9.845000000000002
+      ],
+      [
+        15.402480213910557,
+        8.922500000000001
+      ],
+      [
+        14.780884951245095,
+        8.0
+      ],
+      [
+        14.057021936473163,
+        7.0775000000000015
+      ],
+      [
+        13.280221237811274,
+        6.155000000000001
+      ],
+      [
+        12.78,
+        6.155000000000001
+      ],
+      [
+        12.78,
+        6.0
+      ],
+      [
+        12.78,
+        5.85
+      ],
+      [
+        12.109999999999998,
+        5.85
+      ],
+      [
+        12.109999999999998,
+        4.18
+      ],
+      [
+        9.579999999999998,
+        4.18
+      ],
+      [
+        9.579999999999998,
+        2.8
+      ],
+      [
+        7.829999999999998,
+        2.8
+      ],
+      [
+        7.829999999999998,
+        5.85
+      ],
+      [
+        7.829999999999998,
+        5.92
+      ],
+      [
+        6.449999999999999,
+        5.92
+      ],
+      [
+        6.449999999999999,
+        2.87
+      ],
+      [
+        4.7799999999999985,
+        2.87
+      ],
+      [
+        4.7799999999999985,
+        2.8200000000000007
+      ],
+      [
+        4.629999999999998,
+        2.8200000000000007
+      ],
+      [
+        4.629999999999998,
+        0.8600000000000005
+      ],
+      [
+        1.049999999999998,
+        -0.11999999999999922
+      ],
+      [
+        1.049999999999998,
+        2.8200000000000007
+      ],
+      [
+        0.899999999999998,
+        2.8200000000000007
       ]
     ],
+    "holes": [],
     "includes_balconies": true,
-    "confidence": "agreement outline corroborated; approximate raster trace",
-    "geometry_provenance": "agreement unit red outline registered to approved sheet",
-    "geometry_uncertainty_m": 0.2,
-    "traced_area_m2": 207.96
+    "modeled_gross_area_m2": 222.44645000000003,
+    "confidence": "dimension-driven rooms; unmeasured connections/curve shape assumed"
   },
   "rooms": [
     {
@@ -261,6 +368,31 @@
       "name": "Service toilet",
       "category": "bathroom",
       "polygon": [
+        [
+          -0.29000000000000203,
+          22.129999999999995
+        ],
+        [
+          1.849999999999998,
+          22.129999999999995
+        ],
+        [
+          1.849999999999998,
+          20.909999999999997
+        ],
+        [
+          -0.29000000000000203,
+          20.909999999999997
+        ]
+      ],
+      "dimensions_m": [
+        2.14,
+        1.22
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "source_polygon": [
         [
           0.033,
           22.003
@@ -278,20 +410,38 @@
           20.778
         ]
       ],
-      "dimensions_m": [
-        2.14,
-        1.22
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.15
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "service_room",
       "name": "Service room",
       "category": "service",
       "polygon": [
+        [
+          -0.29000000000000203,
+          20.759999999999998
+        ],
+        [
+          1.849999999999998,
+          20.759999999999998
+        ],
+        [
+          1.849999999999998,
+          18.25
+        ],
+        [
+          -0.29000000000000203,
+          18.25
+        ]
+      ],
+      "dimensions_m": [
+        2.14,
+        2.51
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "source_polygon": [
         [
           0.017,
           20.712
@@ -309,20 +459,38 @@
           18.146
         ]
       ],
-      "dimensions_m": [
-        2.14,
-        2.51
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.15
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "dry_balcony",
       "name": "Dry balcony",
       "category": "balcony",
       "polygon": [
+        [
+          1.999999999999998,
+          19.95
+        ],
+        [
+          3.929999999999998,
+          19.95
+        ],
+        [
+          3.929999999999998,
+          18.25
+        ],
+        [
+          1.999999999999998,
+          18.25
+        ]
+      ],
+      "dimensions_m": [
+        1.93,
+        1.7
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "source_polygon": [
         [
           2.334,
           19.785
@@ -340,20 +508,38 @@
           18.096
         ]
       ],
-      "dimensions_m": [
-        1.93,
-        1.7
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.25
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "kitchen_balcony",
       "name": "Kitchen balcony",
       "category": "balcony",
       "polygon": [
+        [
+          4.079999999999998,
+          19.86
+        ],
+        [
+          7.059999999999999,
+          19.86
+        ],
+        [
+          7.059999999999999,
+          18.16
+        ],
+        [
+          4.079999999999998,
+          18.16
+        ]
+      ],
+      "dimensions_m": [
+        2.98,
+        1.7
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "source_polygon": [
         [
           4.189,
           19.685
@@ -371,20 +557,38 @@
           18.03
         ]
       ],
-      "dimensions_m": [
-        2.98,
-        1.7
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.25
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "kitchen",
       "name": "Kitchen",
       "category": "kitchen",
       "polygon": [
+        [
+          1.029999999999998,
+          18.1
+        ],
+        [
+          3.779999999999998,
+          18.1
+        ],
+        [
+          3.779999999999998,
+          13.980000000000002
+        ],
+        [
+          1.029999999999998,
+          13.980000000000002
+        ]
+      ],
+      "dimensions_m": [
+        2.75,
+        4.12
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "source_polygon": [
         [
           1.242,
           17.914
@@ -402,20 +606,38 @@
           13.907
         ]
       ],
-      "dimensions_m": [
-        2.75,
-        4.12
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.15
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "bedroom_north",
       "name": "Bedroom beside kitchen",
       "category": "bedroom",
       "polygon": [
+        [
+          3.929999999999998,
+          18.01
+        ],
+        [
+          6.979999999999998,
+          18.01
+        ],
+        [
+          6.979999999999998,
+          13.980000000000002
+        ],
+        [
+          3.929999999999998,
+          13.980000000000002
+        ]
+      ],
+      "dimensions_m": [
+        3.05,
+        4.03
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "source_polygon": [
         [
           3.99,
           17.831
@@ -433,20 +655,38 @@
           13.825
         ]
       ],
-      "dimensions_m": [
-        3.05,
-        4.03
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.15
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "bathroom_north",
       "name": "Toilet beside upper bedroom",
       "category": "bathroom",
       "polygon": [
+        [
+          7.129999999999998,
+          18.01
+        ],
+        [
+          8.519999999999998,
+          18.01
+        ],
+        [
+          8.519999999999998,
+          15.55
+        ],
+        [
+          7.129999999999998,
+          15.55
+        ]
+      ],
+      "dimensions_m": [
+        1.39,
+        2.46
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "source_polygon": [
         [
           7.136,
           17.765
@@ -464,20 +704,38 @@
           15.315
         ]
       ],
-      "dimensions_m": [
-        1.39,
-        2.46
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.15
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "bathroom_outer_north",
       "name": "Outer upper toilet",
       "category": "bathroom",
       "polygon": [
+        [
+          8.669999999999998,
+          19.05
+        ],
+        [
+          11.069999999999999,
+          19.05
+        ],
+        [
+          11.069999999999999,
+          17.53
+        ],
+        [
+          8.669999999999998,
+          17.53
+        ]
+      ],
+      "dimensions_m": [
+        2.4,
+        1.52
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "source_polygon": [
         [
           8.692,
           18.493
@@ -495,20 +753,38 @@
           16.97
         ]
       ],
-      "dimensions_m": [
-        2.4,
-        1.52
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.15
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "bedroom_outer_north",
       "name": "Outer upper bedroom",
       "category": "bedroom",
       "polygon": [
+        [
+          8.669999999999998,
+          17.380000000000003
+        ],
+        [
+          12.629999999999999,
+          17.380000000000003
+        ],
+        [
+          12.629999999999999,
+          13.980000000000002
+        ],
+        [
+          8.669999999999998,
+          13.980000000000002
+        ]
+      ],
+      "dimensions_m": [
+        3.96,
+        3.4
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "source_polygon": [
         [
           8.609,
           16.772
@@ -526,20 +802,38 @@
           13.56
         ]
       ],
-      "dimensions_m": [
-        3.96,
-        3.4
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.15
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "entry",
       "name": "Entry lobby",
       "category": "entry",
       "polygon": [
+        [
+          1.15,
+          12.476
+        ],
+        [
+          2.8,
+          12.476
+        ],
+        [
+          2.8,
+          9.8
+        ],
+        [
+          1.15,
+          9.8
+        ]
+      ],
+      "dimensions_m": [
+        1.65,
+        2.676
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "source_polygon": [
         [
           1.209,
           12.417
@@ -557,20 +851,39 @@
           9.818
         ]
       ],
-      "dimensions_m": [
-        1.65,
-        2.676
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.15
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "living_dining",
       "name": "Living and dining",
       "category": "living",
       "polygon": [
+        [
+          2.8,
+          13.830000000000002
+        ],
+        [
+          12.629999999999999,
+          13.830000000000002
+        ],
+        [
+          12.629999999999999,
+          9.8
+        ],
+        [
+          2.8,
+          9.8
+        ]
+      ],
+      "dimensions_m": [
+        9.83,
+        4.03
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "dimension_note": "open plan; polygon follows visible bounding walls",
+      "source_polygon": [
         [
           2.732,
           13.56
@@ -592,21 +905,84 @@
           9.735
         ]
       ],
-      "dimensions_m": [
-        9.83,
-        4.03
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.15,
-      "dimension_note": "open plan; polygon follows visible bounding walls"
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "balcony_curved",
       "name": "Curved living balcony",
       "category": "balcony",
       "polygon": [
+        [
+          12.78,
+          6.155000000000001
+        ],
+        [
+          12.78,
+          17.225
+        ],
+        [
+          13.280221237811274,
+          17.225
+        ],
+        [
+          14.057021936473163,
+          16.302500000000002
+        ],
+        [
+          14.780884951245095,
+          15.380000000000003
+        ],
+        [
+          15.402480213910556,
+          14.457500000000001
+        ],
+        [
+          15.879447034553635,
+          13.535000000000002
+        ],
+        [
+          16.179280912572445,
+          12.6125
+        ],
+        [
+          16.28154866467892,
+          11.690000000000001
+        ],
+        [
+          16.179280912572445,
+          10.767500000000002
+        ],
+        [
+          15.879447034553635,
+          9.845000000000002
+        ],
+        [
+          15.402480213910557,
+          8.922500000000001
+        ],
+        [
+          14.780884951245095,
+          8.0
+        ],
+        [
+          14.057021936473163,
+          7.0775000000000015
+        ],
+        [
+          13.280221237811274,
+          6.155000000000001
+        ]
+      ],
+      "dimensions_m": [
+        2.4,
+        11.07
+      ],
+      "confidence": "printed span/average enforced; detailed perimeter unmeasured",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed span and average depth enforced; curve/slope remains a visualization assumption",
+      "geometry_uncertainty_m": 0.25,
+      "dimension_note": "2.40 m is marked average balcony depth",
+      "source_polygon": [
         [
           12.533,
           16.556
@@ -660,21 +1036,43 @@
           13.295
         ]
       ],
-      "dimensions_m": [
-        2.4,
-        11.07
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.25,
-      "dimension_note": "2.40 m is marked average balcony depth"
+      "dimension_mode": "average_depth",
+      "span_axis": 1,
+      "dimension_roles": [
+        "average_depth",
+        "span"
+      ]
     },
     {
       "id": "passage",
       "name": "Interior passage",
       "category": "corridor",
       "polygon": [
+        [
+          2.849999999999998,
+          9.65
+        ],
+        [
+          4.629999999999998,
+          9.65
+        ],
+        [
+          4.629999999999998,
+          7.5200000000000005
+        ],
+        [
+          2.849999999999998,
+          7.5200000000000005
+        ]
+      ],
+      "dimensions_m": [
+        1.78,
+        2.13
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "source_polygon": [
         [
           2.632,
           9.636
@@ -692,20 +1090,39 @@
           7.616
         ]
       ],
-      "dimensions_m": [
-        1.78,
-        2.13
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.15
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "wfh",
       "name": "Work from home room",
       "category": "work",
       "polygon": [
+        [
+          4.7799999999999985,
+          9.65
+        ],
+        [
+          7.829999999999998,
+          9.65
+        ],
+        [
+          7.829999999999998,
+          6.07
+        ],
+        [
+          4.7799999999999985,
+          6.07
+        ]
+      ],
+      "dimensions_m": [
+        3.05,
+        3.58
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "dimension_note": "called theatre/den on agreement copy",
+      "source_polygon": [
         [
           4.305,
           9.52
@@ -723,21 +1140,38 @@
           5.977
         ]
       ],
-      "dimensions_m": [
-        3.05,
-        3.58
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.15,
-      "dimension_note": "called theatre/den on agreement copy"
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "bedroom_outer_south",
       "name": "Outer lower bedroom",
       "category": "bedroom",
       "polygon": [
+        [
+          7.979999999999999,
+          9.65
+        ],
+        [
+          12.629999999999999,
+          9.65
+        ],
+        [
+          12.629999999999999,
+          6.0
+        ],
+        [
+          7.979999999999999,
+          6.0
+        ]
+      ],
+      "dimensions_m": [
+        4.65,
+        3.65
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "source_polygon": [
         [
           7.434,
           9.404
@@ -755,20 +1189,38 @@
           5.844
         ]
       ],
-      "dimensions_m": [
-        4.65,
-        3.65
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.15
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "bathroom_outer_south",
       "name": "Outer lower toilet",
       "category": "bathroom",
       "polygon": [
+        [
+          9.579999999999998,
+          5.85
+        ],
+        [
+          11.959999999999997,
+          5.85
+        ],
+        [
+          11.959999999999997,
+          4.33
+        ],
+        [
+          9.579999999999998,
+          4.33
+        ]
+      ],
+      "dimensions_m": [
+        2.38,
+        1.52
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "source_polygon": [
         [
           8.709,
           5.497
@@ -786,20 +1238,38 @@
           3.974
         ]
       ],
-      "dimensions_m": [
-        2.38,
-        1.52
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.15
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "walk_in",
       "name": "Walk-in closet",
       "category": "closet",
       "polygon": [
+        [
+          7.979999999999999,
+          5.85
+        ],
+        [
+          9.429999999999998,
+          5.85
+        ],
+        [
+          9.429999999999998,
+          2.9499999999999997
+        ],
+        [
+          7.979999999999999,
+          2.9499999999999997
+        ]
+      ],
+      "dimensions_m": [
+        1.45,
+        2.9
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "source_polygon": [
         [
           7.152,
           5.596
@@ -817,20 +1287,38 @@
           2.93
         ]
       ],
-      "dimensions_m": [
-        1.45,
-        2.9
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.15
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "bathroom_south",
       "name": "Lower internal toilet",
       "category": "bathroom",
       "polygon": [
+        [
+          4.7799999999999985,
+          5.92
+        ],
+        [
+          6.299999999999999,
+          5.92
+        ],
+        [
+          6.299999999999999,
+          3.02
+        ],
+        [
+          4.7799999999999985,
+          3.02
+        ]
+      ],
+      "dimensions_m": [
+        1.52,
+        2.9
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "source_polygon": [
         [
           4.288,
           5.861
@@ -848,20 +1336,38 @@
           3.013
         ]
       ],
-      "dimensions_m": [
-        1.52,
-        2.9
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.15
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "bedroom_south",
       "name": "Lower internal bedroom",
       "category": "bedroom",
       "polygon": [
+        [
+          1.049999999999998,
+          7.5200000000000005
+        ],
+        [
+          4.629999999999998,
+          7.5200000000000005
+        ],
+        [
+          4.629999999999998,
+          2.9700000000000006
+        ],
+        [
+          1.049999999999998,
+          2.9700000000000006
+        ]
+      ],
+      "dimensions_m": [
+        3.58,
+        4.55
+      ],
+      "confidence": "printed dimensions enforced; wall thickness and orthogonal alignment assumed",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed clear dimensions; adjacency reconstructed from source drawing",
+      "source_polygon": [
         [
           0.596,
           7.467
@@ -879,20 +1385,40 @@
           2.997
         ]
       ],
-      "dimensions_m": [
-        3.58,
-        4.55
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.15
+      "dimension_mode": "clear_rectangle"
     },
     {
       "id": "balcony_south",
       "name": "Lower bedroom balcony",
       "category": "balcony",
       "polygon": [
+        [
+          1.049999999999998,
+          2.8200000000000007
+        ],
+        [
+          4.629999999999998,
+          2.8200000000000007
+        ],
+        [
+          4.629999999999998,
+          0.8600000000000005
+        ],
+        [
+          1.049999999999998,
+          -0.11999999999999922
+        ]
+      ],
+      "dimensions_m": [
+        3.58,
+        2.45
+      ],
+      "confidence": "printed span/average enforced; detailed perimeter unmeasured",
+      "dimension_provenance": "printed label on approved sheet",
+      "geometry_provenance": "printed span and average depth enforced; curve/slope remains a visualization assumption",
+      "geometry_uncertainty_m": 0.25,
+      "dimension_note": "2.45 m is marked average balcony depth",
+      "source_polygon": [
         [
           0.215,
           2.103
@@ -914,18 +1440,2603 @@
           0.0
         ]
       ],
-      "dimensions_m": [
-        3.58,
-        2.45
-      ],
-      "confidence": "printed dimensions; approximate raster geometry",
-      "dimension_provenance": "printed label on approved sheet",
-      "geometry_provenance": "manual trace of approved raster, checked against agreement outline",
-      "geometry_uncertainty_m": 0.25,
-      "dimension_note": "2.45 m is marked average balcony depth"
+      "dimension_mode": "average_depth",
+      "span_axis": 0,
+      "dimension_roles": [
+        "span",
+        "average_depth"
+      ]
     }
   ],
   "wall_segments": [
+    {
+      "id": "partition_000",
+      "start": [
+        -0.365,
+        18.1
+      ],
+      "end": [
+        -0.365,
+        22.28
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000002,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_001",
+      "start": [
+        -0.29,
+        22.205
+      ],
+      "end": [
+        0.88,
+        22.205
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000213,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_002",
+      "start": [
+        -0.29,
+        20.835
+      ],
+      "end": [
+        0.88,
+        20.835
+      ],
+      "kind": "partition",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_003",
+      "start": [
+        -0.29,
+        18.175
+      ],
+      "end": [
+        0.88,
+        18.175
+      ],
+      "kind": "partition",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_004",
+      "start": [
+        0.94,
+        22.13
+      ],
+      "end": [
+        0.94,
+        22.28
+      ],
+      "kind": "partition",
+      "thickness_m": 0.12,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_005",
+      "start": [
+        0.94,
+        20.76
+      ],
+      "end": [
+        0.94,
+        20.91
+      ],
+      "kind": "partition",
+      "thickness_m": 0.12,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_006",
+      "start": [
+        0.94,
+        13.83
+      ],
+      "end": [
+        0.94,
+        18.25
+      ],
+      "kind": "partition",
+      "thickness_m": 0.12,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_007",
+      "start": [
+        1.0110000000000001,
+        22.13
+      ],
+      "end": [
+        1.0110000000000001,
+        22.28
+      ],
+      "kind": "partition",
+      "thickness_m": 0.02200000000000002,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_008",
+      "start": [
+        1.0110000000000001,
+        20.76
+      ],
+      "end": [
+        1.0110000000000001,
+        20.91
+      ],
+      "kind": "partition",
+      "thickness_m": 0.02200000000000002,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_009",
+      "start": [
+        1.0110000000000001,
+        13.83
+      ],
+      "end": [
+        1.0110000000000001,
+        18.25
+      ],
+      "kind": "partition",
+      "thickness_m": 0.02200000000000002,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_010",
+      "start": [
+        1.0110000000000001,
+        11.8706
+      ],
+      "end": [
+        1.0110000000000001,
+        12.626
+      ],
+      "kind": "partition",
+      "thickness_m": 0.02200000000000002,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_011",
+      "start": [
+        1.026,
+        22.13
+      ],
+      "end": [
+        1.026,
+        22.28
+      ],
+      "kind": "partition",
+      "thickness_m": 0.008000000000000007,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_012",
+      "start": [
+        1.026,
+        13.83
+      ],
+      "end": [
+        1.026,
+        18.25
+      ],
+      "kind": "partition",
+      "thickness_m": 0.008000000000000007,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_013",
+      "start": [
+        1.026,
+        11.8706
+      ],
+      "end": [
+        1.026,
+        12.626
+      ],
+      "kind": "partition",
+      "thickness_m": 0.008000000000000007,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_014",
+      "start": [
+        1.0899999999999999,
+        22.13
+      ],
+      "end": [
+        1.0899999999999999,
+        22.28
+      ],
+      "kind": "partition",
+      "thickness_m": 0.11999999999999988,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_015",
+      "start": [
+        1.0899999999999999,
+        18.1
+      ],
+      "end": [
+        1.0899999999999999,
+        18.25
+      ],
+      "kind": "partition",
+      "thickness_m": 0.11999999999999988,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_016",
+      "start": [
+        1.0899999999999999,
+        13.83
+      ],
+      "end": [
+        1.0899999999999999,
+        13.98
+      ],
+      "kind": "partition",
+      "thickness_m": 0.11999999999999988,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_017",
+      "start": [
+        1.0899999999999999,
+        11.8706
+      ],
+      "end": [
+        1.0899999999999999,
+        12.626
+      ],
+      "kind": "partition",
+      "thickness_m": 0.11999999999999988,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_018",
+      "start": [
+        1.15,
+        22.205
+      ],
+      "end": [
+        1.822,
+        22.205
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000213,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_019",
+      "start": [
+        1.15,
+        18.175
+      ],
+      "end": [
+        1.822,
+        18.175
+      ],
+      "kind": "partition",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_020",
+      "start": [
+        1.15,
+        13.905000000000001
+      ],
+      "end": [
+        1.822,
+        13.905000000000001
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_021",
+      "start": [
+        1.15,
+        12.551
+      ],
+      "end": [
+        1.822,
+        12.551
+      ],
+      "kind": "partition",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_022",
+      "start": [
+        1.836,
+        20.76
+      ],
+      "end": [
+        1.836,
+        20.91
+      ],
+      "kind": "partition",
+      "thickness_m": 0.028000000000000025,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_023",
+      "start": [
+        1.836,
+        22.13
+      ],
+      "end": [
+        1.836,
+        22.28
+      ],
+      "kind": "partition",
+      "thickness_m": 0.028000000000000025,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_024",
+      "start": [
+        1.836,
+        18.1
+      ],
+      "end": [
+        1.836,
+        18.25
+      ],
+      "kind": "partition",
+      "thickness_m": 0.028000000000000025,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_025",
+      "start": [
+        1.836,
+        13.83
+      ],
+      "end": [
+        1.836,
+        13.98
+      ],
+      "kind": "partition",
+      "thickness_m": 0.028000000000000025,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_026",
+      "start": [
+        1.836,
+        12.476
+      ],
+      "end": [
+        1.836,
+        12.626
+      ],
+      "kind": "partition",
+      "thickness_m": 0.028000000000000025,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_027",
+      "start": [
+        1.925,
+        19.935
+      ],
+      "end": [
+        1.925,
+        22.28
+      ],
+      "kind": "partition",
+      "thickness_m": 0.1499999999999999,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_028",
+      "start": [
+        1.925,
+        18.1
+      ],
+      "end": [
+        1.925,
+        19.075
+      ],
+      "kind": "partition",
+      "thickness_m": 0.1499999999999999,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_029",
+      "start": [
+        1.925,
+        13.83
+      ],
+      "end": [
+        1.925,
+        13.98
+      ],
+      "kind": "partition",
+      "thickness_m": 0.1499999999999999,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_030",
+      "start": [
+        1.85,
+        12.551
+      ],
+      "end": [
+        2.0,
+        12.551
+      ],
+      "kind": "partition",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_031",
+      "start": [
+        2.0,
+        18.175
+      ],
+      "end": [
+        2.6425,
+        18.175
+      ],
+      "kind": "partition",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_032",
+      "start": [
+        2.0,
+        13.905000000000001
+      ],
+      "end": [
+        2.6425,
+        13.905000000000001
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_033",
+      "start": [
+        2.0,
+        12.551
+      ],
+      "end": [
+        2.6425,
+        12.551
+      ],
+      "kind": "partition",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_034",
+      "start": [
+        2.64625,
+        13.83
+      ],
+      "end": [
+        2.64625,
+        13.98
+      ],
+      "kind": "partition",
+      "thickness_m": 0.00749999999999984,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_035",
+      "start": [
+        2.64625,
+        12.476
+      ],
+      "end": [
+        2.64625,
+        12.626
+      ],
+      "kind": "partition",
+      "thickness_m": 0.00749999999999984,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_036",
+      "start": [
+        2.6875,
+        12.476
+      ],
+      "end": [
+        2.6875,
+        13.98
+      ],
+      "kind": "partition",
+      "thickness_m": 0.07500000000000018,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_037",
+      "start": [
+        2.7625,
+        12.476
+      ],
+      "end": [
+        2.7625,
+        13.98
+      ],
+      "kind": "partition",
+      "thickness_m": 0.07499999999999973,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_038",
+      "start": [
+        3.5425,
+        18.175
+      ],
+      "end": [
+        3.78,
+        18.175
+      ],
+      "kind": "partition",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_039",
+      "start": [
+        3.855,
+        13.83
+      ],
+      "end": [
+        3.855,
+        18.25
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_040",
+      "start": [
+        3.93,
+        13.905000000000001
+      ],
+      "end": [
+        6.98,
+        13.905000000000001
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_041",
+      "start": [
+        0.95,
+        2.82
+      ],
+      "end": [
+        0.95,
+        7.67
+      ],
+      "kind": "partition",
+      "thickness_m": 0.09999999999999998,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_042",
+      "start": [
+        1.025,
+        2.82
+      ],
+      "end": [
+        1.025,
+        7.67
+      ],
+      "kind": "partition",
+      "thickness_m": 0.050000000000000044,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_043",
+      "start": [
+        1.025,
+        9.65
+      ],
+      "end": [
+        1.025,
+        10.9406
+      ],
+      "kind": "partition",
+      "thickness_m": 0.050000000000000044,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_044",
+      "start": [
+        1.1,
+        7.52
+      ],
+      "end": [
+        1.1,
+        7.67
+      ],
+      "kind": "partition",
+      "thickness_m": 0.09999999999999987,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_045",
+      "start": [
+        1.1,
+        9.65
+      ],
+      "end": [
+        1.1,
+        10.9406
+      ],
+      "kind": "partition",
+      "thickness_m": 0.09999999999999987,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_046",
+      "start": [
+        1.15,
+        7.595
+      ],
+      "end": [
+        2.65,
+        7.595
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_047",
+      "start": [
+        1.15,
+        9.725000000000001
+      ],
+      "end": [
+        2.65,
+        9.725000000000001
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_048",
+      "start": [
+        2.675,
+        9.65
+      ],
+      "end": [
+        2.675,
+        9.8
+      ],
+      "kind": "partition",
+      "thickness_m": 0.050000000000000266,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_049",
+      "start": [
+        2.675,
+        7.52
+      ],
+      "end": [
+        2.675,
+        7.67
+      ],
+      "kind": "partition",
+      "thickness_m": 0.050000000000000266,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_050",
+      "start": [
+        2.7125000000000004,
+        7.52
+      ],
+      "end": [
+        2.7125000000000004,
+        9.8
+      ],
+      "kind": "partition",
+      "thickness_m": 0.02499999999999991,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_051",
+      "start": [
+        2.7625,
+        7.52
+      ],
+      "end": [
+        2.7625,
+        9.8
+      ],
+      "kind": "partition",
+      "thickness_m": 0.07499999999999973,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_052",
+      "start": [
+        2.825,
+        7.52
+      ],
+      "end": [
+        2.825,
+        9.8
+      ],
+      "kind": "partition",
+      "thickness_m": 0.050000000000000266,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_053",
+      "start": [
+        2.9000000000000004,
+        9.65
+      ],
+      "end": [
+        2.9000000000000004,
+        9.8
+      ],
+      "kind": "partition",
+      "thickness_m": 0.10000000000000009,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_054",
+      "start": [
+        2.9875,
+        9.65
+      ],
+      "end": [
+        2.9875,
+        9.8
+      ],
+      "kind": "partition",
+      "thickness_m": 0.07499999999999973,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_055",
+      "start": [
+        3.025,
+        9.725000000000001
+      ],
+      "end": [
+        3.275,
+        9.725000000000001
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_056",
+      "start": [
+        4.205,
+        9.725000000000001
+      ],
+      "end": [
+        4.63,
+        9.725000000000001
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_057",
+      "start": [
+        4.705,
+        4.0
+      ],
+      "end": [
+        4.705,
+        9.8
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_058",
+      "start": [
+        4.705,
+        2.82
+      ],
+      "end": [
+        4.705,
+        3.2
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_059",
+      "start": [
+        4.78,
+        9.725000000000001
+      ],
+      "end": [
+        6.3,
+        9.725000000000001
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_060",
+      "start": [
+        4.78,
+        5.995
+      ],
+      "end": [
+        6.3,
+        5.995
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_061",
+      "start": [
+        4.78,
+        2.9450000000000003
+      ],
+      "end": [
+        6.3,
+        2.9450000000000003
+      ],
+      "kind": "partition",
+      "thickness_m": 0.1499999999999999,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_062",
+      "start": [
+        6.3,
+        9.725000000000001
+      ],
+      "end": [
+        6.45,
+        9.725000000000001
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_063",
+      "start": [
+        6.375,
+        2.87
+      ],
+      "end": [
+        6.375,
+        6.07
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_064",
+      "start": [
+        6.45,
+        9.725000000000001
+      ],
+      "end": [
+        6.75,
+        9.725000000000001
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_065",
+      "start": [
+        6.45,
+        5.995
+      ],
+      "end": [
+        6.75,
+        5.995
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_066",
+      "start": [
+        6.75,
+        5.995
+      ],
+      "end": [
+        7.69,
+        5.995
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_067",
+      "start": [
+        7.76,
+        5.92
+      ],
+      "end": [
+        7.76,
+        6.07
+      ],
+      "kind": "partition",
+      "thickness_m": 0.13999999999999968,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_068",
+      "start": [
+        7.76,
+        9.65
+      ],
+      "end": [
+        7.76,
+        9.8
+      ],
+      "kind": "partition",
+      "thickness_m": 0.13999999999999968,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_069",
+      "start": [
+        7.905,
+        2.8
+      ],
+      "end": [
+        7.905,
+        9.8
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_070",
+      "start": [
+        8.0265,
+        9.65
+      ],
+      "end": [
+        8.0265,
+        9.8
+      ],
+      "kind": "partition",
+      "thickness_m": 0.09299999999999997,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_071",
+      "start": [
+        8.0265,
+        5.85
+      ],
+      "end": [
+        8.0265,
+        6.0
+      ],
+      "kind": "partition",
+      "thickness_m": 0.09299999999999997,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_072",
+      "start": [
+        8.0265,
+        2.8
+      ],
+      "end": [
+        8.0265,
+        2.95
+      ],
+      "kind": "partition",
+      "thickness_m": 0.09299999999999997,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_073",
+      "start": [
+        8.073,
+        5.925
+      ],
+      "end": [
+        8.305,
+        5.925
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_074",
+      "start": [
+        8.073,
+        2.875
+      ],
+      "end": [
+        8.305,
+        2.875
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_075",
+      "start": [
+        8.305,
+        2.875
+      ],
+      "end": [
+        9.105,
+        2.875
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_076",
+      "start": [
+        9.105,
+        2.875
+      ],
+      "end": [
+        9.43,
+        2.875
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_077",
+      "start": [
+        9.105,
+        5.925
+      ],
+      "end": [
+        9.43,
+        5.925
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_078",
+      "start": [
+        9.504999999999999,
+        2.8
+      ],
+      "end": [
+        9.504999999999999,
+        4.69
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_079",
+      "start": [
+        9.504999999999999,
+        5.49
+      ],
+      "end": [
+        9.504999999999999,
+        6.0
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_080",
+      "start": [
+        9.58,
+        4.255
+      ],
+      "end": [
+        11.96,
+        4.255
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_081",
+      "start": [
+        9.58,
+        5.925
+      ],
+      "end": [
+        11.96,
+        5.925
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_082",
+      "start": [
+        12.035,
+        4.18
+      ],
+      "end": [
+        12.035,
+        6.0
+      ],
+      "kind": "partition",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_083",
+      "start": [
+        12.11,
+        5.925
+      ],
+      "end": [
+        12.63,
+        5.925
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_084",
+      "start": [
+        12.705,
+        5.85
+      ],
+      "end": [
+        12.705,
+        6.0
+      ],
+      "kind": "partition",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_085",
+      "start": [
+        9.003,
+        9.725000000000001
+      ],
+      "end": [
+        12.63,
+        9.725000000000001
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_086",
+      "start": [
+        7.02,
+        15.4
+      ],
+      "end": [
+        7.02,
+        18.16
+      ],
+      "kind": "partition",
+      "thickness_m": 0.07999999999999918,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_087",
+      "start": [
+        7.095,
+        15.4
+      ],
+      "end": [
+        7.095,
+        18.16
+      ],
+      "kind": "partition",
+      "thickness_m": 0.07000000000000028,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_088",
+      "start": [
+        7.13,
+        18.085
+      ],
+      "end": [
+        7.708,
+        18.085
+      ],
+      "kind": "partition",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_089",
+      "start": [
+        7.13,
+        15.475000000000001
+      ],
+      "end": [
+        7.708,
+        15.475000000000001
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_090",
+      "start": [
+        7.708,
+        18.085
+      ],
+      "end": [
+        8.498,
+        18.085
+      ],
+      "kind": "partition",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_091",
+      "start": [
+        8.509,
+        15.4
+      ],
+      "end": [
+        8.509,
+        15.55
+      ],
+      "kind": "partition",
+      "thickness_m": 0.02200000000000024,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_092",
+      "start": [
+        8.509,
+        18.01
+      ],
+      "end": [
+        8.509,
+        18.16
+      ],
+      "kind": "partition",
+      "thickness_m": 0.02200000000000024,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_093",
+      "start": [
+        8.594999999999999,
+        15.4
+      ],
+      "end": [
+        8.594999999999999,
+        19.2
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_094",
+      "start": [
+        8.71,
+        19.05
+      ],
+      "end": [
+        8.71,
+        19.2
+      ],
+      "kind": "partition",
+      "thickness_m": 0.08000000000000007,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_095",
+      "start": [
+        8.71,
+        17.38
+      ],
+      "end": [
+        8.71,
+        17.53
+      ],
+      "kind": "partition",
+      "thickness_m": 0.08000000000000007,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_096",
+      "start": [
+        8.75,
+        19.125
+      ],
+      "end": [
+        9.55,
+        19.125
+      ],
+      "kind": "partition",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_097",
+      "start": [
+        9.55,
+        19.125
+      ],
+      "end": [
+        11.07,
+        19.125
+      ],
+      "kind": "partition",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_098",
+      "start": [
+        9.55,
+        17.455
+      ],
+      "end": [
+        11.07,
+        17.455
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000213,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_099",
+      "start": [
+        11.145,
+        17.38
+      ],
+      "end": [
+        11.145,
+        19.2
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_100",
+      "start": [
+        11.22,
+        17.455
+      ],
+      "end": [
+        12.63,
+        17.455
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000213,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_101",
+      "start": [
+        12.705,
+        17.38
+      ],
+      "end": [
+        12.705,
+        17.53
+      ],
+      "kind": "partition",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_102",
+      "start": [
+        8.67,
+        13.905000000000001
+      ],
+      "end": [
+        10.135,
+        13.905000000000001
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "partition_103",
+      "start": [
+        11.165,
+        13.905000000000001
+      ],
+      "end": [
+        12.63,
+        13.905000000000001
+      ],
+      "kind": "partition",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "glazed_exterior_000",
+      "start": [
+        1.05,
+        2.895
+      ],
+      "end": [
+        2.06,
+        2.895
+      ],
+      "kind": "glazed_exterior",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "glazed_exterior_001",
+      "start": [
+        3.62,
+        2.895
+      ],
+      "end": [
+        4.63,
+        2.895
+      ],
+      "kind": "glazed_exterior",
+      "thickness_m": 0.15000000000000036,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "glazed_exterior_002",
+      "start": [
+        12.705,
+        12.795
+      ],
+      "end": [
+        12.705,
+        17.38
+      ],
+      "kind": "glazed_exterior",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "glazed_exterior_003",
+      "start": [
+        12.705,
+        6.0
+      ],
+      "end": [
+        12.705,
+        10.835
+      ],
+      "kind": "glazed_exterior",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "glazed_exterior_004",
+      "start": [
+        3.93,
+        18.085
+      ],
+      "end": [
+        4.08,
+        18.085
+      ],
+      "kind": "glazed_exterior",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "glazed_exterior_005",
+      "start": [
+        4.08,
+        18.085
+      ],
+      "end": [
+        5.0775,
+        18.085
+      ],
+      "kind": "glazed_exterior",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "glazed_exterior_006",
+      "start": [
+        6.7475,
+        18.085
+      ],
+      "end": [
+        6.98,
+        18.085
+      ],
+      "kind": "glazed_exterior",
+      "thickness_m": 0.14999999999999858,
+      "height_m": 2.8,
+      "confidence": "dimension-driven",
+      "geometry_provenance": "outside dimensioned room clear boundaries",
+      "height_thickness_provenance": "assumed wall build-up and height"
+    },
+    {
+      "id": "dry_balcony_guard_0",
+      "start": [
+        3.969999999999998,
+        18.25
+      ],
+      "end": [
+        3.969999999999998,
+        19.95
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "dry_balcony_guard_1",
+      "start": [
+        3.929999999999998,
+        19.99
+      ],
+      "end": [
+        1.999999999999998,
+        19.99
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "kitchen_balcony_guard_0",
+      "start": [
+        7.099999999999999,
+        18.16
+      ],
+      "end": [
+        7.099999999999999,
+        19.86
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "kitchen_balcony_guard_1",
+      "start": [
+        7.059999999999999,
+        19.9
+      ],
+      "end": [
+        4.079999999999998,
+        19.9
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "kitchen_balcony_guard_2",
+      "start": [
+        4.039999999999998,
+        19.86
+      ],
+      "end": [
+        4.039999999999998,
+        18.16
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "balcony_curved_guard_1",
+      "start": [
+        12.78,
+        17.265
+      ],
+      "end": [
+        13.280221237811274,
+        17.265
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "balcony_curved_guard_2",
+      "start": [
+        13.310818362388115,
+        17.25076462628546
+      ],
+      "end": [
+        14.087619061050004,
+        16.32826462628546
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "balcony_curved_guard_3",
+      "start": [
+        14.088490546280221,
+        16.32719264256436
+      ],
+      "end": [
+        14.812353561052154,
+        15.40469264256436
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "balcony_curved_guard_4",
+      "start": [
+        14.81405710010392,
+        15.402351924751308
+      ],
+      "end": [
+        15.43565236276938,
+        14.479851924751307
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "balcony_curved_guard_5",
+      "start": [
+        15.43801187957958,
+        14.47587119306917
+      ],
+      "end": [
+        15.91497870022266,
+        13.55337119306917
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "balcony_curved_guard_6",
+      "start": [
+        15.917488138157355,
+        13.547364240235902
+      ],
+      "end": [
+        16.217322016176166,
+        12.624864240235901
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "balcony_curved_guard_7",
+      "start": [
+        16.219037359284513,
+        12.616907373915431
+      ],
+      "end": [
+        16.321305111390988,
+        11.694407373915432
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "balcony_curved_guard_8",
+      "start": [
+        16.321305111390988,
+        11.68559262608457
+      ],
+      "end": [
+        16.219037359284513,
+        10.763092626084571
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "balcony_curved_guard_9",
+      "start": [
+        16.217322016176166,
+        10.755135759764102
+      ],
+      "end": [
+        15.917488138157355,
+        9.832635759764102
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "balcony_curved_guard_10",
+      "start": [
+        15.91497870022266,
+        9.826628806930835
+      ],
+      "end": [
+        15.438011879579582,
+        8.904128806930833
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "balcony_curved_guard_11",
+      "start": [
+        15.435652362769382,
+        8.900148075248696
+      ],
+      "end": [
+        14.81405710010392,
+        7.977648075248696
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "balcony_curved_guard_12",
+      "start": [
+        14.812353561052154,
+        7.975307357435643
+      ],
+      "end": [
+        14.088490546280221,
+        7.052807357435644
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "balcony_curved_guard_13",
+      "start": [
+        14.087619061050004,
+        7.051735373714544
+      ],
+      "end": [
+        13.310818362388115,
+        6.129235373714543
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "balcony_curved_guard_14",
+      "start": [
+        13.280221237811274,
+        6.115000000000001
+      ],
+      "end": [
+        12.78,
+        6.115000000000001
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "balcony_south_guard_1",
+      "start": [
+        4.669999999999998,
+        2.8200000000000007
+      ],
+      "end": [
+        4.669999999999998,
+        0.8600000000000005
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "balcony_south_guard_2",
+      "start": [
+        4.640561166516892,
+        0.8214194121117574
+      ],
+      "end": [
+        1.0605611665168915,
+        -0.1585805878882423
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    },
+    {
+      "id": "balcony_south_guard_3",
+      "start": [
+        1.009999999999998,
+        -0.11999999999999922
+      ],
+      "end": [
+        1.009999999999998,
+        2.8200000000000007
+      ],
+      "kind": "balcony_guard",
+      "height_m": 1.1,
+      "thickness_m": 0.08,
+      "confidence": "assumed railing build-up"
+    }
+  ],
+  "openings": [
+    {
+      "id": "main_entry",
+      "type": "door",
+      "space_id": "entry",
+      "start": [
+        1.075,
+        10.940600000000002
+      ],
+      "end": [
+        1.075,
+        11.870600000000001
+      ],
+      "center": [
+        1.075,
+        11.405600000000002
+      ],
+      "width_m": 0.93,
+      "height_m": 2.2,
+      "free_opening": true,
+      "confidence": "location from source topology; width and assembly assumed"
+    },
+    {
+      "id": "passage_opening",
+      "type": "opening",
+      "space_id": "passage",
+      "start": [
+        3.274999999999998,
+        9.725
+      ],
+      "end": [
+        4.204999999999998,
+        9.725
+      ],
+      "center": [
+        3.7399999999999984,
+        9.725
+      ],
+      "width_m": 0.93,
+      "height_m": 2.2,
+      "free_opening": true,
+      "confidence": "location from source topology; width and assembly assumed"
+    },
+    {
+      "id": "north_bedroom_door",
+      "type": "door",
+      "space_id": "bedroom_north",
+      "start": [
+        7.054999999999998,
+        14.073900000000002
+      ],
+      "end": [
+        7.054999999999998,
+        14.933900000000001
+      ],
+      "center": [
+        7.054999999999998,
+        14.503900000000002
+      ],
+      "width_m": 0.86,
+      "height_m": 2.2,
+      "free_opening": true,
+      "confidence": "location from source topology; width and assembly assumed"
+    },
+    {
+      "id": "outer_north_bedroom_door",
+      "type": "door",
+      "space_id": "bedroom_outer_north",
+      "start": [
+        10.134999999999998,
+        13.905000000000003
+      ],
+      "end": [
+        11.165,
+        13.905000000000003
+      ],
+      "center": [
+        10.649999999999999,
+        13.905000000000003
+      ],
+      "width_m": 1.03,
+      "height_m": 2.2,
+      "free_opening": true,
+      "confidence": "location from source topology; width and assembly assumed"
+    },
+    {
+      "id": "wfh_door",
+      "type": "door",
+      "space_id": "wfh",
+      "start": [
+        6.749999999999999,
+        9.725
+      ],
+      "end": [
+        7.689999999999999,
+        9.725
+      ],
+      "center": [
+        7.219999999999999,
+        9.725
+      ],
+      "width_m": 0.94,
+      "height_m": 2.2,
+      "free_opening": true,
+      "confidence": "location from source topology; width and assembly assumed"
+    },
+    {
+      "id": "outer_lower_bedroom_door",
+      "type": "door",
+      "space_id": "bedroom_outer_south",
+      "start": [
+        8.072999999999999,
+        9.725
+      ],
+      "end": [
+        9.002999999999998,
+        9.725
+      ],
+      "center": [
+        8.537999999999998,
+        9.725
+      ],
+      "width_m": 0.93,
+      "height_m": 2.2,
+      "free_opening": true,
+      "confidence": "location from source topology; width and assembly assumed"
+    },
+    {
+      "id": "service_wc_door",
+      "type": "door",
+      "space_id": "service_wc",
+      "start": [
+        1.021999999999998,
+        20.834999999999997
+      ],
+      "end": [
+        1.8219999999999983,
+        20.834999999999997
+      ],
+      "center": [
+        1.4219999999999982,
+        20.834999999999997
+      ],
+      "width_m": 0.8,
+      "height_m": 2.2,
+      "free_opening": true,
+      "confidence": "location from source topology; width and assembly assumed"
+    },
+    {
+      "id": "service_room_door",
+      "type": "door",
+      "space_id": "service_room",
+      "start": [
+        1.924999999999998,
+        19.075
+      ],
+      "end": [
+        1.924999999999998,
+        19.935
+      ],
+      "center": [
+        1.924999999999998,
+        19.505
+      ],
+      "width_m": 0.86,
+      "height_m": 2.2,
+      "free_opening": true,
+      "confidence": "location from source topology; width and assembly assumed"
+    },
+    {
+      "id": "kitchen_dry_balcony_door",
+      "type": "door",
+      "space_id": "kitchen",
+      "start": [
+        2.642499999999998,
+        18.175
+      ],
+      "end": [
+        3.542499999999998,
+        18.175
+      ],
+      "center": [
+        3.092499999999998,
+        18.175
+      ],
+      "width_m": 0.9,
+      "height_m": 2.2,
+      "free_opening": true,
+      "confidence": "location from source topology; width and assembly assumed"
+    },
+    {
+      "id": "north_toilet_door",
+      "type": "door",
+      "space_id": "bathroom_north",
+      "start": [
+        7.707999999999998,
+        15.475000000000001
+      ],
+      "end": [
+        8.497999999999998,
+        15.475000000000001
+      ],
+      "center": [
+        8.102999999999998,
+        15.475000000000001
+      ],
+      "width_m": 0.79,
+      "height_m": 2.2,
+      "free_opening": true,
+      "confidence": "location from source topology; width and assembly assumed"
+    },
+    {
+      "id": "outer_north_toilet_door",
+      "type": "door",
+      "space_id": "bathroom_outer_north",
+      "start": [
+        8.749999999999998,
+        17.455000000000002
+      ],
+      "end": [
+        9.549999999999999,
+        17.455000000000002
+      ],
+      "center": [
+        9.149999999999999,
+        17.455000000000002
+      ],
+      "width_m": 0.8,
+      "height_m": 2.2,
+      "free_opening": true,
+      "confidence": "location from source topology; width and assembly assumed"
+    },
+    {
+      "id": "south_toilet_door",
+      "type": "door",
+      "space_id": "bathroom_south",
+      "start": [
+        4.704999999999998,
+        3.2
+      ],
+      "end": [
+        4.704999999999998,
+        4.0
+      ],
+      "center": [
+        4.704999999999998,
+        3.6
+      ],
+      "width_m": 0.8,
+      "height_m": 2.2,
+      "free_opening": true,
+      "confidence": "location from source topology; width and assembly assumed"
+    },
+    {
+      "id": "walk_in_door",
+      "type": "door",
+      "space_id": "walk_in",
+      "start": [
+        8.304999999999998,
+        5.925
+      ],
+      "end": [
+        9.104999999999999,
+        5.925
+      ],
+      "center": [
+        8.704999999999998,
+        5.925
+      ],
+      "width_m": 0.8,
+      "height_m": 2.2,
+      "free_opening": true,
+      "confidence": "location from source topology; width and assembly assumed"
+    },
+    {
+      "id": "outer_south_toilet_door",
+      "type": "door",
+      "space_id": "bathroom_outer_south",
+      "start": [
+        9.504999999999999,
+        4.6899999999999995
+      ],
+      "end": [
+        9.504999999999999,
+        5.49
+      ],
+      "center": [
+        9.504999999999999,
+        5.09
+      ],
+      "width_m": 0.8,
+      "height_m": 2.2,
+      "free_opening": true,
+      "confidence": "location from source topology; width and assembly assumed"
+    },
+    {
+      "id": "living_balcony_slider",
+      "type": "sliding_door",
+      "space_id": "living_dining",
+      "start": [
+        12.704999999999998,
+        10.835
+      ],
+      "end": [
+        12.704999999999998,
+        12.795000000000002
+      ],
+      "center": [
+        12.704999999999998,
+        11.815000000000001
+      ],
+      "width_m": 1.96,
+      "height_m": 2.2,
+      "free_opening": true,
+      "confidence": "location from source topology; width and assembly assumed"
+    },
+    {
+      "id": "lower_balcony_slider",
+      "type": "sliding_door",
+      "space_id": "bedroom_south",
+      "start": [
+        2.059999999999998,
+        2.8950000000000005
+      ],
+      "end": [
+        3.6199999999999983,
+        2.8950000000000005
+      ],
+      "center": [
+        2.839999999999998,
+        2.8950000000000005
+      ],
+      "width_m": 1.56,
+      "height_m": 2.2,
+      "free_opening": true,
+      "confidence": "location from source topology; width and assembly assumed"
+    },
+    {
+      "id": "kitchen_balcony_slider",
+      "type": "sliding_door",
+      "space_id": "bedroom_north",
+      "start": [
+        5.077499999999998,
+        18.085
+      ],
+      "end": [
+        6.747499999999998,
+        18.085
+      ],
+      "center": [
+        5.912499999999998,
+        18.085
+      ],
+      "width_m": 1.67,
+      "height_m": 2.2,
+      "free_opening": true,
+      "confidence": "location from source topology; width and assembly assumed"
+    }
+  ],
+  "unmeasured": [
+    "floor elevation",
+    "ceiling height",
+    "wall build-up and true thickness",
+    "door widths",
+    "window/slider widths",
+    "structural column sizes",
+    "facade glass specification",
+    "balcony railing height"
+  ],
+  "source_wall_segments": [
     {
       "id": "service_toilet_divider",
       "start": [
@@ -2295,346 +5406,179 @@
       "height_thickness_provenance": "visualization assumption; not specified by the plan"
     }
   ],
-  "openings": [
-    {
-      "id": "service_wc_door",
-      "type": "door",
-      "start": [
-        1.407,
-        20.712
+  "source_footprint": {
+    "polygon": [
+      [
+        0.0,
+        22.053
       ],
-      "end": [
-        2.268,
-        20.712
+      [
+        2.368,
+        22.003
       ],
-      "center": [
-        1.838,
-        20.712
+      [
+        2.368,
+        19.868
       ],
-      "space_id": "service_wc",
-      "width_m": 0.86,
-      "free_opening": true,
-      "confidence": "estimated from D/SD symbol",
-      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
-      "geometry_uncertainty_m": 0.2
-    },
-    {
-      "id": "service_room_door",
-      "type": "door",
-      "start": [
-        2.268,
-        19.735
+      [
+        7.434,
+        19.57
       ],
-      "end": [
-        2.268,
-        18.874
+      [
+        7.434,
+        17.732
       ],
-      "center": [
-        2.268,
-        19.305
+      [
+        8.576,
+        17.715
       ],
-      "space_id": "service_room",
-      "width_m": 0.86,
-      "free_opening": true,
-      "confidence": "estimated from D/SD symbol",
-      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
-      "geometry_uncertainty_m": 0.2
-    },
-    {
-      "id": "kitchen_dry_balcony_door",
-      "type": "door",
-      "start": [
-        2.318,
-        17.947
+      [
+        8.593,
+        18.543
       ],
-      "end": [
-        3.278,
-        17.914
+      [
+        11.175,
+        18.427
       ],
-      "center": [
-        2.798,
-        17.93
+      [
+        11.192,
+        17.219
       ],
-      "space_id": "dry_balcony",
-      "width_m": 0.96,
-      "free_opening": true,
-      "confidence": "estimated from D/SD symbol",
-      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
-      "geometry_uncertainty_m": 0.2
-    },
-    {
-      "id": "north_toilet_door",
-      "type": "door",
-      "start": [
-        7.699,
-        15.281
+      [
+        12.848,
+        16.656
       ],
-      "end": [
-        8.493,
-        15.248
+      [
+        13.543,
+        15.513
       ],
-      "center": [
-        8.096,
-        15.265
+      [
+        14.189,
+        14.04
       ],
-      "space_id": "bathroom_north",
-      "width_m": 0.79,
-      "free_opening": true,
-      "confidence": "estimated from D/SD symbol",
-      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
-      "geometry_uncertainty_m": 0.2
-    },
-    {
-      "id": "outer_north_toilet_door",
-      "type": "door",
-      "start": [
+      [
+        14.669,
+        12.55
+      ],
+      [
+        14.868,
+        11.093
+      ],
+      [
+        14.752,
+        9.652
+      ],
+      [
+        14.437,
+        8.262
+      ],
+      [
+        13.791,
+        6.821
+      ],
+      [
+        12.748,
+        5.414
+      ],
+      [
+        11.291,
+        5.48
+      ],
+      [
+        11.209,
+        3.874
+      ],
+      [
         8.659,
-        16.904
+        3.874
       ],
-      "end": [
-        9.52,
-        16.854
+      [
+        8.659,
+        2.765
       ],
-      "center": [
-        9.089,
-        16.887
+      [
+        7.07,
+        2.765
       ],
-      "space_id": "bathroom_outer_north",
-      "width_m": 0.86,
-      "free_opening": true,
-      "confidence": "estimated from D/SD symbol",
-      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
-      "geometry_uncertainty_m": 0.2
-    },
-    {
-      "id": "main_entry",
-      "type": "door",
-      "start": [
-        1.192,
-        11.871
+      [
+        7.07,
+        5.281
       ],
-      "end": [
-        1.192,
-        10.944
+      [
+        5.861,
+        5.281
       ],
-      "center": [
-        1.192,
-        11.407
+      [
+        5.861,
+        2.732
       ],
-      "space_id": "entry",
-      "width_m": 0.93,
-      "free_opening": true,
-      "confidence": "estimated from D/SD symbol",
-      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
-      "geometry_uncertainty_m": 0.2
-    },
-    {
-      "id": "north_bedroom_door",
-      "type": "door",
-      "start": [
-        7.036,
-        14.785
+      [
+        4.106,
+        1.026
       ],
-      "end": [
-        7.036,
-        13.924
+      [
+        0.215,
+        0.0
       ],
-      "center": [
-        7.036,
-        14.354
+      [
+        0.215,
+        2.103
       ],
-      "space_id": "bedroom_north",
-      "width_m": 0.86,
-      "free_opening": true,
-      "confidence": "estimated from D/SD symbol",
-      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
-      "geometry_uncertainty_m": 0.2
-    },
-    {
-      "id": "outer_north_bedroom_door",
-      "type": "door",
-      "start": [
-        10.0,
-        13.46
+      [
+        0.464,
+        2.103
       ],
-      "end": [
-        11.026,
-        13.411
+      [
+        0.464,
+        7.533
       ],
-      "center": [
-        10.513,
-        13.444
-      ],
-      "space_id": "bedroom_outer_north",
-      "width_m": 1.03,
-      "free_opening": true,
-      "confidence": "estimated from D/SD symbol",
-      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
-      "geometry_uncertainty_m": 0.2
-    },
-    {
-      "id": "passage_to_south_bedroom",
-      "type": "opening",
-      "start": [
+      [
         2.566,
         7.533
       ],
-      "end": [
-        4.238,
-        7.45
-      ],
-      "center": [
-        3.394,
-        7.5
-      ],
-      "space_id": "bedroom_south",
-      "width_m": 1.67,
-      "free_opening": true,
-      "confidence": "estimated from D/SD symbol",
-      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
-      "geometry_uncertainty_m": 0.2
-    },
-    {
-      "id": "passage_opening",
-      "type": "opening",
-      "start": [
-        3.593,
+      [
+        2.566,
         9.685
       ],
-      "end": [
-        4.52,
-        9.636
+      [
+        1.192,
+        9.685
       ],
-      "center": [
-        4.056,
-        9.669
+      [
+        1.192,
+        12.467
       ],
-      "space_id": "passage",
-      "width_m": 0.93,
-      "free_opening": true,
-      "confidence": "estimated from D/SD symbol",
-      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
-      "geometry_uncertainty_m": 0.2
-    },
-    {
-      "id": "wfh_door",
-      "type": "door",
-      "start": [
-        6.556,
-        9.603
+      [
+        2.732,
+        12.467
       ],
-      "end": [
-        7.5,
-        9.553
+      [
+        2.732,
+        13.858
       ],
-      "center": [
-        7.02,
-        9.586
+      [
+        1.192,
+        13.858
       ],
-      "space_id": "wfh",
-      "width_m": 0.94,
-      "free_opening": true,
-      "confidence": "estimated from D/SD symbol",
-      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
-      "geometry_uncertainty_m": 0.2
-    },
-    {
-      "id": "outer_lower_bedroom_door",
-      "type": "door",
-      "start": [
-        7.5,
-        9.553
+      [
+        1.192,
+        16.722
       ],
-      "end": [
-        8.427,
-        9.52
+      [
+        1.209,
+        18.063
       ],
-      "center": [
-        7.964,
-        9.536
-      ],
-      "space_id": "bedroom_outer_south",
-      "width_m": 0.93,
-      "free_opening": true,
-      "confidence": "estimated from D/SD symbol",
-      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
-      "geometry_uncertainty_m": 0.2
-    },
-    {
-      "id": "living_balcony_slider",
-      "type": "sliding_door",
-      "start": [
-        12.434,
-        12.848
-      ],
-      "end": [
-        12.368,
-        10.894
-      ],
-      "center": [
-        12.401,
-        11.871
-      ],
-      "space_id": "balcony_curved",
-      "width_m": 1.96,
-      "free_opening": true,
-      "confidence": "estimated from D/SD symbol",
-      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
-      "geometry_uncertainty_m": 0.2
-    },
-    {
-      "id": "lower_balcony_slider",
-      "type": "sliding_door",
-      "start": [
-        1.838,
-        2.98
-      ],
-      "end": [
-        3.394,
-        2.964
-      ],
-      "center": [
-        2.616,
-        2.98
-      ],
-      "space_id": "balcony_south",
-      "width_m": 1.56,
-      "free_opening": true,
-      "confidence": "estimated from D/SD symbol",
-      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
-      "geometry_uncertainty_m": 0.2
-    },
-    {
-      "id": "kitchen_balcony_slider",
-      "type": "sliding_door",
-      "start": [
-        5.43,
-        17.997
-      ],
-      "end": [
-        7.103,
-        17.93
-      ],
-      "center": [
-        6.258,
-        17.964
-      ],
-      "space_id": "kitchen_balcony",
-      "width_m": 1.67,
-      "free_opening": true,
-      "confidence": "estimated from D/SD symbol",
-      "width_provenance": "estimated from scanned D/SD symbol; not dimensioned",
-      "geometry_uncertainty_m": 0.2
-    }
-  ],
-  "unmeasured": [
-    "floor elevation",
-    "ceiling height",
-    "wall build-up and true thickness",
-    "door widths",
-    "window/slider widths",
-    "structural column sizes",
-    "facade glass specification",
-    "balcony railing height"
-  ]
+      [
+        0.0,
+        18.063
+      ]
+    ],
+    "includes_balconies": true,
+    "confidence": "agreement outline corroborated; approximate raster trace",
+    "geometry_provenance": "agreement unit red outline registered to approved sheet",
+    "geometry_uncertainty_m": 0.2,
+    "traced_area_m2": 207.96
+  },
+  "dimension_model": "b1-clear-dimensions-v1",
+  "dimension_note": "1 scene unit = 1 m. Rectangular clear spans and balcony span/average depth follow printed dimensions. Wall thickness, heights, orthogonal alignment and detailed curve remain assumed."
 }

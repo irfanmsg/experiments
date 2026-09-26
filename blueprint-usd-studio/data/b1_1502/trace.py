@@ -332,9 +332,15 @@ def main() -> None:
             "facade glass specification", "balcony railing height",
         ],
     }
+    source = Path(__file__).with_name("raster_trace.json")
+    source.write_text(json.dumps(plan, indent=2, ensure_ascii=False) + "\n")
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from app.dimensioned_b1 import build_dimensioned_plan
+    plan = build_dimensioned_plan(plan)
     target = Path(__file__).with_name("plan.json")
     target.write_text(json.dumps(plan, indent=2, ensure_ascii=False) + "\n")
-    print(f"Wrote {target} ({len(rooms)} rooms; footprint {polygon_area(footprint):.2f} m²)")
+    print(f"Wrote {target} ({len(rooms)} rooms; modeled gross footprint {plan['footprint']['modeled_gross_area_m2']:.2f} m²)")
 
 
 if __name__ == "__main__":

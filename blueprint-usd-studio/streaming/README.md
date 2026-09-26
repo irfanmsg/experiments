@@ -31,8 +31,9 @@ The browser page fills in the laptop hostname automatically. The overview stays
 still until you drag it. Scroll to zoom, use **Top view** to match the drawing's
 orientation, or select a room and choose **Eye level**. **Reset view** returns to
 the whole building. Eye-level scroll moves the camera and does not enforce wall
-collisions. **Drawing + walls** overlays the traced wall segments on the original
-scan when calibration is available. **Original size** and **Full screen** control
+collisions. **Source drawing** overlays the original raster wall trace on the original
+scan when calibration is available. Corrected B1 geometry is shown separately,
+with room dimensions in meters; the raster overlay is not a dimensional check. **Original size** and **Full screen** control
 the display size; the default fits the available workspace without stretching.
 The app defaults to 1280×720 HD. Stop the process with Ctrl+C.
 

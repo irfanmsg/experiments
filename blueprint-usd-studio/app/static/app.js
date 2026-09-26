@@ -19,6 +19,13 @@ function toast(message) {
 }
 function safeNumber(value, fallback) { const number = Number(value); return Number.isFinite(number) ? number : fallback; }
 function calibration() {
+  if (state.plan?.dimension_model && state.plan.rooms?.length) {
+    const points = state.plan.rooms.flatMap(r => r.polygon);
+    const xs = points.map(p=>p[0]), ys = points.map(p=>p[1]);
+    const minx=Math.min(...xs), maxx=Math.max(...xs), miny=Math.min(...ys), maxy=Math.max(...ys);
+    const scale=.90*Math.min(canvas.width/(maxx-minx),canvas.height/(maxy-miny));
+    return {scale,origin:[(canvas.width-(maxx-minx)*scale)/2-minx*scale,(canvas.height-(maxy-miny)*scale)/2+maxy*scale]};
+  }
   const value = state.plan?.calibration;
   if (!value) return null;
   const scale = value.pixels_per_meter || value.pixels_per_metre || value.px_per_m || value.scale_px_per_m;
@@ -53,6 +60,7 @@ function dimensions(room) {
 }
 
 function setTool(tool) {
+  if (tool === 'calibrate' && state.plan?.dimension_model) { toast('This plan uses printed meter dimensions. Image calibration is not needed.'); return; }
   state.tool = state.tool === tool ? null : tool;
   state.points = []; state.dragStart = null; state.hover = null;
   document.querySelectorAll(".tool").forEach(button => button.classList.toggle("active", button.dataset.tool === state.tool));
@@ -93,6 +101,7 @@ async function setProject(data) {
   $("projectTitle").textContent = state.plan.name || "Untitled project";
   $("projectSubtitle").textContent = state.plan.example ? "Flat B1-1502 · 15th floor · approved architectural plan" : "Review your drawing, then build a measured 3D scene.";
   $("sourceNote").textContent = state.plan.source?.filename || (state.plan.example ? "Approved B1 building plan · unit 1502" : "Your drawing");
+  if(state.plan.dimension_model) $("sourceNote").textContent='Dimensioned plan · 1 m grid · approved metric room dimensions';
   $("sourceNote").hidden = false;
   renderAssets();
   $("pageControls").hidden = !(data.page_count > 1);
@@ -103,12 +112,12 @@ async function setProject(data) {
   $("structureType").value = ["home", "factory", "office", "showroom", "other"].includes(state.plan.structure_type) ? state.plan.structure_type : "home";
   $("heightInput").value = state.plan.room_height_m || 2.9;
   $("heightStatus").textContent = state.plan.height_status || "Wall height is a visualization assumption. Confirm it if known.";
-  $("showLabels").checked = !state.plan.example;
+  $("showLabels").checked = !!state.plan.dimension_model || !state.plan.example;
   const image = new Image();
   image.onload = () => {
     state.image = image; canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
     $("canvasArea").hidden = false; $("emptyState").hidden = true;
-    $("calibrateButton").disabled = false; $("suggestButton").disabled = false;
+    $("calibrateButton").disabled = !!state.plan.dimension_model; $("suggestButton").disabled = !!state.plan.dimension_model;
     document.querySelectorAll(".tool").forEach(button => button.disabled = false);
     if (!state.plan.image_size) state.plan.image_size = [image.naturalWidth, image.naturalHeight];
     renderStyles(); refreshAll();
@@ -167,14 +176,14 @@ function refreshPlacements() {
 }
 function refreshMeasurements() {
   const cal = calibration();
-  $("scaleSummary").textContent = cal ? `Scale set: ${cal.scale.toFixed(1)} image pixels = 1 metre.` : state.project ? "Use a dimension printed on the plan. Click its two endpoints." : "Upload a drawing to begin.";
+  $("scaleSummary").textContent = state.plan?.dimension_model ? "Printed meter dimensions enforced. Each grid square is 1 m × 1 m." : cal ? `Scale set: ${cal.scale.toFixed(1)} image pixels = 1 metre.` : state.project ? "Use a dimension printed on the plan. Click its two endpoints." : "Upload a drawing to begin.";
   $("canvasScale").textContent = cal ? `1 m ≈ ${cal.scale.toFixed(1)} px` : "Scale not set";
   const badges = $("measurementBadges"); badges.replaceChildren();
   if (!state.plan) { $("drawingInfo").hidden = true; return; }
   const area = state.plan.area_schedule_m2;
   const values = area ? [`${Number(area.carpet).toFixed(2)} m² carpet`, `${Number(area.balcony).toFixed(2)} m² balcony`, `${Number(area.dry_balcony).toFixed(2)} m² dry balcony`, `${Number(area.total).toFixed(2)} m² scheduled total`] : [`${state.plan.rooms?.length || 0} spaces outlined`, cal ? "Measured in metres" : "Scale needs review"];
   values.forEach(value => { const badge = document.createElement("span"); badge.textContent = value; badges.append(badge); });
-  $("provenanceText").textContent = area ? "B1-1502 areas come from the printed RERA schedule. Room sizes come from the approved drawing; traced corners and unprinted heights remain estimates." : "Room outlines come from your review. Confirm any unprinted dimension before using the model for construction or purchasing.";
+  $("provenanceText").textContent = area ? "B1-1502 areas come from the printed RERA schedule. Room spans follow the approved meter dimensions; wall thickness, heights and the detailed balcony curve remain assumptions." : "Room outlines come from your review. Confirm any unprinted dimension before using the model for construction or purchasing.";
   $("drawingInfo").hidden = false;
 }
 function updateCreateReady() {
@@ -202,7 +211,14 @@ function drawPolygon(points, stroke, fill, width = 3, label = "") {
 }
 function draw() {
   if (!state.image || !state.plan) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(state.image, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (state.plan.dimension_model) {
+    ctx.fillStyle='#f9fbf8';ctx.fillRect(0,0,canvas.width,canvas.height);
+    const cal=calibration();ctx.strokeStyle='#dbe5dc';ctx.lineWidth=1;
+    for(let x=cal.origin[0]%cal.scale;x<canvas.width;x+=cal.scale){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}
+    for(let y=cal.origin[1]%cal.scale;y<canvas.height;y+=cal.scale){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}
+    ctx.fillStyle='#284b35';ctx.font='24px sans-serif';ctx.textAlign='left';ctx.fillText('1 grid square = 1 m × 1 m',35,40);
+  } else ctx.drawImage(state.image, 0, 0);
   const footprint = state.plan.footprint?.polygon || [];
   if (footprint.length >= 3) drawPolygon(footprint, "#1caa86", "#41b89917", 5);
   (state.plan.rooms || []).forEach(room => drawPolygon(room.polygon, "#407daf", "#75b7e224", 2, $("showLabels").checked ? room.name || "Space" : ""));

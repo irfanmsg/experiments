@@ -100,7 +100,28 @@ def validate_plan(plan: dict) -> list[str]:
             triangulate(footprint)
         except (ValueError, TypeError) as exc:
             errors.append(f"Perimeter: {exc}")
+    for room in rooms:
+        mode = room.get('dimension_mode')
+        if mode not in {'clear_rectangle', 'average_depth'}:
+            continue
+        try:
+            from shapely.geometry import Polygon
+            shape = Polygon(room['polygon'])
+            x0, y0, x1, y1 = shape.bounds
+            printed = list(map(float, room['dimensions_m']))
+            if mode == 'clear_rectangle':
+                actual = [x1-x0, y1-y0]
+                if abs(shape.area-actual[0]*actual[1]) > 1e-6:
+                    raise ValueError('clear dimensions require a rectangular room boundary')
+            else:
+                axis = room['span_axis']
+                span = (y1-y0) if axis == 1 else (x1-x0)
+                actual = [shape.area/span, span] if axis == 1 else [span, shape.area/span]
+            if len(printed) != 2 or any(abs(a-b) > 1e-6 for a,b in zip(actual,printed)):
+                raise ValueError(f'modeled meters {actual} do not match printed meters {printed}')
+        except (KeyError, TypeError, ValueError, ZeroDivisionError) as exc:
+            errors.append(f"Room {room.get('id', '?')}: {exc}")
     for wall in plan.get("wall_segments", []):
-        if segment_length(wall.get("start", (0, 0)), wall.get("end", (0, 0))) < 0.05:
-            errors.append(f"Wall {wall.get('id', '?')} is shorter than 5 cm")
+        if segment_length(wall.get("start", (0, 0)), wall.get("end", (0, 0))) < 0.005:
+            errors.append(f"Wall {wall.get('id', '?')} is shorter than 5 mm")
     return errors

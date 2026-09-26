@@ -19,7 +19,10 @@ def test_b1_1502_area_and_authoritative_room_dimensions(tmp_path):
     plan = json.loads((ROOT / "data/b1_1502/plan.json").read_text())
     assert not validate_plan(plan)
     assert plan["source"]["unit"] == "02" and plan["source"]["floor"] == 15
-    assert abs(polygon_area(plan["footprint"]["polygon"]) - plan["area_schedule_m2"]["total"]) < 0.5
+    # RERA is a source net-area schedule, not the generated gross slab area.
+    assert plan['area_schedule_m2']['total'] == 207.77
+    assert polygon_area(plan['footprint']['polygon']) == pytest.approx(plan['footprint']['modeled_gross_area_m2'])
+    assert plan['dimension_model'] == 'b1-clear-dimensions-v1'
     rooms = {room["id"]: room for room in plan["rooms"]}
     assert rooms["living_dining"]["dimensions_m"] == [9.83, 4.03]
     assert rooms["kitchen"]["dimensions_m"] == [2.75, 4.12]

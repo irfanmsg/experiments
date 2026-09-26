@@ -35,7 +35,7 @@ def catalog() -> dict:
     return {"asset_root": str(ALLOWED), "assets": furniture + warehouse}
 
 
-def b1_starter_furniture() -> list[dict]:
+def b1_starter_furniture(plan=None) -> list[dict]:
     by_name = {item["name"]: item for item in catalog()["assets"] if "home" in item["structure_types"]}
     choices = [
         ("living_sofa", "Crestwood Sofa", [10.2, 10.35, 0.008], -90),
@@ -57,4 +57,7 @@ def b1_starter_furniture() -> list[dict]:
         if not item or not Path(item["usd_path"]).is_file():
             continue
         result.append({"id": identifier, "name": name, "asset_path": item["usd_path"], "position": position, "rotation_deg": rotation, "provenance": "illustrative starter layout; placed in traced B1-1502 rooms"})
+    if plan and plan.get('dimension_model'):
+        from .dimensioned_b1 import relocate_assets
+        result = relocate_assets(result, plan['rooms'])
     return result

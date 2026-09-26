@@ -9,3 +9,6 @@ opencv-python-headless>=4.10,<5
 pytest>=8,<10
 # Includes compatible OpenUSD `pxr` bindings. Do not also install usd-core.
 usd-exchange==3.0.0
+
+# Dimensioned room/wall topology and slab holes.
+shapely>=2.1,<3
