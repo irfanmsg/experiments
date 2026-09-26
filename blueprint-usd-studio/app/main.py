@@ -61,7 +61,17 @@ def _read_plan(project_id: str) -> dict:
     path = _project_dir(project_id) / "plan.json"
     if not path.exists():
         raise HTTPException(404, "Plan not found")
-    return json.loads(path.read_text())
+    plan = json.loads(path.read_text())
+    if plan.get('example') == 'B1-1502' and not plan.get('dimension_model'):
+        raw = json.loads((EXAMPLE / 'raster_trace.json').read_text())
+        keys = ('rooms', 'wall_segments', 'openings', 'footprint')
+        if all(plan.get(key) == raw.get(key) for key in keys):
+            from .dimensioned_b1 import build_dimensioned_plan
+            plan = build_dimensioned_plan(plan)
+            _save_plan(project_id, plan)
+        else:
+            raise HTTPException(409, 'This older B1 project has geometry edits. Open the updated B1 example to use dimensioned rooms; your edited project is preserved.')
+    return plan
 
 
 def _save_plan(project_id: str, plan: dict) -> None:
@@ -182,7 +192,7 @@ def load_flat_example():
     plan["id"] = project_id
     plan["example"] = "B1-1502"
     plan["structure_type"] = "home"
-    plan['asset_placements'] = b1_starter_furniture()
+    plan['asset_placements'] = b1_starter_furniture(plan)
     _save_plan(project_id, plan)
     return _project_response(project_id)
 
@@ -295,7 +305,7 @@ def furnish_flat_example(project_id: str):
     plan = _read_plan(project_id)
     if plan.get("example") != "B1-1502":
         raise HTTPException(400, "Starter layout is for the B1-1502 example")
-    additions = b1_starter_furniture()
+    additions = b1_starter_furniture(plan)
     if not additions:
         raise HTTPException(503, "SimReady furniture pack is not installed")
     existing = {item.get("id") for item in plan.get("asset_placements", [])}

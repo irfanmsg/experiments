@@ -68,7 +68,7 @@ its affiliates is strictly prohibited.
             <div class="toolbar">
                 <button class="control" id="overview-button" aria-pressed="true">3D overview</button>
                 <button class="control" id="plan-button" aria-pressed="false">Top view</button>
-                <button class="control" id="source-button" aria-pressed="false" disabled>Drawing + walls</button>
+                <button class="control" id="source-button" aria-pressed="false" disabled>Source drawing</button>
                 <button class="control" id="reset-button">Reset view</button>
                 <button class="control" id="zoom-in" aria-label="Zoom in">+</button>
                 <button class="control" id="zoom-out" aria-label="Zoom out">−</button>
@@ -326,14 +326,17 @@ its affiliates is strictly prohibited.
                 document.getElementById('room-button').disabled = !selectedRoom;
                 document.getElementById('interior-button').disabled = !selectedRoom;
                 document.getElementById('room-name').textContent = selectedRoom?.name || 'Whole home';
-                document.getElementById('room-dimensions').textContent = selectedRoom?.dimensions?.length ? selectedRoom.dimensions.map(x => Number(x).toFixed(2)).join(' × ') + ' m · printed dimensions' : '';
+                const measured = selectedRoom?.modeled_dimensions;
+                const dims = measured || selectedRoom?.dimensions;
+                const label = measured ? (selectedRoom.dimension_mode === 'average_depth' ? ' m · modeled span / average depth' : ' m · modeled clear dimensions') : ' m · printed dimensions';
+                document.getElementById('room-dimensions').textContent = dims?.length ? dims.map(x => Number(x).toFixed(2)).join(' × ') + label : '';
                 document.querySelectorAll('#plan-map polygon').forEach(p => p.classList.toggle('selected', p.dataset.room === id));
             }
             let scene = {rooms:[]};
             fetch('/api/scene').then(response => {if(!response.ok) throw new Error('Scene controls unavailable'); return response.json();}).then(data => {
                 scene = data;
                 document.getElementById('scene-name').textContent = data.name || 'Blueprint Studio';
-                document.getElementById('scene-summary').textContent = `${data.width} × ${data.height} · ${data.asset_count || 0} furnishings · Live RTX`;
+                document.getElementById('scene-summary').textContent = `${data.width} × ${data.height} · ${data.asset_count || 0} furnishings · 1 unit = 1 m · Live RTX`;
                 document.getElementById('geometry-note').textContent = data.geometry_note;
                 const svg = document.getElementById('plan-map');
                 const points = data.rooms.flatMap(r => r.polygon);
@@ -382,7 +385,7 @@ its affiliates is strictly prohibited.
             document.getElementById('source-button').onclick = (event) => {
                 const drawing = document.getElementById('source-compare'); const hidden = drawing.toggleAttribute('hidden');
                 event.currentTarget.setAttribute('aria-pressed',String(!hidden));
-                document.getElementById('view-help').textContent = hidden ? 'Drag to rotate · Scroll to zoom' : 'Orange lines: reconstructed wall positions over the original drawing · Choose Top view to compare the 3D model';
+                document.getElementById('view-help').textContent = hidden ? 'Drag to rotate · Scroll to zoom' : 'Orange: source raster trace. The corrected model uses printed meter dimensions · Choose Top view to compare';
             };
             document.getElementById('reset-button').onclick = () => {chooseRoom('');camera({view:'overview'});};
             document.getElementById('room-button').onclick = () => camera({view:'room',room:selectedRoom.id});

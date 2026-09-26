@@ -241,19 +241,36 @@ def _box(stage, path, center, size, yaw_degrees, material, modules, collision=Tr
     return box.GetPrim()
 
 
-def _slab(stage, path, polygon, material, modules, top=0.0, depth=0.15):
+def _slab(stage, path, polygon, material, modules, top=0.0, depth=0.15, holes=()):
     Gf, Sdf, _, UsdGeom, _, UsdPhysics, _ = modules
     xy = [tuple(map(float, p[:2])) for p in polygon]
     if len(xy) > 3 and xy[0] == xy[-1]:
         xy.pop()
-    triangles = triangulate(xy)
+    rings = [xy] + [[tuple(map(float, p[:2])) for p in ring] for ring in holes]
+    if holes:
+        from shapely import constrained_delaunay_triangles
+        from shapely.geometry import Polygon
+        xy = [point for ring in rings for point in ring]
+        indices = {point: i for i, point in enumerate(xy)}
+        triangles = []
+        for triangle in constrained_delaunay_triangles(Polygon(rings[0], rings[1:])).geoms:
+            face = [indices[tuple(p)] for p in list(triangle.exterior.coords)[:3]]
+            a, b, c = [xy[i] for i in face]
+            if (b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]) < 0:
+                face.reverse()
+            triangles.append(face)
+    else:
+        triangles = triangulate(xy)
     n = len(xy)
     points = [Gf.Vec3f(x, y, top) for x, y in xy] + [Gf.Vec3f(x, y, top - depth) for x, y in xy]
     faces = [list(face) for face in triangles]
     faces += [[c + n, b + n, a + n] for a, b, c in triangles]
-    for i in range(n):
-        j = (i + 1) % n
-        faces.append([i, i + n, j + n, j])
+    offset = 0
+    for ring in rings:
+        for k in range(len(ring)):
+            i, j = offset+k, offset+(k+1)%len(ring)
+            faces.append([i, i+n, j+n, j])
+        offset += len(ring)
     mesh = UsdGeom.Mesh.Define(stage, path)
     mesh.CreatePointsAttr(points)
     mesh.CreateFaceVertexCountsAttr([len(face) for face in faces])
@@ -428,9 +445,11 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
     world.GetPrim().SetCustomDataByKey("heightStatus", str(plan.get("height_status", "user provided or assumed")))
     world.GetPrim().SetCustomDataByKey("style", style)
     world.GetPrim().SetCustomDataByKey('traceCalibration', json.dumps(plan.get('calibration', {})))
-    world.GetPrim().SetCustomDataByKey('wallTrace', json.dumps(plan.get('wall_segments', [])))
+    world.GetPrim().SetCustomDataByKey('wallTrace', json.dumps(plan.get('source_wall_segments', plan.get('wall_segments', []))))
     if plan.get("area_schedule_m2"):
         world.GetPrim().SetCustomDataByKey("areaScheduleM2", json.dumps(plan["area_schedule_m2"]))
+    world.GetPrim().SetCustomDataByKey('dimensionModel', plan.get('dimension_model', 'raster'))
+    world.GetPrim().SetCustomDataByKey('dimensionNote', plan.get('dimension_note', 'Raster trace in meters; dimensions not constrained'))
     style_specs = PALETTES[style]
     materials = {key: _make_material(stage, f"/World/Looks/{safe_name(key)}", spec, modules) for key, spec in style_specs.items() if isinstance(spec, tuple)}
     if style in {'contemporary', 'classic', 'warm_office', 'executive_office'}:
@@ -444,7 +463,7 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
     footprint = plan.get("footprint", {}).get("polygon", [])
     rooms = plan.get("rooms", [])
     if footprint:
-        floor = _slab(stage, "/World/Building/FloorSlab", footprint, materials["floor"], modules)
+        floor = _slab(stage, "/World/Building/FloorSlab", footprint, materials["floor"], modules, holes=plan.get("footprint", {}).get("holes", []))
         floor.SetCustomDataByKey("traceConfidence", str(plan.get("footprint", {}).get("confidence", "reviewed")))
     elif rooms:
         for i, room in enumerate(rooms):
@@ -454,6 +473,13 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
         room_prim.SetCustomDataByKey("label", str(room.get("name", room.get("id", "Room"))))
         room_prim.SetCustomDataByKey("polygonM", json.dumps(room["polygon"]))
         room_prim.SetCustomDataByKey("category", str(room.get("category", "room")))
+        room_prim.SetCustomDataByKey('dimensionMode', room.get('dimension_mode', 'raster'))
+        room_prim.SetCustomDataByKey('spanAxis', int(room.get('span_axis', -1)))
+        if room.get('dimension_mode'):
+            category = room.get('category')
+            finish = materials['balcony'] if category == 'balcony' else materials['tile'] if category in {'bathroom','kitchen','service'} else materials['floor']
+            _slab(stage, str(room_prim.GetPath()) + '/Floor', room['polygon'], finish, modules, top=.008, depth=.008)
+
         room_prim.SetCustomDataByKey("printedDimensionsM", json.dumps(room.get("dimensions_m", [])))
         room_prim.SetCustomDataByKey("tracedAreaM2", round(polygon_area(room["polygon"]), 4))
         room_prim.SetCustomDataByKey("confidence", str(room.get("confidence", "reviewed")))
@@ -481,7 +507,7 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
         a = [float(v) for v in wall["start"][:2]]
         b = [float(v) for v in wall["end"][:2]]
         length = segment_length(a, b)
-        if length < 0.05:
+        if length < 0.005:
             continue
         wall_id = safe_name(wall.get("id", f"wall_{i}"))
         base = f"/World/Building/Walls/{wall_id}"
@@ -639,7 +665,7 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
     return {
         "usd_path": str(output_path),
         "style": style,
-        "footprint_area_m2": round(polygon_area(footprint), 2) if footprint else None,
+        "footprint_area_m2": round(polygon_area(footprint) - sum(polygon_area(h) for h in plan.get("footprint", {}).get("holes", [])), 2) if footprint else None,
         "traced_room_area_m2": round(sum(polygon_area(r["polygon"]) for r in rooms), 2),
         "room_count": len(rooms),
         "wall_count": len(walls),

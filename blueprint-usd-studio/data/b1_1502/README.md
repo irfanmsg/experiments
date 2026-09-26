@@ -1,31 +1,36 @@
-# B1-1502 traced plan
+# B1-1502 dimensioned plan
 
-`plan.json` is a metre-based 2D trace of the 15th-floor unit in B1. Its
-coordinates use X to the right and Y upward in the upright architectural
-sheet; the floor is Z=0 until an elevation is supplied.
+`plan.json` contains the meter-based reconstruction. `raster_trace.json`
+preserves the original approximate pixel trace for source comparisons.
+Run `python data/b1_1502/trace.py` from the project root to rebuild both.
 
-The room labels and dimensions come from `B1-Building-3.pdf`, PDF page 1,
-approved sheet 63/69 dated 22 April 2024. The unit boundary is corroborated
-by the red B1-1502 outline in `Miami PWC House Documents.pdf`, PDF page 35.
-The RERA area schedule on `B1-Building-1.pdf`, PDF page 1 gives 172.00 m²
-carpet + 32.72 m² balcony + 3.05 m² dry balcony = 207.77 m² total.
-The raster-traced outline measures 207.96 m² at 60.4 pixels/metre.
+The approved source is `B1-Building-3.pdf`, PDF page 1, sheet 63/69 dated
+22 April 2024. The agreement outline identifies B1-1502. The room dimensions
+in that approved sheet drive the clear room boundaries, independently of
+raster calibration. Walls sit outside those boundaries; shared solids and
+openings are generated from room adjacency.
 
-Room dimension values in JSON are printed source facts. Wall vertices and
-door positions are approximate raster traces, typically within 0.15–0.25 m;
-the scan has skew and folds. No source here specifies wall thickness, ceiling
-height, door width or floor elevation. The 2.80 m visualization height and
-individual wall thicknesses are marked as assumptions in the data.
-Door and sliding-door symbols are represented as estimated gaps in the wall
-runs, with illustrative jambs and lintels. Glazing frames and balcony railings
-are illustrative assemblies; the generated scene does not claim exact leaf,
-frame, or railing specifications. The September viewer review added omitted
-service-toilet, dry-balcony, kitchen, and north-toilet partitions and door gaps.
-These measurements should be confirmed on site before construction or fit-out.
+There are 18 rectangular spaces and two irregular balconies. Rectangles use
+the printed clear width and length. Irregular balconies use the labelled span
+and average depth (area divided by span), with a provisional curve/slope.
+The exact curve, wall thickness, height and relative alignment are not
+established by the room labels. The layout uses 0.15 m partitions and 2.8 m
+wall height as assumptions, clearly distinct from the constrained dimensions.
 
-`approved_crop.jpg` shows the source geometry. `agreement_unit_crop.jpg`
-contains only the marked unit, without the rest of the registered document.
-`trace_overlay.jpg` is the original tracing snapshot. The live viewer's
-**Drawing + walls** comparison displays the current reconstruction over the scan.
-Run `python3 trace.py` to rebuild `plan.json` from the annotated raster
-coordinates in that script, then rebuild the USD from the regenerated JSON.
+Pages 32–35 of `Sales Presenter Mergred Web.pdf` were reviewed. Page 32 shows
+the detailed type-02/05 apartment in feet/inches; page 33 is the typical floor.
+Pages 34 and 35 describe first/refuge floors, not floor 15. See
+[source_comparison.json](source_comparison.json) for unit conversions and
+source differences. The approved metric values remain primary.
+
+The 172.00 + 32.72 + 3.05 = 207.77 m² source schedule is retained, not used
+as a scaling factor. The generated gross footprint is about 222.45 m² and
+includes assumed wall construction and balcony geometry. It is not equivalent
+to the source net-area schedule. Matching total area alone cannot validate
+individual room dimensions.
+
+`approved_crop.jpg`, `agreement_unit_crop.jpg`, and `trace_overlay.jpg` remain
+source images. The live **Source drawing** view shows the original raster
+trace over the scan. The editor shows the corrected geometry on a 1-meter
+grid; it does not pretend that a single pixel scale registers the corrected
+layout onto the distorted scan.

@@ -22,7 +22,7 @@ result = build_style_variants(plan, destination)
 stage = Usd.Stage.Open(str(destination / "contemporary.usda"))
 binary = destination / "B1-1502.usd"
 stage.Export(str(binary))
-placements = b1_starter_furniture()
+placements = b1_starter_furniture(plan)
 if placements:
     from app.usd_builder import build_usd
     furnished_plan = {**plan, "asset_placements": placements}

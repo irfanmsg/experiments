@@ -44,6 +44,8 @@ def test_building_fits_camera_and_rooms_survive_preparation(tmp_path):
     build_usd(plan, tmp_path/'flat.usda')
     scene = prepare_scene(tmp_path/'flat.usda', tmp_path/'stream.usda', 1280, 720)
     assert len(scene['rooms']) == 20
+    for room in scene['rooms']:
+        assert room['modeled_dimensions'] == pytest.approx(room['dimensions'], abs=2e-6)
     assert next(r for r in scene['rooms'] if r['id']=='living_dining')['dimensions'] == [9.83,4.03]
     camera = CameraController(scene['target'], scene['radius'], 'Z', scene['rooms'], scene['plan_radius'])
     for view in ['overview', 'plan']:
@@ -66,5 +68,5 @@ def test_traced_doors_are_framed_without_filling_passage(tmp_path):
     center = lintel.GetPrim().GetAttribute('xformOp:translate').Get()
     size = lintel.GetPrim().GetAttribute('xformOp:scale').Get()
     assert center[2] - size[2]/2 == pytest.approx(2.2)
-    assert stage.GetPrimAtPath('/World/Building/Walls/service_toilet_divider')
-    assert stage.GetPrimAtPath('/World/Building/Walls/north_toilet_south')
+    assert stage.GetPrimAtPath('/World/Building/Openings/service_wc_door')
+    assert stage.GetPrimAtPath('/World/Building/Openings/north_toilet_door')

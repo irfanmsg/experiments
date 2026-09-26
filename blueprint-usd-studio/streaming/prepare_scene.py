@@ -116,6 +116,17 @@ def prepare_scene(source: Path, destination: Path, width: int, height: int) -> d
         if not polygon:
             continue
         polygon = json.loads(polygon)
+        floor_prim = prim.GetChild('Floor')
+        modeled = None
+        if floor_prim and floor_prim.IsA(UsdGeom.Mesh):
+            points = UsdGeom.Mesh(floor_prim).GetPointsAttr().Get()
+            polygon = [[float(p[0]), float(p[1])] for p in points[:len(points)//2]]
+            spans = [max(p[i] for p in polygon)-min(p[i] for p in polygon) for i in range(2)]
+            modeled = spans.copy()
+            if prim.GetCustomDataByKey('dimensionMode') == 'average_depth':
+                area = abs(sum(a[0]*b[1]-b[0]*a[1] for a,b in zip(polygon,polygon[1:]+polygon[:1])))/2
+                axis = int(prim.GetCustomDataByKey('spanAxis'))
+                modeled[1-axis] = area/spans[axis]
         low = [min(p[i] for p in polygon) for i in range(2)]
         high = [max(p[i] for p in polygon) for i in range(2)]
         # Plan coordinates are metre-based XY (the authoring pipeline is Z-up).
@@ -126,7 +137,9 @@ def prepare_scene(source: Path, destination: Path, width: int, height: int) -> d
         rooms.append({'id': prim.GetName(), 'name': prim.GetCustomDataByKey('label'),
                       'polygon': polygon, 'min': low + [0], 'max': high + [0],
                       'eye': eye, 'look_at': look,
-                      'dimensions': json.loads(prim.GetCustomDataByKey('printedDimensionsM') or '[]')})
+                      'dimensions': json.loads(prim.GetCustomDataByKey('printedDimensionsM') or '[]'),
+                      'dimension_mode': prim.GetCustomDataByKey('dimensionMode') or 'raster',
+                      'modeled_dimensions': modeled})
     floor = original.GetPrimAtPath(str(root.GetPath()) + '/Building/FloorSlab')
     footprint = []
     if floor:
@@ -170,7 +183,7 @@ def prepare_scene(source: Path, destination: Path, width: int, height: int) -> d
         "source_image": source_image,
         "name": root.GetCustomDataByKey('planName') or source.stem,
         "asset_count": len(original.GetPrimAtPath(str(root.GetPath()) + '/Assets').GetChildren()) if original.GetPrimAtPath(str(root.GetPath()) + '/Assets') else 0,
-        "geometry_note": 'Traced from the drawing. Wall positions are approximate; height and thickness are assumed.',
+        "geometry_note": root.GetCustomDataByKey('dimensionNote') or 'Traced from the drawing. Wall positions are approximate; height and thickness are assumed.',
         "up_axis": str(axis),
         "meters_per_unit": units,
         "camera": CAMERA_PATH,
