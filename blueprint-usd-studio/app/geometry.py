@@ -82,6 +82,61 @@ def bbox(polygons: Iterable[Iterable[Iterable[float]]]) -> tuple[float, float, f
     return min(x for x, _ in pts), min(y for _, y in pts), max(x for x, _ in pts), max(y for _, y in pts)
 
 
+def measured_scale_audit(plan: dict) -> dict:
+    """Remeasure current geometry while retaining the source comparison evidence."""
+    audit = dict(plan.get('scale_audit') or {})
+    if not audit:
+        return audit
+    rows = []
+    for room in plan.get('rooms', []):
+        modeled = []
+        try:
+            x0, y0, x1, y1 = bbox([room['polygon']])
+            modeled = [x1-x0, y1-y0]
+            if room.get('dimension_mode') == 'average_depth':
+                axis = int(room['span_axis'])
+                modeled[1-axis] = polygon_area(room['polygon']) / modeled[axis]
+        except (KeyError, ValueError, TypeError, IndexError, ZeroDivisionError):
+            modeled = []
+        rows.append({'id': room.get('id'), 'name': room.get('name'),
+                     'printed': room.get('dimensions_m', []), 'modeled': modeled,
+                     'dimension_mode': room.get('dimension_mode', 'raster')})
+    audit['room_dimensions'] = rows
+    footprint = plan.get('footprint', {})
+    try:
+        x0, y0, x1, y1 = bbox([footprint['polygon']])
+        audit['footprint_span_m'] = [x1-x0, y1-y0]
+        audit['gross_area_m2'] = polygon_area(footprint['polygon']) - sum(
+            polygon_area(hole) for hole in footprint.get('holes', []))
+    except (KeyError, ValueError, TypeError, IndexError):
+        audit['footprint_span_m'], audit['gross_area_m2'] = [], None
+    if 'room_registration_offsets_m' in audit:
+        from shapely.geometry import Polygon
+        audit['room_registration_offsets_m'] = []
+        for room in plan.get('rooms', []):
+            if room.get('id') == 'balcony_curved' or not room.get('source_polygon'):
+                continue
+            current, source = Polygon(room['polygon']).centroid, Polygon(room['source_polygon']).centroid
+            audit['room_registration_offsets_m'].append({
+                'id': room.get('id'), 'center_offset_xy_m': [current.x-source.x, current.y-source.y],
+                'basis': 'difference from approximate agreement raster registration; exact offsets are not dimensioned'})
+    if 'modeled_visible_span_m' in audit:
+        try:
+            x0, y0, x1, y1 = bbox([room['polygon'] for room in plan.get('rooms', [])
+                                  if room.get('id') != 'balcony_curved'])
+            audit['modeled_visible_span_m'] = [x1-x0, y1-y0]
+        except (KeyError, ValueError, TypeError, IndexError):
+            audit['modeled_visible_span_m'] = []
+    if 'main_outer_arc_length_m' in audit:
+        balcony = next((room for room in plan.get('rooms', []) if room.get('id') == 'balcony_curved'), {})
+        # The registered B1 profile keeps the outer arc between its inboard returns.
+        points = balcony.get('polygon', [])[1:-3]
+        audit['main_outer_arc_length_m'] = sum(segment_length(a, b) for a, b in zip(points, points[1:])) if len(points) > 1 else None
+    audit['static_source_evidence_fields'] = [key for key in (
+        'source_trace_gross_area_m2', 'source_trace_span_m', 'visible_agreement_span_m', 'scheduled_area_m2') if key in audit]
+    return audit
+
+
 def validate_plan(plan: dict) -> list[str]:
     errors: list[str] = []
     if plan.get("units", "m") != "m":

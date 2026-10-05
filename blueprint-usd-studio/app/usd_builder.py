@@ -13,12 +13,24 @@ from pathlib import Path
 
 import usdex.core
 
-from .geometry import bbox, polygon_area, safe_name, segment_length, triangulate, validate_plan
+from .asset_library import DEFAULT_ASSET_ROOT
+from .geometry import bbox, measured_scale_audit, polygon_area, safe_name, segment_length, triangulate, validate_plan
 
 
 PALETTES = {
+    "home_specification": {
+        "label": "B1-1502 specified finishes",
+        "category": "home",
+        "description": "Annexure F: vitrified tiles, master bedroom wood, ceramic bathrooms and granite kitchen",
+        "wall": ((.89, .88, .84), .78, 0.0),
+        "floor": ((.74, .72, .67), .30, 0.0),
+        "balcony": ((.58, .55, .50), .86, 0.0),
+        "door": ((.38, .23, .13), .42, 0.0),
+        "glass": ((.65, .78, .81), .08, 0.0),
+        "metal": ((.62, .65, .66), .22, .90),
+    },
     "contemporary": {
-        "label": "Contemporary",
+        "label": "Warm neutral finishes",
         "category": "home",
         "description": "Warm wood and calm neutrals",
         "wall": ((0.85, 0.83, 0.78), 0.78, 0.0),
@@ -29,7 +41,7 @@ PALETTES = {
         "metal": ((0.27, 0.29, 0.30), 0.26, 0.85),
     },
     "minimal": {
-        "label": "Light minimal",
+        "label": "Light neutral finishes",
         "category": "home",
         "description": "Pale oak and clean whites",
         "wall": ((0.91, 0.91, 0.87), 0.73, 0.0),
@@ -40,7 +52,7 @@ PALETTES = {
         "metal": ((0.63, 0.65, 0.64), 0.30, 0.78),
     },
     "classic": {
-        "label": "Classic",
+        "label": "Cream and walnut",
         "category": "home",
         "description": "Cream walls and dark walnut",
         "wall": ((0.83, 0.76, 0.61), 0.83, 0.0),
@@ -51,7 +63,7 @@ PALETTES = {
         "metal": ((0.54, 0.43, 0.22), 0.30, 0.82),
     },
     "industrial": {
-        "label": "Industrial loft",
+        "label": "Concrete and steel",
         "category": "home",
         "description": "Concrete and dark steel",
         "wall": ((0.45, 0.46, 0.44), 0.88, 0.0),
@@ -62,7 +74,7 @@ PALETTES = {
         "metal": ((0.23, 0.24, 0.25), 0.27, 0.88),
     },
     "home_luxury": {
-        "label": "Contemporary luxury",
+        "label": "Stone and bronze",
         "category": "home",
         "description": "Stone, walnut and bronze",
         "wall": ((0.76, 0.72, 0.65), 0.52, 0.0),
@@ -206,7 +218,7 @@ def _bind(prim, material, modules):
 def _wood_floor_texture(stage, material, output_path, modules):
     """Use the installed SimReady walnut map with metre-based floor UVs."""
     _, Sdf, _, _, _, _, UsdShade = modules
-    root = Path(os.environ.get('BLUEPRINT_STUDIO_ASSET_ROOT', '/home/ovqa/Repos/OmniverseAssets'))
+    root = Path(os.environ.get('BLUEPRINT_STUDIO_ASSET_ROOT', DEFAULT_ASSET_ROOT)).expanduser()
     texture = root / 'SimReady_Furniture_Misc_01/Assets/simready_content/common_assets/props/desk_01/textures/Walnut_BaseColor.png'
     if not texture.is_file():
         return
@@ -339,7 +351,7 @@ def _derive_walls(plan):
 def _safe_asset_path(value: str, scene_path: Path) -> str:
     # Only the dedicated Omniverse asset library can be referenced. In
     # particular, never let arbitrary local paths leak into authored USD.
-    root = Path(os.environ.get("BLUEPRINT_STUDIO_ASSET_ROOT", "/home/ovqa/Repos/OmniverseAssets")).expanduser().resolve()
+    root = Path(os.environ.get("BLUEPRINT_STUDIO_ASSET_ROOT", DEFAULT_ASSET_ROOT)).expanduser().resolve()
     asset = Path(value).expanduser().absolute()
     if not asset.is_file() or not asset.is_relative_to(root) or not asset.resolve().is_relative_to(root):
         raise ValueError(f"SimReady asset must exist under {root}")
@@ -371,10 +383,11 @@ def _configure_asset_physics(stage, placement_prim, model, placement, furniture_
         for prim in Usd.PrimRange(model, Usd.TraverseInstanceProxies())
     )
     if not colliders:
+        # The child proxy inherits model transforms; its bounds must exclude them.
         bound = UsdGeom.BBoxCache(
             Usd.TimeCode.Default(),
             [UsdGeom.Tokens.default_, UsdGeom.Tokens.render, UsdGeom.Tokens.proxy],
-        ).ComputeLocalBound(model).ComputeAlignedBox()
+        ).ComputeUntransformedBound(model).ComputeAlignedBox()
         if bound.IsEmpty():
             raise ValueError("SimReady asset has no bounded geometry for a collision proxy")
         minimum, maximum = bound.GetMin(), bound.GetMax()
@@ -417,10 +430,218 @@ def _configure_asset_physics(stage, placement_prim, model, placement, furniture_
         rigid_body.CreateRigidBodyEnabledAttr(False)
 
 
+def _specified_home(stage, plan, materials, modules):
+    """Specified finish classes, with explicitly assumed fixture forms and sizes."""
+    from shapely.geometry import LineString, Polygon, box
+    from shapely.ops import unary_union
+
+    Gf, _, Usd, UsdGeom, _, UsdPhysics, _ = modules
+    source = {'file': 'Miami PWC House Documents.pdf', 'pdf_page': 28,
+              'printed_page': 23, 'annexure': 'F'}
+    decisions = [
+        {'id': 'specified_home_finishes', 'kind': 'source-specified', 'source': source,
+         'summary': 'Wood in master bedroom; vitrified tiles elsewhere; matte wet-area tiles, 7-foot ceramic bathroom dado, veneer/laminated doors, aluminium glazing, glass rails and granite/stainless kitchen.',
+         'parameters': {'master_room_id': 'bedroom_outer_south', 'bathroom_dado_height_m': 2.1336},
+         'status': 'source-specified'},
+        {'id': 'home_presentation_assumptions', 'kind': 'assumed',
+         'source': {'file': 'Layout.jpeg', 'role': 'Placement guide only; room dimensions remain the reviewed metric plan'},
+         'summary': 'Tile option, colours, grout, furniture and fixture dimensions/forms are assumed. Layout-guided placements clear doorway approaches and the shown open leaves; no manufacturer geometry is claimed.',
+         'parameters': {'tile_size_m': [.6, 1.2], 'grout_m': .003, 'door_clearance_m': .55,
+                        'bed_wardrobe_clearance_m': .60,
+                        'master_assignment': 'Master bedroom label in Layout.jpeg',
+                        'children_toilet_assignment': 'bathroom_outer_north inferred; confirm shower partition assignment'}, 'status': 'needs-review'},
+    ]
+    rooms = {room['id']: room for room in plan.get('rooms', [])}
+    door_shapes = [LineString([o['start'], o['end']]).buffer(.55, cap_style=2)
+                   for o in plan.get('openings', []) if o.get('start') and o.get('end')]
+    transforms = UsdGeom.XformCache()
+    for opening in plan.get('openings', []):
+        leaf = stage.GetPrimAtPath('/World/Building/Openings/'+safe_name(opening.get('id', ''))+'/Leaf')
+        if not leaf or not leaf.IsA(UsdGeom.Cube):
+            continue
+        transform = transforms.GetLocalToWorldTransform(leaf)
+        half = UsdGeom.Cube(leaf).GetSizeAttr().Get()/2
+        corners = [transform.Transform(Gf.Vec3d(x*half, y*half, 0))
+                   for x, y in [(-1, -1), (1, -1), (1, 1), (-1, 1)]]
+        door_shapes.append(Polygon([(point[0], point[1]) for point in corners]))
+    doors = unary_union(door_shapes)
+    opening_cuts = unary_union([LineString([o['start'], o['end']]).buffer(.1, cap_style=2)
+                                for o in plan.get('openings', []) if o.get('start') and o.get('end')])
+    occupied = {key: [] for key in rooms}
+
+    def fixture(room, name, kind, size, preference, parts, yaw=0):
+        polygon = Polygon(room['polygon'])
+        lowx, lowy, highx, highy = polygon.bounds
+        width, depth = size[:2] if yaw == 0 else (size[1], size[0])
+        wanted = (lowx+(highx-lowx)*preference[0], lowy+(highy-lowy)*preference[1])
+        if highx-lowx < width+.08 or highy-lowy < depth+.08:
+            candidates = []
+        else:
+            # ponytail: fixed placement grid; increase sampling if custom rooms need it.
+            xs = [max(lowx+width/2+.04, min(highx-width/2-.04, wanted[0]))]
+            ys = [max(lowy+depth/2+.04, min(highy-depth/2-.04, wanted[1]))]
+            xs += [lowx+width/2+.04+(highx-lowx-width-.08)*i/5 for i in range(6)]
+            ys += [lowy+depth/2+.04+(highy-lowy-depth-.08)*i/5 for i in range(6)]
+            candidates = sorted(((x, y) for x in xs for y in ys),
+                                key=lambda p: (p[0]-wanted[0])**2+(p[1]-wanted[1])**2)
+        for x, y in candidates:
+            footprint = box(x-width/2, y-depth/2, x+width/2, y+depth/2)
+            if (polygon.covers(footprint) and footprint.intersection(doors).area < 1e-9
+                    and all(footprint.intersection(other).area < 1e-9
+                            and (room.get('category') != 'bedroom' or {kind, other_kind} != {'bed', 'wardrobe'}
+                                 or footprint.distance(other) >= .60)
+                            for other_kind, other in occupied[room['id']])):
+                break
+        else:
+            decisions.append({'id': room['id']+'_'+name, 'kind': 'assumed', 'status': 'not-placed',
+                              'summary': 'Fixed-size '+kind+' omitted because room/door clearance is insufficient',
+                              'parameters': {'size_xyz_m': list(size)}})
+            return
+        occupied[room['id']].append((kind, footprint))
+        base = '/World/Fixtures/'+safe_name(room['id'])+'/'+name
+        prim = UsdGeom.Xform.Define(stage, base).GetPrim()
+        transform = UsdGeom.Xformable(prim)
+        transform.AddTranslateOp().Set(Gf.Vec3d(x, y, .014))
+        transform.AddRotateZOp().Set(yaw)
+        note = 'Assumed metric size and generic form; Layout.jpeg placement guide, adjusted for measured room and door clearance'
+        for key, value in {'assumedFixture': True, 'roomId': room['id'], 'fixtureType': kind,
+                           'provenance': note, 'sizeXYZM': Gf.Vec3d(*size)}.items():
+            prim.SetCustomDataByKey(key, value)
+        for part, center, dimensions, material, rounded in parts:
+            if rounded:
+                shape = UsdGeom.Sphere.Define(stage, base+'/'+part)
+                shape.CreateRadiusAttr(1)
+                xf = UsdGeom.Xformable(shape.GetPrim())
+                xf.AddTranslateOp().Set(Gf.Vec3d(*center))
+                xf.AddScaleOp().Set(Gf.Vec3f(*(v/2 for v in dimensions)))
+                _bind(shape.GetPrim(), materials[material], modules)
+            else:
+                _box(stage, base+'/'+part, center, dimensions, 0, materials[material], modules)
+        decisions.append({'id': room['id']+'_'+name, 'kind': 'assumed', 'status': 'needs-review',
+                          'summary': note, 'parameters': {'room_id': room['id'], 'fixture_type': kind,
+                          'size_xyz_m': list(size), 'position_m': [x, y, .014], 'yaw_deg': yaw}})
+
+    for room in rooms.values():
+        polygon = Polygon(room['polygon'])
+        path = '/World/Spaces/'+safe_name(room['id'])
+        space = stage.GetPrimAtPath(path)
+        wet = room.get('category') in {'bathroom', 'balcony'} or room['id'] == 'powder_room'
+        finish = 'wood' if room['id'] == 'bedroom_outer_south' else 'matte tile' if wet else 'vitrified tile'
+        space.SetCustomDataByKey('floorFinish', finish)
+        space.SetCustomDataByKey('finishSource', json.dumps(source))
+        if finish != 'wood':
+            lowx, lowy, highx, highy = polygon.bounds
+            tile_material = materials['matte'] if wet else materials['floor']
+            n = 0
+            for ix in range(math.ceil((highx-lowx)/.6)):
+                for iy in range(math.ceil((highy-lowy)/1.2)):
+                    tile = polygon.intersection(box(lowx+ix*.6+.0015, lowy+iy*1.2+.0015,
+                                                    lowx+(ix+1)*.6-.0015, lowy+(iy+1)*1.2-.0015))
+                    pieces = [tile] if tile.geom_type == 'Polygon' else getattr(tile, 'geoms', [])
+                    for piece in pieces:
+                        if piece.geom_type == 'Polygon' and piece.area > 1e-7:
+                            prim = _slab(stage, path+f'/Tiles/Tile_{n:03d}', list(piece.exterior.coords), tile_material,
+                                         modules, top=.012, depth=.003)
+                            prim.RemoveAPI(UsdPhysics.CollisionAPI)  # The continuous room slab is the collider.
+                            n += 1
+            space.SetCustomDataByKey('tileSizeM', Gf.Vec2d(.6, 1.2))
+        if room.get('category') == 'bathroom' or room['id'] == 'powder_room':
+            dado = UsdGeom.Xform.Define(stage, path+'/CeramicDado').GetPrim()
+            dado.SetCustomDataByKey('heightM', 2.1336)
+            dado.SetCustomDataByKey('source', json.dumps(source))
+            for i, (a, b) in enumerate(zip(room['polygon'], room['polygon'][1:]+room['polygon'][:1])):
+                length = segment_length(a, b)
+                if length < .02:
+                    continue
+                ux, uy = (b[0]-a[0])/length, (b[1]-a[1])/length
+                middle = ((a[0]+b[0])/2, (a[1]+b[1])/2)
+                inward = 1 if polygon.covers(box(middle[0]-uy*.012-.001, middle[1]+ux*.012-.001,
+                                                middle[0]-uy*.012+.001, middle[1]+ux*.012+.001)) else -1
+                a = [a[0]-uy*inward*.011, a[1]+ux*inward*.011]
+                b = [b[0]-uy*inward*.011, b[1]+ux*inward*.011]
+                pieces = LineString([a, b]).difference(opening_cuts)
+                segments = [pieces] if pieces.geom_type == 'LineString' else getattr(pieces, 'geoms', [])
+                for j, segment in enumerate(segments):
+                    if segment.length > .02:
+                        p, q = segment.coords[0], segment.coords[-1]
+                        _wall_piece(stage, path+'/CeramicDado/Edge_'+str(i), j, p, q, 0, segment.length,
+                                    .012, .012+2.1336, .016, materials['dado'], modules)
+
+    bed_parts = [('Frame', (0, 0, .26), (2.14, 1.72, .20), 'cabinet', False),
+                 ('Headboard', (-1.03, 0, .51), (.08, 1.72, 1.02), 'cabinet', False),
+                 ('Mattress', (.04, 0, .45), (1.98, 1.60, .22), 'linen', False),
+                 ('Blanket', (.40, 0, .578), (1.25, 1.62, .032), 'blanket', False)]
+    bed_parts += [('Pillow_'+str(i), (-.65, (i-.5)*.79, .64), (.52, .64, .17), 'linen', True) for i in range(2)]
+    bed_parts += [('Leg_'+str(i), (x, y, .08), (.08, .08, .16), 'cabinet', False)
+                  for i, (x, y) in enumerate([(-.92, -.72), (-.92, .72), (.92, -.72), (.92, .72)])]
+    wardrobe = [('Body', (0, 0, 1.05), (1.80, .55, 2.10), 'cabinet', False)]
+    wardrobe += [('Door_'+str(i), ((i-.5)*.9, -.275, 1.05), (.885, .025, 2.06), 'door', False) for i in range(2)]
+    wardrobe += [('Handle_'+str(i), ((i-.5)*.12, -.29, 1.10), (.016, .02, .20), 'metal', False) for i in range(2)]
+    for room in rooms.values():
+        if room.get('category') == 'bedroom':
+            yaw = 90 if room['id'] in {'bedroom_outer_north', 'bedroom_outer_south'} else 0
+            preference = (.63, .36) if yaw else (.38, .52) if room['id'] == 'bedroom_south' else (.38, .58)
+            fixture(room, 'Bed', 'bed', (2.14, 1.72, 1.02), preference, bed_parts, yaw)
+            fixture(room, 'Wardrobe', 'wardrobe', (1.8, .60, 2.10),
+                    (.09, .5) if yaw else (.34, .94) if room['id'] == 'bedroom_south' else (.5, .09), wardrobe, 90 if yaw else 0)
+        elif room['id'] == 'walk_in':
+            fixture(room, 'Wardrobe', 'wardrobe', (1.8, .60, 2.10), (.1, .5), wardrobe, 90)
+        if room.get('category') == 'bathroom' or room['id'] == 'powder_room':
+            fixture(room, 'WC', 'wc', (.55, .72, .85), (.83, .5), [
+                ('Cistern', (0, .25, .62), (.50, .16, .42), 'porcelain', False),
+                ('Pedestal', (0, -.035, .19), (.30, .42, .36), 'porcelain', True),
+                ('Bowl', (0, -.035, .37), (.49, .62, .25), 'porcelain', True),
+                ('Seat', (0, -.035, .49), (.48, .59, .045), 'porcelain', True),
+                ('BowlInset', (0, -.035, .508), (.34, .43, .017), 'matte', True)])
+            if room['id'] not in {'service_wc', 'powder_room'}:
+                shower = [('Tray', (0, 0, .035), (.82, .82, .07), 'porcelain', False),
+                          ('Drain', (0, 0, .074), (.09, .09, .007), 'metal', False),
+                          ('ShowerRail', (-.36, .36, 1.40), (.025, .025, 1.05), 'metal', False),
+                          ('ShowerHead', (-.24, .36, 1.95), (.25, .18, .028), 'metal', False)]
+                if room['id'] in {'bathroom_outer_north', 'bathroom_outer_south'}:
+                    shower.append(('GlassPartition', (.40, 0, .95), (.014, .80, 1.90), 'glass', False))
+                fixture(room, 'Shower', 'shower', (.82, .82, 1.97), (.2, .83), shower)
+            fixture(room, 'Washbasin', 'washbasin', (.52, .42, 1.20), (.2, .18), [
+                ('Cabinet', (0, 0, .40), (.5, .40, .78), 'cabinet', False),
+                ('Basin', (0, 0, .83), (.52, .42, .12), 'porcelain', True),
+                ('BasinInset', (0, -.01, .881), (.38, .29, .017), 'matte', True),
+                ('Tap', (.15, .14, .955), (.028, .028, .16), 'metal', False)])
+
+    if 'kitchen' in rooms:
+        room = rooms['kitchen']
+        cabinets = [('Counter', (0, 0, .875), (.64, 2.40, .05), 'granite', False)]
+        cabinets += [('Cabinet_'+str(i), (0, (i-1.5)*.6, .435), (.60, .585, .85), 'cabinet', False) for i in range(4)]
+        cabinets += [('Front_'+str(i), (.302, (i-1.5)*.6, .435), (.016, .565, .79), 'door', False) for i in range(4)]
+        cabinets += [('Handle_'+str(i), (.313, (i-1.5)*.6, .69), (.014, .22, .018), 'metal', False) for i in range(4)]
+        cook = cabinets+[
+            ('Hob', (0, -.25, .908), (.48, .58, .025), 'black', False),
+            ('Chimney', (0, -.25, 1.88), (.60, .66, .13), 'metal', False),
+            ('ChimneyDuct', (-.17, -.25, 2.12), (.20, .22, .38), 'metal', False)]
+        cook += [('Burner_'+str(i), (x, y-.25, .928), (.145, .145, .022), 'black', True)
+                 for i, (x, y) in enumerate([(-.12, -.15), (-.12, .15), (.12, -.15), (.12, .15)])]
+        fixture(room, 'CookingRun', 'kitchen_cabinetry', (.64, 2.40, 2.31), (.06, .67), cook)
+        sink = [(name, (-center[0], center[1], center[2]) if name.startswith(('Front_', 'Handle_')) else center,
+                 dimensions, material, rounded) for name, center, dimensions, material, rounded in cabinets]+[
+            ('Sink', (0, .45, .905), (.49, .59, .055), 'metal', False),
+            ('SinkInset', (0, .45, .936), (.37, .45, .018), 'black', False),
+            ('Tap', (.20, .45, 1.04), (.025, .025, .27), 'metal', False),
+            ('TopUnit', (.08, -.60, 1.98), (.42, 1.10, .68), 'cabinet', False)]
+        fixture(room, 'SinkRun', 'kitchen_cabinetry', (.64, 2.40, 2.32), (.94, .56), sink)
+        fixture(room, 'Fridge', 'refrigerator', (.72, .70, 1.84), (.08, .09), [
+            ('Body', (0, 0, .92), (.66, .70, 1.84), 'porcelain', False),
+            ('FreezerDoor', (.338, 0, 1.53), (.016, .69, .57), 'metal', False),
+            ('FridgeDoor', (.338, 0, .61), (.016, .69, 1.20), 'metal', False),
+            ('Handle', (.351, -.26, .82), (.018, .024, .42), 'metal', False)])
+    stage.GetDefaultPrim().SetCustomDataByKey('presentationDecisions', json.dumps(decisions, ensure_ascii=False))
+    return decisions
+
+
 def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") -> dict:
     """Build one style; return paths and measured/declared area notes."""
     if style not in PALETTES:
         raise ValueError(f"Unknown style: {style}")
+    if style == 'home_specification' and plan.get('source', {}).get('primary_crop') != 'agreement_unit_crop.jpg':
+        raise ValueError('B1-1502 specified finishes require the demarcated agreement reference')
     errors = validate_plan(plan)
     if errors:
         raise ValueError("; ".join(errors))
@@ -442,6 +663,7 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
     stage.GetRootLayer().comment = "Generated from a reviewed plan; see prim metadata for source and uncertainty. Z-up, metres."
     world.GetPrim().SetCustomDataByKey("planName", str(plan.get("name", "Untitled plan")))
     world.GetPrim().SetCustomDataByKey("source", json.dumps(plan.get("source", {}), ensure_ascii=False))
+    world.GetPrim().SetCustomDataByKey('referenceManifest', json.dumps(plan.get('reference_manifest', {}), ensure_ascii=False))
     world.GetPrim().SetCustomDataByKey("heightStatus", str(plan.get("height_status", "user provided or assumed")))
     world.GetPrim().SetCustomDataByKey("style", style)
     world.GetPrim().SetCustomDataByKey('traceCalibration', json.dumps(plan.get('calibration', {})))
@@ -450,11 +672,26 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
         world.GetPrim().SetCustomDataByKey("areaScheduleM2", json.dumps(plan["area_schedule_m2"]))
     world.GetPrim().SetCustomDataByKey('dimensionModel', plan.get('dimension_model', 'raster'))
     world.GetPrim().SetCustomDataByKey('dimensionNote', plan.get('dimension_note', 'Raster trace in meters; dimensions not constrained'))
+    world.GetPrim().SetCustomDataByKey('reconstructionDecisions', json.dumps(plan.get('reconstruction_decisions', []), ensure_ascii=False))
+    world.GetPrim().SetCustomDataByKey('scaleAudit', json.dumps(measured_scale_audit(plan), ensure_ascii=False))
+    world.GetPrim().SetCustomDataByKey('openingTrace', json.dumps(plan.get('openings', []), ensure_ascii=False))
+    world.GetPrim().SetCustomDataByKey('presentationNote', 'Finish colours, furniture layout, door assembly and 75-degree open swing are illustrative assumptions; printed room dimensions remain source constraints')
     style_specs = PALETTES[style]
+    home_details = style == 'home_specification' or (plan.get('source', {}).get('primary_crop') == 'agreement_unit_crop.jpg' and style_specs['category'] == 'home')
     materials = {key: _make_material(stage, f"/World/Looks/{safe_name(key)}", spec, modules) for key, spec in style_specs.items() if isinstance(spec, tuple)}
-    if style in {'contemporary', 'classic', 'warm_office', 'executive_office'}:
+    if not home_details and style in {'contemporary', 'classic', 'home_luxury', 'warm_office', 'executive_office'}:
         _wood_floor_texture(stage, materials['floor'], output_path, modules)
     materials['tile'] = _make_material(stage, '/World/Looks/tile', ((.65, .63, .58), .45, 0), modules)
+    if home_details:
+        for key, spec in {
+            'specified_wood': ((.40, .26, .15), .52, 0), 'matte': ((.58, .56, .51), .88, 0),
+            'dado': ((.81, .80, .75), .25, 0), 'granite': ((.16, .17, .17), .24, 0),
+            'porcelain': ((.94, .94, .92), .19, 0), 'cabinet': ((.48, .36, .25), .58, 0),
+            'linen': ((.94, .91, .84), .92, 0), 'blanket': ((.22, .36, .38), .95, 0),
+            'black': ((.035, .038, .04), .31, 0), 'laminated_door': ((.62, .54, .43), .51, 0),
+        }.items():
+            materials[key] = _make_material(stage, '/World/Looks/'+key, spec, modules)
+        _wood_floor_texture(stage, materials['specified_wood'], output_path, modules)
     height = float(plan.get("room_height_m") or 2.9)
     physics_scene = UsdPhysics.Scene.Define(stage, "/World/PhysicsScene")
     physics_scene.CreateGravityDirectionAttr(Gf.Vec3f(0, 0, -1))
@@ -475,9 +712,12 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
         room_prim.SetCustomDataByKey("category", str(room.get("category", "room")))
         room_prim.SetCustomDataByKey('dimensionMode', room.get('dimension_mode', 'raster'))
         room_prim.SetCustomDataByKey('spanAxis', int(room.get('span_axis', -1)))
-        if room.get('dimension_mode'):
+        if room.get('dimension_mode') or home_details:
             category = room.get('category')
-            finish = materials['balcony'] if category == 'balcony' else materials['tile'] if category in {'bathroom','kitchen','service'} else materials['floor']
+            if home_details:
+                finish = materials['specified_wood'] if room.get('id') == 'bedroom_outer_south' else materials['matte'] if category in {'bathroom', 'balcony'} or room.get('id') == 'powder_room' else materials['floor']
+            else:
+                finish = materials['balcony'] if category == 'balcony' else materials['tile'] if category in {'bathroom','kitchen','service'} else materials['floor']
             _slab(stage, str(room_prim.GetPath()) + '/Floor', room['polygon'], finish, modules, top=.008, depth=.008)
 
         room_prim.SetCustomDataByKey("printedDimensionsM", json.dumps(room.get("dimensions_m", [])))
@@ -534,6 +774,8 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
                 offset = length * post / max(1, math.ceil(length / 1.2))
                 _wall_piece(stage, base, post+2, a, b, max(0, offset-.025), min(length, offset+.025), 0, wall_height, .05, materials['metal'], modules)
             wall_prim.SetCustomDataByKey('assemblyNote', 'Illustrative glass railing; specification unmeasured')
+            if home_details:
+                wall_prim.SetCustomDataByKey('assemblyNote', 'Glass railing specified in Annexure F; height, profiles and post spacing assumed')
             continue
         openings = _openings_for_wall(wall, i, plan.get("openings", []))
         intervals = []
@@ -581,21 +823,72 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
                 offset = length * post / divisions
                 _wall_piece(stage, base, piece+3+post, a, b, max(0, offset-.025), min(length, offset+.025), 0, wall_height, .055, materials['metal'], modules)
 
-    # The B1 trace already splits walls around doors. Complete these gaps with
-    # lintels and slim jambs, without inventing a closed leaf or blocking travel.
+    # Dimension-driven walls are already cut around these openings.
     for i, opening in enumerate(plan.get('openings', [])):
         if not opening.get('free_opening') or not opening.get('start') or not opening.get('end'):
             continue
         a, b = opening['start'], opening['end']
         length = segment_length(a, b)
+        if length < .1:
+            continue
         base = f'/World/Building/Openings/{safe_name(opening.get("id", str(i)))}'
-        UsdGeom.Xform.Define(stage, base).GetPrim().SetCustomDataByKey('assemblyNote', 'Illustrative jambs and lintel; opening positions traced, assembly dimensions assumed')
+        opening_prim = UsdGeom.Xform.Define(stage, base).GetPrim()
         head = min(height-.1, float(opening.get('height_m', 2.2)))
+        kind = str(opening.get('type', 'opening'))
+        opening_room = next((r for r in rooms if r.get('id') == opening.get('space_id')), {})
+        door_material = materials['laminated_door'] if home_details and (opening_room.get('category') == 'bathroom' or opening_room.get('id') == 'powder_room') else materials['door']
+        for key, value in {'widthM': length, 'heightM': height if opening.get('no_header') else head,
+                           'type': kind, 'label': str(opening.get('label', opening.get('id', i))),
+                           'provenance': json.dumps(opening.get('provenance', {}), ensure_ascii=False),
+                           'connects': json.dumps(opening.get('connects', []))}.items():
+            opening_prim.SetCustomDataByKey(key, value)
+        opening_prim.SetCustomDataByKey('assemblyNote', 'Illustrative jambs, frame and lintel; assembly dimensions and finishes assumed')
+        if home_details and kind == 'door':
+            laminated = opening_room.get('category') == 'bathroom' or opening_room.get('id') == 'powder_room'
+            specified = laminated or opening_room.get('category') == 'bedroom' or opening.get('id') == 'main_entry'
+            opening_prim.SetCustomDataByKey('leafFinish', 'laminate' if laminated else 'veneer')
+            opening_prim.SetCustomDataByKey('leafFinishBasis', 'Annexure F, Miami PWC House Documents.pdf page 28' if specified else 'Veneer appearance assumed for this unlisted door')
+        if opening.get('no_header'):
+            opening_prim.SetCustomDataByKey('assemblyNote', 'Full-height circulation opening; no inferred frame, leaf or lintel')
+            continue
         _wall_piece(stage, base, 0, a, b, 0, length, head, height, .15, materials['wall'], modules)
-        if opening.get('type') != 'opening':
-            _wall_piece(stage, base, 1, a, b, 0, .035, 0, head, .16, materials['door'], modules)
-            _wall_piece(stage, base, 2, a, b, length-.035, length, 0, head, .16, materials['door'], modules)
-            _wall_piece(stage, base, 3, a, b, .035, length-.035, head-.035, head, .16, materials['door'], modules)
+        if kind != 'opening':
+            frame_material = materials['metal'] if home_details and kind == 'sliding_door' else materials['door']
+            if home_details and kind == 'sliding_door':
+                opening_prim.SetCustomDataByKey('frameFinish', 'aluminium')
+                opening_prim.SetCustomDataByKey('frameFinishBasis', 'Annexure F, Miami PWC House Documents.pdf page 28; exact colour assumed')
+            _wall_piece(stage, base, 1, a, b, 0, .035, 0, head, .16, frame_material, modules)
+            _wall_piece(stage, base, 2, a, b, length-.035, length, 0, head, .16, frame_material, modules)
+            _wall_piece(stage, base, 3, a, b, .035, length-.035, head-.035, head, .16, frame_material, modules)
+        ux, uy = (b[0]-a[0])/length, (b[1]-a[1])/length
+        yaw = math.degrees(math.atan2(uy, ux))
+        if kind == 'door':
+            room = next((r for r in rooms if r.get('id') == opening.get('space_id')), None)
+            sign = 1
+            if room:
+                cx = sum(p[0] for p in room['polygon']) / len(room['polygon'])
+                cy = sum(p[1] for p in room['polygon']) / len(room['polygon'])
+                sign = 1 if -uy*(cx-a[0])+ux*(cy-a[1]) >= 0 else -1
+            angle = math.radians(yaw + sign*75)
+            dx, dy = math.cos(angle), math.sin(angle)
+            hinge = [a[0]+ux*.04, a[1]+uy*.04]
+            width = length-.09
+            _box(stage, base+'/Leaf', (hinge[0]+dx*width/2, hinge[1]+dy*width/2, head/2),
+                 (width, .035, head-.07), yaw+sign*75, door_material, modules, collision=False)
+            _box(stage, base+'/Handle', (hinge[0]+dx*(width-.1)-dy*.027, hinge[1]+dy*(width-.1)+dx*.027, 1.02),
+                 (.1, .025, .025), yaw+sign*75, materials['metal'], modules, collision=False)
+            opening_prim.SetCustomDataByKey('assemblyNote', 'Illustrative timber leaf, slim frame and handle; hinge at opening start, 75-degree swing toward room assumed; leaf is not a physics obstacle')
+            opening_prim.SetCustomDataByKey('swingDeg', float(sign*75))
+        elif kind == 'sliding_door':
+            for panel in range(2):
+                along, offset = length*.75, (panel-.5)*.04
+                _box(stage, f'{base}/Glass_{panel}', (a[0]+ux*along-uy*offset, a[1]+uy*along+ux*offset, head/2),
+                     (length/2-.04, .014, head-.07), yaw, materials['glass'], modules, collision=False)
+                _box(stage, f'{base}/Stile_{panel}', (a[0]+ux*(length/2+.02)-uy*offset, a[1]+uy*(length/2+.02)+ux*offset, head/2),
+                     (.03, .028, head-.07), yaw, materials['metal'], modules, collision=False)
+            opening_prim.SetCustomDataByKey('assemblyNote', 'Illustrative two-panel glass slider shown half-open; panel arrangement, frame and finish assumed; panels are not physics obstacles')
+
+    presentation_decisions = _specified_home(stage, plan, materials, modules) if home_details else []
 
     physics_specs = {
         "Masonry": (0.72, 0.56, 0.08),
@@ -627,21 +920,72 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
         modules[-1].MaterialBindingAPI.Apply(prim).Bind(material, modules[-1].Tokens.weakerThanDescendants, "physics")
     world.GetPrim().SetCustomDataByKey("physicsMaterialNote", "Indicative dry-surface friction/restitution; site-specific engineering values need confirmation")
 
+    asset_imports = []
     for i, placement in enumerate(plan.get("asset_placements", [])):
         path = _safe_asset_path(str(placement["asset_path"]), output_path)
+        source_stage = Usd.Stage.Open(str(output_path.parent / path))
+        if not source_stage or not source_stage.GetDefaultPrim():
+            raise ValueError('SimReady asset must have a valid USD stage and default prim')
+        source_units = UsdGeom.GetStageMetersPerUnit(source_stage)
+        source_axis = str(UsdGeom.GetStageUpAxis(source_stage))
+        if not math.isfinite(source_units) or source_units <= 0:
+            raise ValueError('SimReady asset metersPerUnit must be positive and finite')
+        if source_axis not in {'Y', 'Z'}:
+            raise ValueError('SimReady asset upAxis must be Y or Z')
+        unit_scale = source_units / UsdGeom.GetStageMetersPerUnit(stage)
         prim = UsdGeom.Xform.Define(stage, f"/World/Assets/{safe_name(placement.get('id', f'asset_{i}'))}").GetPrim()
-        position = placement.get("position", [0, 0, 0])
-        UsdGeom.Xformable(prim).AddTranslateOp().Set(Gf.Vec3d(*map(float, position)))
-        UsdGeom.Xformable(prim).AddRotateZOp().Set(float(placement.get("rotation_deg", 0)))
+        position = list(map(float, placement.get("position", [0, 0, 0])))
+        rotation = float(placement.get("rotation_deg", 0))
+        if len(position) != 3 or not all(math.isfinite(v) for v in [*position, rotation]):
+            raise ValueError('SimReady position and rotation must be finite metre coordinates')
+        xform = UsdGeom.Xformable(prim)
+        xform.AddTranslateOp().Set(Gf.Vec3d(*position))
+        xform.AddRotateZOp().Set(rotation)
         # Reference below a placement wrapper: many SimReady roots already
         # author translate/rotate/scale ops and cannot accept duplicate ops.
-        model = UsdGeom.Xform.Define(stage, str(prim.GetPath()) + "/Model").GetPrim()
+        model = stage.DefinePrim(str(prim.GetPath()) + "/Model")
         model.GetReferences().AddReference(path)
         prim.SetCustomDataByKey("simReady", True)
         _configure_asset_physics(stage, prim, model, placement,
                                  physics_materials["Furniture"], modules)
+        # Physics variants can author a different root transform stack.
+        source_reset = UsdGeom.Xformable(model).GetResetXformStack()
+        if source_reset:
+            # A standalone root reset would otherwise ignore placement and
+            # unit conversion. Its authored translate/rotate/scale stay intact.
+            UsdGeom.Xformable(model).SetResetXformStack(False)
+        # USD references do not convert stage units or up axes. Keep the
+        # vendor root operations intact and normalize on the placement wrapper.
+        bound = UsdGeom.BBoxCache(Usd.TimeCode.Default(),
+            [UsdGeom.Tokens.default_, UsdGeom.Tokens.render, UsdGeom.Tokens.proxy]).ComputeRelativeBound(model, prim)
+        conversion = Gf.Matrix4d().SetScale(unit_scale)
+        if source_axis == 'Y':
+            conversion *= Gf.Matrix4d().SetRotate(Gf.Rotation(Gf.Vec3d(1, 0, 0), 90))
+        bound.Transform(conversion)
+        box = bound.ComputeAlignedBox()
+        if box.IsEmpty() or not all(math.isfinite(float(v)) for v in [*box.GetMin(), *box.GetMax()]):
+            raise ValueError('SimReady asset must have finite bounded geometry')
+        anchor = -float(box.GetMin()[2])
+        xform.AddTranslateOp(opSuffix='floorAnchor').Set(Gf.Vec3d(0, 0, anchor))
+        if source_axis == 'Y':
+            xform.AddRotateXOp().Set(90)
+        xform.AddScaleOp(UsdGeom.XformOp.PrecisionDouble).Set(Gf.Vec3d(unit_scale))
+        floor_anchor = 'Asset geometry bottom anchored to placement Z; source pivot offset adjusted without resizing furniture'
+        for key, value in {'sourceUnits': source_units, 'sourceUpAxis': source_axis,
+                           'sourceRootReset': source_reset, 'unitScale': unit_scale, 'floorAnchor': floor_anchor,
+                           'floorAnchorOffsetM': anchor}.items():
+            prim.SetCustomDataByKey(key, value)
+        asset_imports.append({'id': str(placement.get('id', f'asset_{i}')),
+            'name': str(placement.get('name', source_stage.GetDefaultPrim().GetName())),
+            'source_units_m': source_units, 'source_up_axis': source_axis,
+            'source_root_reset': source_reset,
+            'unit_scale': unit_scale, 'position_m': position,
+            'size_xyz_m': [float(v) for v in box.GetSize()], 'bottom_m': position[2],
+            'floor_anchor': floor_anchor, 'floor_anchor_offset_m': anchor,
+            'note': 'Source units and up-axis converted to building metres/Z-up; source transforms and furniture size retained; floor anchoring is an explicit placement assumption'})
+    world.GetPrim().SetCustomDataByKey('assetImports', json.dumps(asset_imports, ensure_ascii=False))
 
-    warm_styles = {"contemporary", "classic", "home_luxury", "warm_office", "executive_office", "luxury_showroom"}
+    warm_styles = {"home_specification", "contemporary", "classic", "home_luxury", "warm_office", "executive_office", "luxury_showroom"}
     cool_styles = {"factory", "hightech_factory", "tech_showroom"}
     if style in warm_styles:
         sky_intensity, sky_color, sun_intensity, sun_color = 360.0, (1.0, 0.92, 0.82), 2200.0, (1.0, 0.88, 0.75)
@@ -673,6 +1017,8 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
         "height_m": height,
         "height_status": plan.get("height_status", "assumed"),
         "source": plan.get("source", {}),
+        "asset_imports": asset_imports,
+        "presentation_decisions": presentation_decisions,
     }
 
 
@@ -683,7 +1029,9 @@ def build_style_variants(plan: dict, output_dir: str | Path) -> dict:
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     category = plan.get("structure_type", "home")
-    selected_styles = [name for name, spec in PALETTES.items() if category == "other" or spec["category"] == category]
+    selected_styles = [name for name, spec in PALETTES.items()
+                       if (category == "other" or spec["category"] == category)
+                       and (name != 'home_specification' or plan.get('source', {}).get('primary_crop') == 'agreement_unit_crop.jpg')]
     if not selected_styles:
         raise ValueError(f"No styles available for {category}")
     reports = {style: build_usd(plan, output_dir / f"{style}.usda", style) for style in selected_styles}

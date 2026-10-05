@@ -44,6 +44,9 @@ its affiliates is strictly prohibited.
             #plan-map text { fill:#253223; font-size:.34px; pointer-events:none; text-anchor:middle; dominant-baseline:middle; }
             #room-name { margin:16px 0 5px; font-weight:600; }
             #room-dimensions, .note { color:#aebbb2; font-size:12px; line-height:1.55; }
+            aside details { margin:12px 0; font-size:12px; line-height:1.5; }
+            aside summary { cursor:pointer; color:#d6e8b0; }
+            aside ul { padding-left:18px; } aside li { margin:8px 0; }
             #room-select { width:100%; margin:12px 0 8px; }
             .room-actions { display:flex; flex-wrap:wrap; gap:6px; }
             .stream-content { position:relative; min-width:0; min-height:0; display:flex; justify-content:center; align-items:center; overflow:hidden; background:#d2d1cb; }
@@ -84,14 +87,17 @@ its affiliates is strictly prohibited.
                     <label for="room-select" class="note">Choose a room to explore</label>
                     <select id="room-select" class="control"><option value="">Whole home</option></select>
                     <div class="room-actions"><button class="control" id="room-button" disabled>View room</button><button class="control" id="interior-button" disabled>Eye level</button></div>
-                    <div id="room-name">Whole home</div><div id="room-dimensions"></div>
+                    <div id="room-name">Whole home</div><div id="room-dimensions"></div><div id="room-access" class="note"></div>
+                    <p class="note" id="scale-summary"></p>
+                    <details id="reconstruction-details"><summary>Source and reconstruction assumptions</summary><ul id="reconstruction-list"></ul></details>
+                    <details id="asset-scale-details" hidden><summary>Furniture dimensions in metres</summary><ul id="asset-scale-list"></ul></details>
                     <p class="note" id="geometry-note"></p>
-                    <p class="note">Furniture is an illustrative layout, not part of the approved drawing.</p>
+                    <p class="note">Furniture models and unprinted placement details are illustrative; their assumptions remain available for review.</p>
                 </aside>
                 <div class="stream-content">
                     <video id="remote-video" autoplay muted playsinline tabindex="0" aria-label="Interactive 3D view"></video>
                     <audio id="remote-audio" autoplay muted></audio>
-                    <svg id="source-compare" hidden aria-label="Source blueprint with reconstructed walls highlighted"></svg>
+                    <svg id="source-compare" hidden aria-label="Source blueprint with traced room boundaries highlighted"></svg>
                     <div id="loading-info">Opening your 3D view…</div>
                 </div>
             </div>
@@ -291,6 +297,9 @@ its affiliates is strictly prohibited.
                 remoteVideo.addEventListener('mouseenter', () => {
                     if (connected) remoteVideo.focus();
                 });
+                remoteVideo.addEventListener('pointerdown', () => {
+                    if (connected) remoteVideo.focus({preventScroll: true});
+                }, {capture: true});
             }
 
             let selectedRoom = null;
@@ -330,6 +339,12 @@ its affiliates is strictly prohibited.
                 const dims = measured || selectedRoom?.dimensions;
                 const label = measured ? (selectedRoom.dimension_mode === 'average_depth' ? ' m · modeled span / average depth' : ' m · modeled clear dimensions') : ' m · printed dimensions';
                 document.getElementById('room-dimensions').textContent = dims?.length ? dims.map(x => Number(x).toFixed(2)).join(' × ') + label : '';
+                const access = (scene.openings || []).filter(opening => selectedRoom && opening.connects?.includes(id));
+                document.getElementById('room-access').textContent = access.map(opening => {
+                    const other = opening.connects.find(name => name !== id);
+                    const name = scene.rooms.find(room => room.id === other)?.name || (other === 'north_circulation' ? 'shared recess' : other);
+                    return `${opening.type === 'opening' ? 'Open access' : 'Door'} to ${name} · ${Number(opening.width_m).toFixed(2)} m (${opening.provenance?.width || 'width needs review'})`;
+                }).join('; ');
                 document.querySelectorAll('#plan-map polygon').forEach(p => p.classList.toggle('selected', p.dataset.room === id));
             }
             let scene = {rooms:[]};
@@ -338,11 +353,38 @@ its affiliates is strictly prohibited.
                 document.getElementById('scene-name').textContent = data.name || 'Blueprint Studio';
                 document.getElementById('scene-summary').textContent = `${data.width} × ${data.height} · ${data.asset_count || 0} furnishings · 1 unit = 1 m · Live RTX`;
                 document.getElementById('geometry-note').textContent = data.geometry_note;
+                const audit = data.scale_audit || {};
+                const spans = audit.footprint_span_m;
+                document.getElementById('scale-summary').textContent = spans?.length ? `Footprint ${spans.map(n => Number(n).toFixed(2)).join(' × ')} m. Room labels show clear floor dimensions. Wall height and doorway assemblies are assumed.` : 'Room and furniture measurements share metre units.';
+                const review = document.getElementById('reconstruction-list');
+                const reference = data.reference_manifest?.primary_layout;
+                if (reference) {
+                    const item = document.createElement('li');
+                    item.textContent = `Layout: ${reference.file}, page ${reference.pdf_page}, Annexure ${reference.annexure}. ${(data.reference_manifest.sources || []).length} reference files reviewed; conflicting revisions remain recorded.`;
+                    review.append(item);
+                }
+                [...(data.reconstruction_decisions || []), ...(data.presentation_decisions || [])].forEach(decision => {
+                    const item = document.createElement('li');
+                    item.textContent = `${decision.id}: ${decision.summary} ${decision.basis || ''}`;
+                    review.append(item);
+                });
+                (data.openings || []).forEach(opening => {
+                    const item = document.createElement('li');
+                    const evidence = opening.provenance || {};
+                    item.textContent = `${opening.id}: ${evidence.topology || 'needs review'}; ${Number(opening.width_m).toFixed(2)} m wide (${evidence.width || 'unconfirmed'}). ${evidence.basis || ''}`;
+                    review.append(item);
+                });
+                (data.assets || []).forEach(asset => {
+                    const item = document.createElement('li');
+                    item.textContent = `${asset.name || asset.id}: ${(asset.size_xyz_m || []).map(n => Number(n).toFixed(2)).join(' × ')} m; source unit ${asset.source_units_m} m, converted without fitting to the room. Bottom anchored at placement height.`;
+                    document.getElementById('asset-scale-list').append(item);
+                });
+                document.getElementById('asset-scale-details').hidden = !(data.assets || []).length;
                 const svg = document.getElementById('plan-map');
                 const points = data.rooms.flatMap(r => r.polygon);
                 if (points.length) {
                     const xs = points.map(p => p[0]), ys = points.map(p => p[1]);
-                    svg.setAttribute('viewBox', `${Math.min(...xs)-.5} ${-Math.max(...ys)-.5} ${Math.max(...xs)-Math.min(...xs)+1} ${Math.max(...ys)-Math.min(...ys)+1}`);
+                    svg.setAttribute('viewBox', `${Math.min(...xs)-.5} ${-Math.max(...ys)-.5} ${Math.max(...xs)-Math.min(...xs)+1} ${Math.max(...ys)-Math.min(...ys)+2}`);
                 }
                 data.rooms.forEach((room, index) => {
                     const option = document.createElement('option'); option.value=room.id; option.textContent=room.name; roomSelect.append(option);
@@ -354,6 +396,17 @@ its affiliates is strictly prohibited.
                     label.setAttribute('x',(room.min[0]+room.max[0])/2);label.setAttribute('y',-(room.min[1]+room.max[1])/2);label.textContent=String(index+1);svg.append(label);
                     option.textContent = `${index+1}. ${room.name}`;
                 });
+                if (points.length) {
+                    const x = Math.min(...points.map(p => p[0]));
+                    const y = -Math.min(...points.map(p => p[1])) + .7;
+                    const length = Math.min(5, Math.max(...points.map(p => p[0])) - x);
+                    const ruler = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    ruler.id = 'metric-ruler';
+                    for (const [key, value] of Object.entries({x1:x, x2:x+length, y1:y, y2:y, stroke:'#253223', 'stroke-width':.08})) ruler.setAttribute(key, value);
+                    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+                    label.setAttribute('x',x+length/2);label.setAttribute('y',y+.35);label.textContent=`${length.toFixed(1)} m`;
+                    svg.append(ruler, label);
+                }
                 const cal = data.calibration || {};
                 const scale = cal.pixels_per_metre || cal.pixels_per_meter;
                 const origin = cal.origin_in_crop_px || cal.pixel_origin;
@@ -385,7 +438,7 @@ its affiliates is strictly prohibited.
             document.getElementById('source-button').onclick = (event) => {
                 const drawing = document.getElementById('source-compare'); const hidden = drawing.toggleAttribute('hidden');
                 event.currentTarget.setAttribute('aria-pressed',String(!hidden));
-                document.getElementById('view-help').textContent = hidden ? 'Drag to rotate · Scroll to zoom' : 'Orange: source raster trace. The corrected model uses printed meter dimensions · Choose Top view to compare';
+                document.getElementById('view-help').textContent = hidden ? 'Drag to rotate · Scroll to zoom' : 'Orange: approximate source boundaries. The model uses printed metric dimensions; the cropped outer arc remains inferred · Choose Top view to compare';
             };
             document.getElementById('reset-button').onclick = () => {chooseRoom('');camera({view:'overview'});};
             document.getElementById('room-button').onclick = () => camera({view:'room',room:selectedRoom.id});

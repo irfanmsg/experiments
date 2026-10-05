@@ -10,4 +10,17 @@
 .placement-controls label{display:inline-flex;align-items:center;gap:3px;cursor:pointer}
 .placement-controls input[type=checkbox]{accent-color:#267ca8}
 .placement-controls input[type=number]{width:42px;min-width:42px;padding:2px 3px;font-size:10px;border:1px solid #dce5e9;border-radius:5px}
-.asset-list button small{font-size:9px;color:#84979b;white-space:nowrap}
+.asset-list button small{font-size:9px;color:#617b80;flex:0 1 120px;text-align:right;line-height:1.4}
+.reconstruction-review{margin-top:15px;border-top:1px solid #e2e9ec;padding-top:13px;font-size:11px;color:#536579}
+.reconstruction-review summary{cursor:pointer;font-size:12px;font-weight:750;color:#287b6f}
+.reconstruction-review h3{margin:16px 0 7px;font-size:12px;color:#324757}
+.reconstruction-review p{color:#62778a;overflow-wrap:anywhere}
+.review-list{margin:0 0 13px;padding:0 12px 0 25px;max-height:320px;overflow:auto}
+.review-list li{padding:10px 0;border-bottom:1px solid #e8eef0}
+.review-list code{display:block;font-size:10px;color:#6d7e8b;overflow-wrap:anywhere;margin-top:3px}
+.review-list .subtle-button{padding:7px 0 0;font-size:11px}
+.review-table{max-height:230px;overflow:auto;margin-top:10px;border:1px solid #e2e9ec;border-radius:8px}
+.review-table table{width:100%;border-collapse:collapse;font-size:10px;text-align:left}
+.review-table th,.review-table td{padding:7px 10px;border-bottom:1px solid #e8eef0}
+.review-table thead{background:#eff6f3;position:sticky;top:0}
+.review-table td{white-space:nowrap}

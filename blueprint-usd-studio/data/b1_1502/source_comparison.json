@@ -1,20 +1,423 @@
 {
-  "primary_geometry_source": "B1-Building-3.pdf, page 1 (approved sheet 63/69, 22 April 2024)",
-  "secondary_source": "Sales Presenter Mergred Web.pdf",
-  "secondary_page_review": {
-    "32": "Detailed B Building 4.5 BHK; flat types 02/05. Room labels use feet and inches.",
-    "33": "B Building typical floor. Use for unit-02 layout context on floor 15.",
-    "34": "First-floor plan; not the floor-15 layout.",
-    "35": "Refuge floors 8, 13, 18; not floor 15."
+  "schema_version": 2,
+  "primary_geometry_source": "Miami PWC House Documents.pdf, PDF page 35, Annexure G demarcated B1-1502 metric plan",
+  "approved_comparison_source": "B1-Building-3.pdf, page 1, approved sheet 63/69, drawing 22 April 2024, approval 1 July 2024",
+  "secondary_source": "Layout.jpeg and Sales Presenter Mergred Web.pdf, pages32/33: furniture and fixture guidance only",
+  "reference_manifest": "reference_manifest.json",
+  "measurement_sources": {
+    "agreement": {
+      "file": "Miami PWC House Documents.pdf",
+      "pdf_page": 35,
+      "annexure": "G",
+      "units": "m"
+    },
+    "approved": {
+      "file": "B1-Building-3.pdf",
+      "pdf_page": 1,
+      "sheet": "63/69",
+      "units": "m"
+    },
+    "layout": {
+      "file": "Layout.jpeg",
+      "units": "feet and inches"
+    },
+    "brochure": {
+      "file": "Sales Presenter Mergred Web.pdf",
+      "pdf_page": 32,
+      "units": "feet and inches"
+    }
   },
-  "conversion": "meters = feet * 0.3048 + inches * 0.0254",
+  "secondary_page_review": {
+    "32": "Detailed B Building4.5 BHK; flat types 02/05; furniture guidance and separate feet/inches cross-check",
+    "33": "B Building typical floor; unit 02 context and furniture guidance",
+    "34": "First floor; excluded from floor 15 geometry",
+    "35": "Refuge floors 8,13,18; excluded from floor 15 geometry"
+  },
+  "conversion": "meters = feet *0.3048 + inches *0.0254; null marks an unreadable component",
   "measurements": [
-    {"room_id":"kitchen", "brochure_feet_inches":[[9,0],[13,5]], "brochure_m":[2.7432,4.0894], "approved_m":[2.75,4.12]},
-    {"room_id":"bedroom_outer_north", "brochure_feet_inches":[[13,0],[11,0]], "brochure_m":[3.9624,3.3528], "approved_m":[3.96,3.4]},
-    {"room_id":"bedroom_north", "brochure_feet_inches":[[10,0],[13,3]], "brochure_m":[3.048,4.0386], "approved_m":[3.05,4.03]},
-    {"room_id":"wfh", "brochure_feet_inches":[[10,0],[11,9]], "brochure_m":[3.048,3.5814], "approved_m":[3.05,3.58]},
-    {"room_id":"bedroom_south", "brochure_feet_inches":[[11,9],[14,11]], "brochure_m":[3.5814,4.5466], "approved_m":[3.58,4.55]}
+    {
+      "room_id": "service_wc",
+      "agreement_m": [2.14, 1.22],
+      "agreement_status": "printed",
+      "approved_m": [2.14, 1.22],
+      "layout_feet_inches": [
+        [7, 0],
+        [4, 0]
+      ],
+      "layout_m": [2.1336, 1.2192]
+    },
+    {
+      "room_id": "service_room",
+      "agreement_m": [2.14, 2.51],
+      "agreement_status": "printed",
+      "approved_m": [2.14, 2.51],
+      "layout_feet_inches": [
+        [7, 0],
+        [8, 3]
+      ],
+      "layout_m": [2.1336, 2.5146]
+    },
+    {
+      "room_id": "dry_balcony",
+      "agreement_m": [1.93, 1.7],
+      "agreement_status": "printed",
+      "approved_m": [1.93, 1.7],
+      "layout_feet_inches": [
+        [6, 4],
+        [5, 7]
+      ],
+      "layout_m": [1.9304, 1.7018]
+    },
+    {
+      "room_id": "kitchen_balcony",
+      "agreement_m": [2.98, 1.7],
+      "agreement_status": "printed",
+      "approved_m": [2.98, 1.7],
+      "layout_feet_inches": [
+        [9, 9],
+        [5, 7]
+      ],
+      "layout_m": [2.9718, 1.7018]
+    },
+    {
+      "room_id": "kitchen",
+      "agreement_m": [2.75, 4.12],
+      "agreement_status": "printed",
+      "approved_m": [2.75, 4.12],
+      "layout_feet_inches": [
+        [9, 0],
+        [13, 5]
+      ],
+      "layout_m": [2.7432, 4.0894],
+      "brochure_feet_inches": [
+        [9, 0],
+        [13, 5]
+      ],
+      "brochure_m": [2.7432, 4.0894]
+    },
+    {
+      "room_id": "bedroom_north",
+      "agreement_m": [3.05, 4.03],
+      "agreement_status": "printed",
+      "approved_m": [3.05, 4.03],
+      "layout_feet_inches": [
+        [10, 0],
+        [13, 3]
+      ],
+      "layout_m": [3.048, 4.0386],
+      "brochure_feet_inches": [
+        [10, 0],
+        [13, 3]
+      ],
+      "brochure_m": [3.048, 4.0386]
+    },
+    {
+      "room_id": "bathroom_north",
+      "agreement_m": [1.38, 2.46],
+      "agreement_status": "printed",
+      "approved_m": [1.39, 2.46],
+      "layout_feet_inches": [
+        [4, 1],
+        [8, 1]
+      ],
+      "layout_m": [1.2446, 2.4638],
+      "brochure_feet_inches": [
+        [4, 1],
+        [8, 1]
+      ],
+      "brochure_m": [1.2446, 2.4638]
+    },
+    {
+      "room_id": "powder_room",
+      "agreement_m": [1.38, 1.38],
+      "agreement_status": "printed",
+      "approved_m": null,
+      "layout_feet_inches": [
+        [null, null],
+        [4, 4]
+      ],
+      "layout_m": [null, 1.3208],
+      "brochure_feet_inches": [
+        [null, null],
+        [4, 4]
+      ],
+      "brochure_m": [null, 1.3208],
+      "approved_presence": "absent",
+      "note": "Furniture-reference and brochure width partly covered by fixture artwork; unconfirmed width deliberately left null."
+    },
+    {
+      "room_id": "bathroom_outer_north",
+      "agreement_m": [2.4, 1.52],
+      "agreement_status": "printed",
+      "approved_m": [2.4, 1.52],
+      "layout_feet_inches": [
+        [7, 10],
+        [5, 0]
+      ],
+      "layout_m": [2.3876, 1.524]
+    },
+    {
+      "room_id": "bedroom_outer_north",
+      "agreement_m": [3.96, 3.4],
+      "agreement_status": "printed",
+      "approved_m": [3.96, 3.4],
+      "layout_feet_inches": [
+        [13, 0],
+        [11, 0]
+      ],
+      "layout_m": [3.9624, 3.3528],
+      "brochure_feet_inches": [
+        [13, 0],
+        [11, 0]
+      ],
+      "brochure_m": [3.9624, 3.3528]
+    },
+    {
+      "room_id": "entry",
+      "agreement_m": [1.65, 2.676],
+      "agreement_status": "needs-review",
+      "approved_m": [1.65, 2.676],
+      "layout_feet_inches": [
+        [5, 5],
+        [8, 9]
+      ],
+      "layout_m": [1.651, 2.667],
+      "note": "Final digit of2.676 overlaps boundary; retain source reading and flag for confirmation."
+    },
+    {
+      "room_id": "living_dining",
+      "agreement_m": [9.83, 4.03],
+      "agreement_status": "printed",
+      "approved_m": [9.83, 4.03],
+      "layout_combined_m": [9.8044, 4.0386],
+      "note": "Layout.jpeg living17ft11 in + dining14ft3 in gives9.8044 m combined width; these remain illustration measurements, not geometry constraints."
+    },
+    {
+      "room_id": "balcony_curved",
+      "agreement_m": [2.4, 11.07],
+      "agreement_status": "printed",
+      "approved_m": [2.4, 11.07],
+      "layout_feet_inches": [
+        [7, 10],
+        [34, 6]
+      ],
+      "layout_m": [2.3876, 10.5156],
+      "dimension_mode": "average_depth_span",
+      "note": "Agreement average depth/span2.40 \u00d7 11.07 m; Layout.jpeg span34ft6 in differs. A label is not a unique curve definition."
+    },
+    {
+      "room_id": "passage",
+      "agreement_m": [1.77, 2.0],
+      "agreement_status": "needs-review",
+      "approved_m": [1.78, 2.13],
+      "layout_feet_inches": [
+        [5, 10],
+        [6, 7]
+      ],
+      "layout_m": [1.778, 2.0066],
+      "agreement_name": "Mandir",
+      "approved_name": "Passage",
+      "note": "Width1.77 m partially clipped; height2.00 m legible. Do not replace with brochure measurements."
+    },
+    {
+      "room_id": "wfh",
+      "agreement_m": [3.05, 3.58],
+      "agreement_status": "printed",
+      "approved_m": [3.05, 3.58],
+      "layout_feet_inches": [
+        [10, 0],
+        [11, 9]
+      ],
+      "layout_m": [3.048, 3.5814],
+      "brochure_feet_inches": [
+        [10, 0],
+        [11, 9]
+      ],
+      "brochure_m": [3.048, 3.5814],
+      "agreement_name": "Theatre / Den",
+      "approved_name": "WFH"
+    },
+    {
+      "room_id": "bedroom_outer_south",
+      "agreement_m": [4.65, 3.65],
+      "agreement_status": "printed",
+      "approved_m": [4.65, 3.65],
+      "layout_feet_inches": [
+        [15, 3],
+        [11, 9]
+      ],
+      "layout_m": [4.6482, 3.5814],
+      "brochure_feet_inches": [
+        [15, 3],
+        [11, 9]
+      ],
+      "brochure_m": [4.6482, 3.5814]
+    },
+    {
+      "room_id": "bathroom_outer_south",
+      "agreement_m": [2.43, 1.52],
+      "agreement_status": "printed",
+      "approved_m": [2.38, 1.52],
+      "layout_feet_inches": [
+        [8, 0],
+        [5, 0]
+      ],
+      "layout_m": [2.4384, 1.524]
+    },
+    {
+      "room_id": "walk_in",
+      "agreement_m": [1.45, 2.9],
+      "agreement_status": "printed",
+      "approved_m": [1.45, 2.9],
+      "layout_feet_inches": [
+        [4, 9],
+        [9, 6]
+      ],
+      "layout_m": [1.4478, 2.8956]
+    },
+    {
+      "room_id": "bathroom_south",
+      "agreement_m": [1.52, 2.9],
+      "agreement_status": "printed",
+      "approved_m": [1.52, 2.9],
+      "layout_feet_inches": [
+        [4, 9],
+        [9, 6]
+      ],
+      "layout_m": [1.4478, 2.8956]
+    },
+    {
+      "room_id": "bedroom_south",
+      "agreement_m": [3.58, 4.55],
+      "agreement_status": "printed",
+      "approved_m": [3.58, 4.55],
+      "layout_feet_inches": [
+        [11, 9],
+        [14, 11]
+      ],
+      "layout_m": [3.5814, 4.5466],
+      "brochure_feet_inches": [
+        [11, 9],
+        [14, 11]
+      ],
+      "brochure_m": [3.5814, 4.5466]
+    },
+    {
+      "room_id": "balcony_south",
+      "agreement_m": [3.58, 2.45],
+      "agreement_status": "needs-review",
+      "approved_m": [3.58, 2.45],
+      "layout_feet_inches": [
+        [11, 9],
+        [8, 0]
+      ],
+      "layout_m": [3.5814, 2.4384],
+      "dimension_mode": "span_average_depth",
+      "clipboard_alternative_m": [3.58, 2.46],
+      "note": "Agreement file/crop reads2.45AVG; supplied clipboard appears2.46AVG. Selected agreement 2.45;1 cm discrepancy remains flagged."
+    }
   ],
-  "source_policy": "Use approved metric dimensions for geometry. Brochure dimensions are a separate cross-check; do not mix values from different drawings or interpret feet/inches as decimal meters.",
-  "area_policy": "Retain the approved area schedule as source metadata. Do not equate the generated gross slab area with the printed net-area schedule or force the model to fit it by global scaling."
+  "layout_context_measurements": [
+    {
+      "space": "Lift outside apartment",
+      "label_m": [2.4, 1.85],
+      "use": "Context only, not apartment geometry"
+    }
+  ],
+  "agreement_reference": {
+    "image": "agreement_unit_crop.jpg",
+    "source_file": "Miami PWC House Documents.pdf",
+    "pdf_page": 35,
+    "annexure": "G",
+    "user_reference": "Supplied rotated metric image depicts the same demarcated apartment; ambiguous digits remain flagged",
+    "source_choice": "Primary reconstruction target for requested B1-1502; agreement file chosen over brochure and differing approved topology",
+    "differences": [
+      {
+        "room_id": "bathroom_north",
+        "agreement_m": [1.38, 2.46],
+        "approved_m": [1.39, 2.46],
+        "agreement_access": "D on west wall directly into bedroom_north",
+        "approved_access": "D on south wall into the shared recess"
+      },
+      {
+        "room_id": "powder_room",
+        "agreement_m": [1.38, 1.38],
+        "agreement_access": "D on south wall into the shared recess",
+        "approved_presence": "absent"
+      },
+      {
+        "room_id": "bathroom_outer_south",
+        "agreement_m": [2.43, 1.52],
+        "approved_m": [2.38, 1.52]
+      },
+      {
+        "room_id": "passage",
+        "agreement_name": "Mandir",
+        "agreement_m_approximate": [1.77, 2.0],
+        "agreement_access": "D into bedroom_south",
+        "approved_name": "Passage",
+        "approved_m": [1.78, 2.13],
+        "approved_access": "open connection into bedroom_south"
+      },
+      {
+        "room_id": "wfh",
+        "agreement_name": "Theatre / Den",
+        "approved_name": "WFH",
+        "shared_m": [3.05, 3.58]
+      },
+      {
+        "room_id": "bedroom_outer_south",
+        "agreement_m": [4.65, 3.65],
+        "layout_m": [4.6482, 3.5814],
+        "note": "Illustration master bedroom depth differs by about6.9 cm"
+      },
+      {
+        "room_id": "balcony_curved",
+        "agreement_m": [2.4, 11.07],
+        "layout_m": [2.3876, 10.5156],
+        "note": "Average depth/labelled span differs; no illustration measurement is substituted"
+      },
+      {
+        "room_id": "balcony_south",
+        "agreement_m": [3.58, 2.45],
+        "clipboard_alternative_m": [3.58, 2.46],
+        "status": "needs-review",
+        "note": "Agreement reading selected;1 cm alternative remains in trace"
+      }
+    ],
+    "topology_note": "D/SD symbols establish door/sliding-door connections. The walk-in north boundary has an unmarked access gap: keep an opening without inventing a hinged leaf."
+  },
+  "source_policy": "Use agreement metric dimensions and drawn access for the requested apartment. Keep approved and illustration differences explicit; never mix revisions silently or interpret feet/inches as decimal metres.",
+  "area_policy": "Retain approved RERA area schedule as independent source metadata; reconstructed gross slab and net schedule have different boundaries. Do not globally shrink rooms to force agreement.",
+  "as_built_status": "unverified",
+  "revision_status": "These files do not establish which conflicting layout supersedes the other or was constructed.",
+  "layout_additional_space_measurements": [
+    {
+      "space_id": "north_shared_passage",
+      "feet_inches": [
+        [4, 4],
+        [3, 1]
+      ],
+      "meters": [1.3208, 0.9398],
+      "status": "legible"
+    },
+    {
+      "space_id": "dining",
+      "feet_inches": [
+        [14, 3],
+        [13, 3]
+      ],
+      "meters": [4.3434, 4.0386],
+      "status": "legible"
+    },
+    {
+      "space_id": "living",
+      "feet_inches": [
+        [17, 11],
+        [13, 3]
+      ],
+      "meters": [5.461, 4.0386],
+      "status": "legible"
+    }
+  ]
 }

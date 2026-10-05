@@ -98,7 +98,7 @@ def test_bad_dimensions_cannot_be_exported_with_good_labels(tmp_path):
     with pytest.raises(ValueError):build_usd(plan,tmp_path/'bad.usda')
 
 
-def test_dimensioned_rebuild_ignores_raster_pixel_calibration():
+def test_agreement_rebuild_ignores_comparison_calibration_and_dimensions():
     source=json.loads((ROOT/'data/b1_1502/raster_trace.json').read_text())
     rebuilt=build_dimensioned_plan(source)
     source['calibration']['pixels_per_metre']=999
@@ -106,19 +106,30 @@ def test_dimensioned_rebuild_ignores_raster_pixel_calibration():
     assert [r['polygon'] for r in rebuilt['rooms']] == [r['polygon'] for r in changed['rooms']]
     altered=deepcopy(source)
     next(r for r in altered['rooms'] if r['id']=='kitchen')['dimensions_m'][0]=3.0
-    widened=build_dimensioned_plan(altered)
-    room=next(r for r in widened['rooms'] if r['id']=='kitchen')
-    assert Polygon(room['polygon']).bounds[2]-Polygon(room['polygon']).bounds[0] == pytest.approx(3.0)
+    from_agreement=build_dimensioned_plan(altered)
+    room=next(r for r in from_agreement['rooms'] if r['id']=='kitchen')
+    assert Polygon(room['polygon']).bounds[2]-Polygon(room['polygon']).bounds[0] == pytest.approx(2.75)
+    assert [r['polygon'] for r in from_agreement['rooms']] == [r['polygon'] for r in rebuilt['rooms']]
+    assert from_agreement['source']['file'] == 'Miami PWC House Documents.pdf'
+    assert from_agreement['source']['page'] == 35
 
 
-def test_brochure_feet_inches_crosscheck_keeps_approved_values():
+def test_illustration_crosschecks_keep_agreement_values_and_unknown_dimensions():
     data=json.loads((ROOT/'data/b1_1502/source_comparison.json').read_text())
     plan=json.loads((ROOT/'data/b1_1502/plan.json').read_text())
     rooms={r['id']:r for r in plan['rooms']}
     for entry in data['measurements']:
-        converted=[feet*.3048+inches*.0254 for feet,inches in entry['brochure_feet_inches']]
-        assert converted == pytest.approx(entry['brochure_m'],abs=1e-9)
-        assert rooms[entry['room_id']]['dimensions_m'] == entry['approved_m']
+        assert rooms[entry['room_id']]['dimensions_m'] == entry['agreement_m']
+        for reference in ('layout','brochure'):
+            if reference+'_feet_inches' not in entry:
+                continue
+            for (feet,inches), meters in zip(entry[reference+'_feet_inches'],entry[reference+'_m']):
+                if feet is None or inches is None:
+                    assert meters is None  # Obscured digits remain unknown.
+                else:
+                    assert feet*.3048+inches*.0254 == pytest.approx(meters,abs=1e-9)
+    assert rooms['bathroom_north']['dimensions_m'] == [1.38,2.46]
+    assert rooms['bathroom_outer_south']['dimensions_m'] == [2.43,1.52]
 
 
 def test_existing_example_migrates_without_rescaling_furniture(tmp_path, monkeypatch):

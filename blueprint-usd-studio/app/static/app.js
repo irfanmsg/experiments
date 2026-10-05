@@ -1,5 +1,5 @@
 const $ = (id) => document.getElementById(id);
-const state = { project: null, plan: null, image: null, styles: [], style: "contemporary", revision: 0, tool: null, points: [], dragStart: null, hover: null, saveTimer: null, suggestions: [], selectedAsset: null, generated: null, assets: [] };
+const state = { project: null, plan: null, image: null, styles: [], style: "contemporary", revision: 0, tool: null, points: [], dragStart: null, hover: null, saveTimer: null, suggestions: [], selectedAsset: null, generated: null, assets: [], reviewOpening: null };
 const canvas = $("planCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -95,13 +95,16 @@ async function savePlan() {
 }
 async function setProject(data) {
   state.project = data.id; state.plan = data.plan; state.styles = data.styles || [];
+  if (state.plan.source?.primary_crop === 'agreement_unit_crop.jpg' && state.styles.some(style => style.id === 'home_specification')) state.style = 'home_specification';
+  $('finishPresetNote').textContent = state.plan.reference_manifest ? 'The B1-1502 specified finishes follow the agreement. Other presets are illustrative materials and lighting.' : 'Presets change surface materials and lighting. Your reviewed room dimensions stay in metres.';
+  state.reviewOpening = null;
   state.generated = null; state.selectedAsset = null; state.revision = 0;
   $("generateStatus").textContent = "";
   localStorage.setItem("blueprint-studio-project", data.id);
   $("projectTitle").textContent = state.plan.name || "Untitled project";
-  $("projectSubtitle").textContent = state.plan.example ? "Flat B1-1502 · 15th floor · approved architectural plan" : "Review your drawing, then build a measured 3D scene.";
+  $("projectSubtitle").textContent = state.plan.example ? `Flat B1-1502 · 15th floor · ${state.plan.source?.primary_crop === 'agreement_unit_crop.jpg' ? 'demarcated agreement plan' : 'approved architectural plan'}` : "Review your drawing, then build a measured 3D scene.";
   $("sourceNote").textContent = state.plan.source?.filename || (state.plan.example ? "Approved B1 building plan · unit 1502" : "Your drawing");
-  if(state.plan.dimension_model) $("sourceNote").textContent='Dimensioned plan · 1 m grid · approved metric room dimensions';
+  if(state.plan.dimension_model) $("sourceNote").textContent=`Dimensioned plan · 1 m grid · ${state.plan.source?.primary_crop === 'agreement_unit_crop.jpg' ? 'agreement' : 'approved'} metric room dimensions`;
   $("sourceNote").hidden = false;
   renderAssets();
   $("pageControls").hidden = !(data.page_count > 1);
@@ -183,8 +186,115 @@ function refreshMeasurements() {
   const area = state.plan.area_schedule_m2;
   const values = area ? [`${Number(area.carpet).toFixed(2)} m² carpet`, `${Number(area.balcony).toFixed(2)} m² balcony`, `${Number(area.dry_balcony).toFixed(2)} m² dry balcony`, `${Number(area.total).toFixed(2)} m² scheduled total`] : [`${state.plan.rooms?.length || 0} spaces outlined`, cal ? "Measured in metres" : "Scale needs review"];
   values.forEach(value => { const badge = document.createElement("span"); badge.textContent = value; badges.append(badge); });
-  $("provenanceText").textContent = area ? "B1-1502 areas come from the printed RERA schedule. Room spans follow the approved meter dimensions; wall thickness, heights and the detailed balcony curve remain assumptions." : "Room outlines come from your review. Confirm any unprinted dimension before using the model for construction or purchasing.";
+  $("provenanceText").textContent = area ? `B1-1502 areas come from the printed RERA schedule. Room spans follow the ${state.plan.source?.primary_crop === 'agreement_unit_crop.jpg' ? 'demarcated agreement' : 'approved'} metric dimensions; wall thickness, heights and the detailed balcony curve remain assumptions.` : "Room outlines come from your review. Confirm any unprinted dimension before using the model for construction or purchasing.";
+  if (state.plan.example === 'B1-1502' && state.plan.source?.primary_crop !== 'agreement_unit_crop.jpg') $("provenanceText").textContent += ' This is an older B1 reconstruction. Load the B1 example to review the agreement rebuild; this project is preserved.';
   $("drawingInfo").hidden = false;
+}
+function refreshReconstructionReview() {
+  const plan = state.plan, review = $("reconstructionReview");
+  review.hidden = !plan;
+  if (!plan) return;
+  const openings = plan.openings || [], decisions = [...(plan.reconstruction_decisions || []), ...(state.generated?.result.presentation_decisions || [])];
+  const sourced = openings.filter(o => o.provenance?.topology === "source-derived").length;
+  const inferred = openings.filter(o => o.provenance?.topology === "inferred").length;
+  $("reconstructionCounts").textContent = `${sourced} openings with source-derived access · ${inferred} inferred · ${openings.length - sourced - inferred} without recorded access evidence · ${decisions.filter(d => d.status === "needs-review").length} decisions need review. Opening heights and assemblies remain assumptions.`;
+  $("reconstructionTrace").href = `/api/projects/${state.project}/reconstruction-trace`;
+  const text = (parent, tag, value) => { const node = document.createElement(tag); node.textContent = value; parent.append(node); return node; };
+  const readable = value => String(value || "Unrecorded").replaceAll("_", " ");
+  const manifest = plan.reference_manifest;
+  $('referenceContext').hidden = !manifest;
+  if (manifest) {
+    const ledger = $('referenceLedger'); ledger.replaceChildren();
+    text(ledger, 'p', `Geometry: ${manifest.primary_layout.file}, page ${manifest.primary_layout.pdf_page}, Annexure ${manifest.primary_layout.annexure}.`);
+    const list = document.createElement('ul');
+    for (const source of manifest.sources || []) text(list, 'li', `${source.file}: ${source.role}${source.pages?.length ? `; pages ${source.pages.map(page => page.number).join(', ')}` : ''}`);
+    ledger.append(list);
+    const photos = manifest.construction_photo_review;
+    if (photos) text(ledger, 'p', `${photos.summary.file_count} construction-folder images reviewed: ${photos.summary.construction_exterior_count} exterior photos and ${photos.summary.sales_office_scale_model_count} builder scale-model views. Several show floor 15; tower/unit identity and metric calibration remain unconfirmed. These photos guide exterior detail, not room dimensions or interior finishes.`);
+    for (const conflict of manifest.unresolved || []) text(ledger, 'p', typeof conflict === 'string' ? conflict : conflict.summary || conflict.description || JSON.stringify(conflict));
+    const finishes = $('finishSpecification'); finishes.replaceChildren();
+    const spec = manifest.finish_schedule;
+    text(finishes, 'p', `${spec.file}, page ${spec.pdf_page}, Annexure ${spec.annexure}. Master bedroom: ${spec.flooring.master}. Other rooms: ${spec.flooring.other}. Wet areas: ${spec.flooring.wet}. Bathroom tile height: ${Number(spec.bathroom_dado_height_m).toFixed(2)} m.`);
+    text(finishes, 'p', 'Exact colours, furniture sizes, cabinetry details and lighting are reviewable visualization assumptions. The specified-finish preset applies the documented surface types.');
+  }
+  const metric = value => value != null && value !== "" && Number.isFinite(Number(value)) ? Number(value).toFixed(2) : "unrecorded";
+  const spans = value => Array.isArray(value) && value.length >= 2 ? `${value.map(metric).join(" × ")} m` : "unrecorded";
+  const roomName = id => plan.rooms?.find(room => room.id === id)?.name || readable(id);
+  const scale = $("reconstructionScale"); scale.replaceChildren();
+  const audit = plan.scale_audit && { ...plan.scale_audit };
+  if (audit) {
+    const polygonSpans = points => {
+      if (!points?.length) return [];
+      const xs = points.map(point => Number(point[0])), ys = points.map(point => Number(point[1]));
+      return [Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)];
+    };
+    audit.room_dimensions = (plan.rooms || []).map(room => {
+      const modeled = polygonSpans(room.polygon);
+      if (room.dimension_mode === "average_depth" && modeled.length) {
+        const axis = Number(room.span_axis) === 1 ? 1 : 0;
+        modeled[1 - axis] = modeled[axis] > 0 ? polygonArea(room.polygon) / modeled[axis] : null;
+      }
+      return { id: room.id, name: room.name, printed: room.dimensions_m, modeled, dimension_mode: room.dimension_mode };
+    });
+    audit.footprint_span_m = polygonSpans(plan.footprint?.polygon);
+    audit.gross_area_m2 = polygonArea(plan.footprint?.polygon) - (plan.footprint?.holes || []).reduce((area, hole) => area + polygonArea(hole), 0);
+    const scheduled = typeof audit.scheduled_area_m2 === "object" ? audit.scheduled_area_m2?.total : audit.scheduled_area_m2;
+    text(scale, "p", `${metric(audit.meters_per_unit)} m per scene unit. Model footprint span: ${spans(audit.footprint_span_m)}; approximate source trace span: ${spans(audit.source_trace_span_m)}.`);
+    if (audit.source_trace_basis) text(scale, 'p', `Source trace basis: ${audit.source_trace_basis}.`);
+    if (audit.visible_agreement_span_m) text(scale, 'p', `Visible agreement bounds: ${spans(audit.visible_agreement_span_m)}; corresponding modeled bounds: ${spans(audit.modeled_visible_span_m)}. Image registration and unprinted offsets remain approximate.`);
+    text(scale, "p", `Modeled gross footprint: ${metric(audit.gross_area_m2)} m². Source scheduled total: ${metric(scheduled)} m². Gross geometry and the scheduled net areas are different measurements.`);
+    const wrap = document.createElement("div"); wrap.className = "review-table"; wrap.tabIndex = 0;
+    const table = document.createElement("table"); const header = document.createElement("tr");
+    ["Space", "Printed dimensions", "Modeled dimensions"].forEach(label => text(header, "th", label).scope = "col");
+    const head = document.createElement("thead"); head.append(header); table.append(head);
+    const body = document.createElement("tbody");
+    (audit.room_dimensions || []).forEach(room => {
+      const row = document.createElement("tr");
+      const roles = room.dimension_mode === "average_depth" ? ` (${(plan.rooms?.find(item => item.id === room.id)?.dimension_roles || ["span", "average depth"]).map(readable).join(" × ")})` : "";
+      text(row, "th", `${room.name || roomName(room.id)}${roles}`).scope = "row";
+      text(row, "td", spans(room.printed)); text(row, "td", spans(room.modeled)); body.append(row);
+    });
+    table.append(body); wrap.append(table); scale.append(wrap);
+    text(scale, "p", "Modeled dimensions and gross area are recalculated from the current outlines. Printed dimensions and the source trace remain separate references.");
+    if (audit.notes) text(scale, "p", `Original reconstruction basis: ${Array.isArray(audit.notes) ? audit.notes.join(" ") : audit.notes}`);
+  } else text(scale, "p", "A detailed scale comparison has not been recorded for this plan. Review the calibration and printed measurements.");
+  const decisionList = $("reconstructionDecisions"); decisionList.replaceChildren();
+  decisions.forEach(decision => {
+    const item = document.createElement("li"); text(item, "strong", `${readable(decision.kind)} · ${readable(decision.status)}`);
+    text(item, "code", decision.id); text(item, "p", decision.summary || ""); text(item, "p", `Basis: ${decision.basis || "unrecorded"}`);
+    if (decision.parameters) text(item, "p", `Parameters: ${JSON.stringify(decision.parameters)}`);
+    decisionList.append(item);
+  });
+  if (!decisions.length) text(decisionList, "li", "No reconstruction decisions have been recorded yet.");
+  const openingList = $("reconstructionOpenings"); openingList.replaceChildren();
+  openings.forEach(opening => {
+    const item = document.createElement("li"), provenance = opening.provenance || {};
+    text(item, "strong", opening.name || readable(opening.id)); text(item, "code", opening.id);
+    text(item, "p", `${readable(opening.type)} · ${metric(opening.width_m)} m wide × ${metric(opening.height_m)} m high · ${(opening.connects || []).map(roomName).join(" ↔ ") || "connected spaces unrecorded"}`);
+    text(item, "p", `Access: ${provenance.topology || "unrecorded"}; width: ${provenance.width || "unrecorded"}; height: ${provenance.height || "unrecorded"}; ${provenance.review_status || "needs review"}.`);
+    text(item, "p", `Basis: ${provenance.basis || opening.confidence || "unrecorded"}. Placement: ${provenance.placement || "unrecorded"}.`);
+    const reference = provenance.source_reference;
+    if (reference) {
+      if (typeof reference === "string") text(item, "p", `Source: ${reference}`);
+      else {
+        const source = [reference.file, reference.page ? `page ${reference.page}` : null, reference.sheet, reference.image].filter(Boolean).join(" · ");
+        const jambs = reference.image_coordinates_px;
+        const hasJambs = Array.isArray(jambs?.jamb_start) && Array.isArray(jambs?.jamb_end);
+        const symbol = Array.isArray(reference.symbol_center_px) ? reference.symbol_center_px : null;
+        text(item, "p", `Source: ${source || "unrecorded"}${symbol ? ` · symbol at (${symbol.join(", ")}) px` : ""}${hasJambs ? ` · jambs (${jambs.jamb_start.join(", ")}) → (${jambs.jamb_end.join(", ")}) px` : ""}${reference.image_coordinate_uncertainty_px ? ` · ±${reference.image_coordinate_uncertainty_px} px trace uncertainty` : ""}`);
+      }
+    }
+    const button = text(item, "button", "Show on plan"); button.type = "button"; button.className = "subtle-button";
+    button.setAttribute("aria-label", `Show ${readable(opening.id)} on plan`);
+    button.onclick = () => {
+      state.reviewOpening = opening.id; draw();
+      const point = metresToPixel(opening.center || opening.start), scroller = document.querySelector(".canvas-scroll");
+      if (point) scroller.scrollTop = point[1] * canvas.getBoundingClientRect().height / canvas.height - scroller.clientHeight / 2;
+      $("canvasArea").scrollIntoView({ block: "center", behavior: "smooth" });
+    };
+    openingList.append(item);
+  });
+  if (!openings.length) text(openingList, "li", "No openings have been recorded yet.");
 }
 function updateCreateReady() {
   const measured = !!calibration();
@@ -195,7 +305,7 @@ function updateCreateReady() {
   else if (!outlined) $("generateStatus").textContent = "Outline the outer edge or at least one space to make a 3D scene.";
   else if (!state.generated && ["Mark one known distance", "Outline the outer edge"].some(text => $("generateStatus").textContent.startsWith(text))) $("generateStatus").textContent = "";
 }
-function refreshAll() { updateSteps(); refreshRooms(); refreshPlacements(); refreshMeasurements(); updateCreateReady(); draw(); }
+function refreshAll() { updateSteps(); refreshRooms(); refreshPlacements(); refreshMeasurements(); refreshReconstructionReview(); updateCreateReady(); draw(); }
 
 function drawPolygon(points, stroke, fill, width = 3, label = "") {
   if (!points || points.length < 2) return;
@@ -230,6 +340,10 @@ function draw() {
   (state.plan.openings || []).forEach(opening => {
     const point = metresToPixel(opening.center || opening.start); if (!point) return;
     ctx.beginPath(); ctx.arc(point[0], point[1], Math.max(5, canvas.width / 225), 0, Math.PI * 2); ctx.fillStyle = opening.type === "window" ? "#60adce" : "#f2a765"; ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
+    if (state.reviewOpening === opening.id) {
+      ctx.beginPath(); ctx.arc(point[0], point[1], Math.max(12, canvas.width / 100), 0, Math.PI * 2);
+      ctx.strokeStyle = "#206aaf"; ctx.lineWidth = Math.max(3, canvas.width / 450); ctx.stroke();
+    }
   });
   (state.plan.asset_placements || []).forEach(placement => {
     const point = metresToPixel(placement.position); if (!point) return;
@@ -338,7 +452,7 @@ function handleCanvasUp(event) {
 }
 function renderStyles() {
   const category = state.plan?.structure_type || "home";
-  const styles = state.styles.filter(style => category === "other" || style.category === category);
+  const styles = state.styles.filter(style => (category === "other" || style.category === category) && (style.id !== 'home_specification' || state.plan?.source?.primary_crop === 'agreement_unit_crop.jpg'));
   if (!styles.some(style => style.id === state.style)) state.style = styles[0]?.id || "contemporary";
   const container = $("styleChoices"); container.replaceChildren();
   styles.forEach(style => {
@@ -363,11 +477,12 @@ async function generate(all = false) {
   try {
     await savePlan();
     if (state.project !== projectId || state.revision !== revision) throw new Error("The plan changed. Create the scene again when edits are saved.");
-    $("generateStatus").textContent = all ? "Creating all style files…" : "Creating a measured USD scene…";
+    $("generateStatus").textContent = all ? "Creating all finish files…" : "Creating a measured USD scene…";
     $("generateButton").disabled = true; $("allStylesButton").disabled = true;
     const result = await request(`/api/projects/${projectId}/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ style: all ? "all" : selectedStyle }) });
     if (state.project !== projectId || state.revision !== revision) throw new Error("The plan changed while the scene was building. Create it again to include your edits.");
     state.generated = { result, style: selectedStyle };
+    refreshReconstructionReview();
     $("resultPanel").hidden = false;
     $("streamPanel").hidden = true;
     $("streamPhysics").checked = (state.plan.asset_placements || []).some(item => item.physics_mode === "dynamic");
@@ -381,29 +496,42 @@ async function generate(all = false) {
 }
 async function startStream() {
   if (!state.generated) return;
+  clearInterval(startStream.poller); startStream.poller = null;
+  const link = $("streamLink");
+  link.hidden = true; link.removeAttribute("href");
+  $("streamPanel").hidden = false;
+  const message = $("streamPanel").querySelector("p");
+  message.textContent = "Starting RTX rendering. The first shader build can take a few minutes.";
   try {
     $("streamButton").disabled = true; $("streamButton").textContent = "Starting RTX view…";
     const status = await request(`/api/projects/${state.project}/stream`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ style: state.generated.style, quality: $("streamQuality").value, physics: $("streamPhysics").checked }) });
     const url = status.client_url || `http://${location.hostname}:8088/?signal_port=49100`;
-    $("streamLink").href = url; $("streamLink").textContent = url;
-    $("streamPanel").hidden = false;
-    const message = $("streamPanel").querySelector("p");
-    message.textContent = "Starting RTX rendering. The first shader build can take a few minutes.";
     toast("RTX stream starting. You can keep working while it initializes.");
-    clearInterval(startStream.poller);
-    startStream.poller = setInterval(async () => {
-      try {
-        const progress = await request("/api/stream/status");
-        if (progress.phase === "ready" || progress.phase === "running" || progress.phase === "client_connected") {
-          message.textContent = "Open the address on this laptop or another machine on the same network. The view connects automatically. Drag to rotate and scroll to zoom.";
-          clearInterval(startStream.poller);
-        } else if (progress.phase === "error" || (!progress.running && progress.phase !== "loading")) {
-          message.textContent = "The RTX stream stopped. Check the runtime setup or try again.";
-          clearInterval(startStream.poller);
+    const update = progress => {
+      if (progress.phase === "ready" || progress.phase === "running" || progress.phase === "client_connected") {
+        link.href = url; link.textContent = url; link.hidden = false;
+        message.textContent = "Open the address on this laptop or another machine on the same network. The view connects automatically. Drag to rotate and scroll to zoom.";
+        clearInterval(startStream.poller);
+        return true;
+      } else if (progress.phase === "error" || (!progress.running && progress.phase !== "loading")) {
+        message.textContent = "The RTX stream stopped. Check the runtime setup or try again.";
+        clearInterval(startStream.poller);
+        return true;
+      }
+      return false;
+    };
+    if (!update(status)) {
+      const poller = setInterval(async () => {
+        try {
+          const progress = await request("/api/stream/status");
+          if (startStream.poller === poller) update(progress);
+        } catch (error) {
+          if (startStream.poller === poller) { message.textContent = error.message; clearInterval(poller); }
         }
-      } catch { clearInterval(startStream.poller); }
-    }, 3000);
-  } catch (error) { toast(error.message); }
+      }, 3000);
+      startStream.poller = poller;
+    }
+  } catch (error) { message.textContent = error.message; toast(error.message); }
   finally { $("streamButton").disabled = false; $("streamButton").innerHTML = 'Explore live on another screen <span>↗</span>'; }
 }
 function renderAssets() {
@@ -415,7 +543,7 @@ function renderAssets() {
   entries.slice(0, 60).forEach(asset => {
     const button = document.createElement("button"); button.type = "button";
     const name = document.createElement("span"); name.textContent = asset.name;
-    const size = document.createElement("small"); size.textContent = Array.isArray(asset.size_xyz_m) ? `${asset.size_xyz_m.map(n => Number(n).toFixed(2)).join("×")} m` : asset.category || "SimReady";
+    const size = document.createElement("small"); size.textContent = Array.isArray(asset.size_xyz_m) ? `Physical size: ${asset.size_xyz_m.map(n => Number(n).toFixed(2)).join(" × ")} m (X × Y × Z)` : asset.category || "SimReady";
     button.append(name, size);
     button.onclick = () => { state.selectedAsset = asset; if (state.tool !== "asset") setTool("asset"); document.querySelectorAll("#assetList button").forEach(item => item.classList.remove("active")); button.classList.add("active"); toast(`Click the plan to place ${asset.name}`); };
     list.append(button);
@@ -486,7 +614,7 @@ $("starterFurniture").onclick = async () => {
   if (!state.project) return;
   try {
     const project = await request(`/api/projects/${state.project}/starter-furniture`, { method: "POST" });
-    state.plan = project.plan; state.revision++; invalidateGenerated(); refreshAll(); toast("Five SimReady furnishings added to the example");
+    state.plan = project.plan; state.revision++; invalidateGenerated(); refreshAll(); toast(`${state.plan.asset_placements.length} SimReady furnishings in this layout`);
   } catch (error) { toast(error.message); }
 };
 $("showLabels").onchange = draw;
@@ -497,6 +625,7 @@ for (const name of ["dragenter", "dragover"]) uploadTarget.addEventListener(name
 for (const name of ["dragleave", "drop"]) uploadTarget.addEventListener(name, event => { event.preventDefault(); uploadTarget.classList.remove("dragging"); });
 uploadTarget.addEventListener("drop", async event => { const file = event.dataTransfer?.files?.[0]; if (!file) return; const form = new FormData(); form.append("file", file); try { await setProject(await request("/api/projects/upload", { method: "POST", body: form })); toast("Drawing uploaded"); } catch (error) { toast(error.message); } });
 loadAssets();
-const previousProject = localStorage.getItem("blueprint-studio-project");
-if (new URLSearchParams(location.search).get("example") === "b1-1502") loadExample();
+const query = new URLSearchParams(location.search);
+const previousProject = query.get('project') || localStorage.getItem("blueprint-studio-project");
+if (query.get("example") === "b1-1502") loadExample();
 else if (previousProject) request(`/api/projects/${previousProject}`).then(setProject).catch(() => localStorage.removeItem("blueprint-studio-project"));

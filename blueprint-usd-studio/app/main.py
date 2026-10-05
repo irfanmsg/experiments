@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import socket
 import shutil
 import subprocess
@@ -18,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from PIL import Image
 
 from .asset_library import b1_starter_furniture, catalog
-from .geometry import validate_plan
+from .geometry import measured_scale_audit, validate_plan
 from .usd_builder import PALETTES, build_style_variants, build_usd
 from .vision import suggest_rooms
 
@@ -27,6 +28,13 @@ ROOT = Path(__file__).resolve().parents[1]
 UPLOADS = ROOT / "uploads"
 OUTPUT = ROOT / "output"
 EXAMPLE = ROOT / "data" / "b1_1502"
+STREAM_RESOLUTIONS = {
+    "standard": (640, 360),
+    "hd": (1280, 720),
+    "full_hd": (1920, 1080),
+    "qhd": (2560, 1440),
+    "uhd": (3840, 2160),
+}
 for directory in (UPLOADS, OUTPUT):
     directory.mkdir(exist_ok=True)
 
@@ -62,6 +70,38 @@ def _read_plan(project_id: str) -> dict:
     if not path.exists():
         raise HTTPException(404, "Plan not found")
     plan = json.loads(path.read_text())
+    if plan.get('example') == 'B1-1502' and plan.get('dimension_model') == 'b1-clear-dimensions-v1':
+        # Match the original v1 geometry, allowing JSON's int/float round trip.
+        # Edited geometry is preserved rather than replaced by a new template.
+        def normalized(value):
+            if isinstance(value, dict):
+                return {key: normalized(item) for key, item in value.items()}
+            if isinstance(value, list):
+                return [normalized(item) for item in value]
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                return round(float(value), 8) or 0.0
+            return value
+        geometry_keys = ('rooms', 'wall_segments', 'openings', 'footprint')
+        geometry = normalized({key: plan.get(key) for key in geometry_keys})
+        fingerprint = hashlib.sha256(json.dumps(geometry, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+        if fingerprint != '4543b206e0cf26682afae1da1a3672012e79a5ed760026f08dfa2182041078c7':
+            raise HTTPException(409, 'This older B1 reconstruction has geometry edits. Your project is preserved; open the updated B1 example to use the corrected reconstruction.')
+        updated = json.loads((EXAMPLE / 'plan.json').read_text())
+        if plan.get('asset_placements'):
+            from .dimensioned_b1 import relocate_assets
+            original_rooms = {room['id']: room for room in plan['rooms']}
+            relocation_rooms = [dict(room, source_polygon=original_rooms[room['id']]['polygon'])
+                                for room in updated['rooms'] if room['id'] in original_rooms]
+            plan['asset_placements'] = relocate_assets(plan['asset_placements'], relocation_rooms)
+        for key in (*geometry_keys, 'dimension_model', 'dimension_note', 'reconstruction_decisions', 'scale_audit', 'source', 'calibration', 'image_size', 'reference_manifest', 'coordinate_system', 'source_footprint', 'source_wall_segments'):
+            plan[key] = updated[key]
+        if plan.get('asset_placements'):
+            plan['reconstruction_decisions'].append({'id': 'legacy_furniture_relocation', 'kind': 'assumption',
+                'summary': 'Earlier furniture positions moved with their nearest room; physical size, rotation and placement height retained.',
+                'basis': 'The agreement reconstruction changes room registration. Relative offsets are preserved; fitted placement and door clearance need review.',
+                'status': 'needs-review'})
+        _save_plan(project_id, plan)
+        shutil.copy2(EXAMPLE / updated['source'].get('primary_crop', 'approved_crop.jpg'), _project_dir(project_id) / 'plan.jpg')
     if plan.get('example') == 'B1-1502' and not plan.get('dimension_model'):
         raw = json.loads((EXAMPLE / 'raster_trace.json').read_text())
         keys = ('rooms', 'wall_segments', 'openings', 'footprint')
@@ -69,12 +109,15 @@ def _read_plan(project_id: str) -> dict:
             from .dimensioned_b1 import build_dimensioned_plan
             plan = build_dimensioned_plan(plan)
             _save_plan(project_id, plan)
+            shutil.copy2(EXAMPLE / plan['source'].get('primary_crop', 'approved_crop.jpg'), _project_dir(project_id) / 'plan.jpg')
         else:
             raise HTTPException(409, 'This older B1 project has geometry edits. Open the updated B1 example to use dimensioned rooms; your edited project is preserved.')
     return plan
 
 
 def _save_plan(project_id: str, plan: dict) -> None:
+    if plan.get('scale_audit'):
+        plan['scale_audit'] = measured_scale_audit(plan)
     path = _project_dir(project_id) / "plan.json"
     temporary = path.with_suffix(".tmp")
     temporary.write_text(json.dumps(plan, indent=2, ensure_ascii=False))
@@ -181,14 +224,22 @@ async def upload_blueprint(file: UploadFile = File(...), page: int = Form(1)):
 @app.post("/api/examples/b1-1502")
 def load_flat_example():
     source_plan = EXAMPLE / "plan.json"
-    source_image = EXAMPLE / "approved_crop.jpg"
-    if not source_plan.exists() or not source_image.exists():
+    if not source_plan.exists():
         raise HTTPException(503, "B1-1502 source tracing is still being prepared")
+    plan = json.loads(source_plan.read_text())
+    primary_crop = plan.get('source', {}).get('primary_crop', 'approved_crop.jpg')
+    if primary_crop not in {'approved_crop.jpg', 'agreement_unit_crop.jpg'}:
+        raise HTTPException(503, 'Unknown B1 source image')
+    source_image = EXAMPLE / primary_crop
+    if not source_image.exists():
+        raise HTTPException(503, "B1-1502 source image is unavailable")
     project_id = uuid.uuid4().hex[:12]
     directory = UPLOADS / project_id
     directory.mkdir()
     shutil.copy2(source_image, directory / "plan.jpg")
-    plan = json.loads(source_plan.read_text())
+    manifest = EXAMPLE / 'reference_manifest.json'
+    if manifest.is_file():
+        plan['reference_manifest'] = json.loads(manifest.read_text())
     plan["id"] = project_id
     plan["example"] = "B1-1502"
     plan["structure_type"] = "home"
@@ -200,6 +251,23 @@ def load_flat_example():
 @app.get("/api/projects/{project_id}")
 def get_project(project_id: str):
     return _project_response(project_id)
+
+
+@app.get("/api/projects/{project_id}/reconstruction-trace")
+def project_reconstruction_trace(project_id: str):
+    plan = _read_plan(project_id)
+    trace = {"project_id": project_id, "source": plan.get("source", {}),
+             "dimension_model": plan.get("dimension_model"),
+             "decisions": plan.get("reconstruction_decisions", []),
+             "scale_audit": measured_scale_audit(plan),
+             "openings": plan.get("openings", []),
+             "reference_manifest": plan.get('reference_manifest', {}),
+             "asset_placements": plan.get("asset_placements", [])}
+    export = OUTPUT / project_id / "reconstruction_trace.json"
+    if export.is_file():
+        trace["last_export"] = json.loads(export.read_text())
+    return JSONResponse(trace, headers={
+        "Content-Disposition": f'attachment; filename="{project_id}-reconstruction-trace.json"'})
 
 
 @app.put("/api/projects/{project_id}/plan")
@@ -272,6 +340,12 @@ async def generate(project_id: str, request: Request):
             result["download_url"] = f"/api/projects/{project_id}/usd/{style}"
     except (ValueError, RuntimeError) as exc:
         raise HTTPException(400, str(exc)) from exc
+    trace = {"style": style, "dimension_model": plan.get("dimension_model"),
+             "asset_imports": result.get("asset_imports", []),
+             "presentation_decisions": result.get('presentation_decisions', []),
+             "reference_manifest": plan.get('reference_manifest', {}),
+             "styles": result.get("styles", {}) if style == "all" else {}}
+    (destination / "reconstruction_trace.json").write_text(json.dumps(trace, indent=2))
     return result
 
 
@@ -349,9 +423,9 @@ async def start_stream(project_id: str, request: Request):
     physics = body.get("physics", False)
     if not isinstance(physics, bool):
         raise HTTPException(400, "Physics setting must be true or false")
-    if quality not in {"standard", "hd"}:
+    if quality not in STREAM_RESOLUTIONS:
         raise HTTPException(400, "Unknown stream quality")
-    width, height = (640, 360) if quality == "standard" else (1280, 720)
+    width, height = STREAM_RESOLUTIONS[quality]
     if style not in PALETTES and style != "all_styles":
         raise HTTPException(400, "Unknown style")
     path = OUTPUT / project_id / f"{style}.usda"

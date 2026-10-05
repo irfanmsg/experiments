@@ -27,7 +27,7 @@
         <li class="active" id="step-upload"><span>1</span><div><strong>Bring your plan</strong><small>PDF or image</small></div></li>
         <li id="step-measure"><span>2</span><div><strong>Check the scale</strong><small>One known distance</small></div></li>
         <li id="step-outline"><span>3</span><div><strong>Review the spaces</strong><small>Rooms, perimeter, openings</small></div></li>
-        <li id="step-create"><span>4</span><div><strong>Create and explore</strong><small>Style, USD and live view</small></div></li>
+        <li id="step-create"><span>4</span><div><strong>Create and explore</strong><small>Finishes, USD and live view</small></div></li>
       </ol>
 
       <section class="card source-card">
@@ -81,13 +81,24 @@
       </div>
       <div id="emptyState" class="empty-state"><div class="empty-graphic"><span class="plan-line"></span><span class="plan-line second"></span><span class="plan-line third"></span><span class="plan-door"></span></div><h3>Picture the space before it is built.</h3><p>Open the B1-1502 example to see a real, measured flat plan.</p><button id="emptyExample" class="primary-button" type="button">Explore B1-1502 <span>→</span></button></div>
       <div id="canvasArea" class="canvas-area" hidden><div class="canvas-toolbar"><span id="toolHint">Review the traced plan, or choose a tool on the left.</span><label class="canvas-toggle"><input id="showLabels" type="checkbox" checked> Show labels</label><span id="canvasScale"></span></div><div class="canvas-scroll"><canvas id="planCanvas" aria-label="Blueprint editor"></canvas></div><div class="canvas-footer"><span><i class="legend-swatch perimeter"></i> Perimeter</span><span><i class="legend-swatch room"></i> Spaces</span><span><i class="legend-swatch opening"></i> Openings</span><span>Click a space in the list to remove it</span></div></div>
-      <div id="drawingInfo" class="drawing-info" hidden><div class="info-title">Measurements and source</div><div id="measurementBadges" class="measurement-badges"></div><p id="provenanceText"></p></div>
+      <div id="drawingInfo" class="drawing-info" hidden><div class="info-title">Measurements and source</div><div id="measurementBadges" class="measurement-badges"></div><p id="provenanceText"></p>
+        <details id="reconstructionReview" class="reconstruction-review" hidden>
+          <summary>Review reconstruction assumptions</summary>
+          <p id="reconstructionCounts"></p>
+          <p>Review the source evidence and estimated values below. Use the item IDs when requesting a correction.</p>
+          <section id="referenceContext" hidden><h3>Reference files</h3><div id="referenceLedger"></div><h3>Specified finishes</h3><div id="finishSpecification"></div></section>
+          <h3>Scale check</h3><div id="reconstructionScale"></div>
+          <h3>Reconstruction decisions</h3><ul id="reconstructionDecisions" class="review-list" tabindex="0" aria-label="Reconstruction decisions"></ul>
+          <h3>Openings and access</h3><ol id="reconstructionOpenings" class="review-list" tabindex="0" aria-label="Opening evidence and dimensions"></ol>
+          <a id="reconstructionTrace" class="secondary-button" download>Download reconstruction trace</a>
+        </details>
+      </div>
 
       <section class="create-panel" id="createPanel">
-        <div class="create-copy"><div class="eyebrow">MAKE IT YOURS</div><h2>Choose a look for the same measured space.</h2><p>Styles change finishes and lighting. The traced floor plan stays in metres.</p></div>
-        <div id="styleChoices" class="style-choices" role="radiogroup" aria-label="Architectural style"></div>
-        <div class="create-actions"><button id="generateButton" type="button" class="primary-button" disabled>Create 3D scene <span>→</span></button><button id="allStylesButton" type="button" class="secondary-button" disabled>Export all styles</button><span id="generateStatus" class="helper"></span></div>
-        <div id="resultPanel" class="result-panel" hidden><div><strong>Your USD scene is ready.</strong><p id="resultDetails"></p></div><div class="result-actions"><a id="downloadLink" class="secondary-button" href="#" download>Download USD</a><select id="streamQuality" aria-label="Stream quality"><option value="hd">HD · clearer detail</option><option value="standard">Standard · lower bandwidth</option></select><label class="physics-option"><input id="streamPhysics" type="checkbox"> Simulate physics</label><button id="streamButton" class="primary-button" type="button">Explore live on another screen <span>↗</span></button></div></div>
+        <div class="create-copy"><div class="eyebrow">FINISH OPTIONS</div><h2>Choose finishes for this layout.</h2><p id="finishPresetNote">Presets change surface materials and lighting. Your reviewed room dimensions stay in metres.</p></div>
+        <div id="styleChoices" class="style-choices" role="radiogroup" aria-label="Finish preset"></div>
+        <div class="create-actions"><button id="generateButton" type="button" class="primary-button" disabled>Create 3D scene <span>→</span></button><button id="allStylesButton" type="button" class="secondary-button" disabled>Export all finishes</button><span id="generateStatus" class="helper"></span></div>
+        <div id="resultPanel" class="result-panel" hidden><div><strong>Your USD scene is ready.</strong><p id="resultDetails"></p></div><div class="result-actions"><a id="downloadLink" class="secondary-button" href="#" download>Download USD</a><select id="streamQuality" aria-label="Stream quality"><option value="hd">720p · HD</option><option value="full_hd">1080p · Full HD</option><option value="qhd">1440p · QHD</option><option value="uhd">4K · UHD (3840 × 2160)</option></select><label class="physics-option"><input id="streamPhysics" type="checkbox"> Simulate physics</label><button id="streamButton" class="primary-button" type="button">Explore live on another screen <span>↗</span></button></div></div>
         <div id="streamPanel" class="stream-panel" hidden><div><strong>Live RTX view</strong><p>Open this address on this laptop or another machine on the same network. The view connects automatically. Drag to rotate and scroll to zoom.</p><a id="streamLink" href="#" target="_blank" rel="noopener"></a></div><button id="stopStreamButton" type="button" class="subtle-button">Stop stream</button></div>
       </section>
     </section>

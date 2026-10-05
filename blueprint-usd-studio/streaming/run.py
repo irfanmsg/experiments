@@ -62,7 +62,9 @@ class _ClientHandler(SimpleHTTPRequestHandler):
             prepared = self.server.prepared
             self._json({key: prepared.get(key) for key in
                         ('name', 'rooms', 'footprint', 'walls', 'width', 'height',
-                         'geometry_note', 'asset_count', 'calibration')} |
+                         'geometry_note', 'asset_count', 'calibration', 'up_axis',
+                         'reconstruction_decisions', 'scale_audit', 'openings', 'assets',
+                         'presentation_decisions', 'reference_manifest')} |
                        {'camera': self.server.controller.state(),
                         'has_source': bool(prepared.get('source_image'))})
             return

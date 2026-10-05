@@ -89,6 +89,11 @@ def prepare_scene(source: Path, destination: Path, width: int, height: int) -> d
     wrapper.SetDefaultPrim(world.GetPrim())
     model = UsdGeom.Xform.Define(wrapper, "/World/Model")
     model.GetPrim().GetReferences().AddReference(str(source), root.GetPath())
+    # ALL population renders physics prototypes as duplicates at the origin.
+    # Expand this temporary composition; exported source instances stay intact.
+    for prim in Usd.PrimRange(model.GetPrim()):
+        if prim.IsInstance():
+            prim.SetInstanceable(False)
 
     camera = UsdGeom.Camera.Define(wrapper, CAMERA_PATH)
     camera.CreateFocalLengthAttr(28.0)
@@ -125,8 +130,8 @@ def prepare_scene(source: Path, destination: Path, width: int, height: int) -> d
             modeled = spans.copy()
             if prim.GetCustomDataByKey('dimensionMode') == 'average_depth':
                 area = abs(sum(a[0]*b[1]-b[0]*a[1] for a,b in zip(polygon,polygon[1:]+polygon[:1])))/2
-                axis = int(prim.GetCustomDataByKey('spanAxis'))
-                modeled[1-axis] = area/spans[axis]
+                span_axis = int(prim.GetCustomDataByKey('spanAxis'))
+                modeled[1-span_axis] = area/spans[span_axis]
         low = [min(p[i] for p in polygon) for i in range(2)]
         high = [max(p[i] for p in polygon) for i in range(2)]
         # Plan coordinates are metre-based XY (the authoring pipeline is Z-up).
@@ -163,8 +168,10 @@ def prepare_scene(source: Path, destination: Path, width: int, height: int) -> d
                 source_image = str(candidate)
                 break
     if source_image is None and root.GetCustomDataByKey('planName') == 'PWC Miami B1-1502':
-        candidate = repository / 'data/b1_1502/approved_crop.jpg'
-        if candidate.is_file():
+        source_data = json.loads(root.GetCustomDataByKey('source') or '{}')
+        primary_crop = source_data.get('primary_crop', 'approved_crop.jpg')
+        candidate = repository / 'data/b1_1502' / primary_crop if primary_crop in {'approved_crop.jpg', 'agreement_unit_crop.jpg'} else None
+        if candidate and candidate.is_file():
             source_image = str(candidate)
     reopened = Usd.Stage.Open(str(destination))
     if not reopened or not reopened.GetPrimAtPath("/World/Model").IsValid():
@@ -184,6 +191,12 @@ def prepare_scene(source: Path, destination: Path, width: int, height: int) -> d
         "name": root.GetCustomDataByKey('planName') or source.stem,
         "asset_count": len(original.GetPrimAtPath(str(root.GetPath()) + '/Assets').GetChildren()) if original.GetPrimAtPath(str(root.GetPath()) + '/Assets') else 0,
         "geometry_note": root.GetCustomDataByKey('dimensionNote') or 'Traced from the drawing. Wall positions are approximate; height and thickness are assumed.',
+        "reconstruction_decisions": json.loads(root.GetCustomDataByKey('reconstructionDecisions') or '[]'),
+        "scale_audit": json.loads(root.GetCustomDataByKey('scaleAudit') or '{}'),
+        "openings": json.loads(root.GetCustomDataByKey('openingTrace') or '[]'),
+        "assets": json.loads(root.GetCustomDataByKey('assetImports') or '[]'),
+        "presentation_decisions": json.loads(root.GetCustomDataByKey('presentationDecisions') or '[]'),
+        "reference_manifest": json.loads(root.GetCustomDataByKey('referenceManifest') or '{}'),
         "up_axis": str(axis),
         "meters_per_unit": units,
         "camera": CAMERA_PATH,
