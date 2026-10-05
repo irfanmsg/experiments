@@ -147,6 +147,27 @@ def _ice_servers(ovstream) -> list:
     return servers
 
 
+def _save_rendered_preview(prepared: dict, frame) -> None:
+    if not prepared.get('preview_path') or not prepared.get('plan_fingerprint'):
+        return
+    from PIL import Image
+    destination = Path(prepared['preview_path'])
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix('.tmp')
+    Image.fromarray(frame).convert('RGB').save(temporary, format='PNG')
+    temporary.replace(destination)
+    metadata = destination.parent / 'manifest.json'
+    try:
+        saved = json.loads(metadata.read_text())
+    except (OSError, json.JSONDecodeError):
+        saved = {}
+    styles = saved.get('styles', []) if saved.get('plan_sha256') == prepared['plan_fingerprint'] else []
+    saved = {'plan_sha256': prepared['plan_fingerprint'], 'styles': sorted(set(styles + [destination.stem]))}
+    temporary = metadata.with_suffix('.tmp')
+    temporary.write_text(json.dumps(saved))
+    temporary.replace(metadata)
+
+
 def _render(prepared: dict, args: argparse.Namespace) -> None:
     if wp is None:
         raise RuntimeError("warp-lang is missing; run ./omni_setup/setup.sh runtime")
@@ -217,6 +238,11 @@ def _render(prepared: dict, args: argparse.Namespace) -> None:
             if pixels.ndim != 3 or pixels.shape[2] != 4 or pixels.dtype != wp.uint8:
                 raise RuntimeError("ovrtx LdrColor must be H×W×4 RGBA8")
             height, width = int(pixels.shape[0]), int(pixels.shape[1])
+            try:
+                if prepared.get('preview_path'):
+                    _save_rendered_preview(prepared, pixels.numpy())
+            except (OSError, ValueError) as exc:
+                _status('preview_unavailable', error=type(exc).__name__)
             del pixels
         if (width, height) != (args.width, args.height):
             raise RuntimeError("ovrtx output resolution does not match render product")

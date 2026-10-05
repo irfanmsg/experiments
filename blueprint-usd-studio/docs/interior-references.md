@@ -19,7 +19,19 @@ The reel's sampled frames label these examples:
 | Bhutia/Sikkimese | Timber surfaces, painted borders and saturated red/blue textiles | A small, deliberate colour and textile accent |
 | Bhojpuri/Mithila | Painted frieze/artwork, pale walls, woven seating and patterned rug | Artwork, a painted accent and natural fibre furniture |
 
-Limits: the reel does not provide dimensions, named built projects, material specifications or provenance for its background images. The labels are the creator's presentation, not independently verified regional classifications. Background authenticity and whether they represent completed interiors remain unverified. No guide was requested by comment or message, and no account login was used.
+Limits: the reel does not provide dimensions, named built projects, material specifications or provenance for its background images. The labels are the creator's presentation, not independently verified regional classifications. Background authenticity and whether they represent completed interiors remain unverified. No guide was requested by comment or message, and no new login was performed during this public review.
+
+## User's saved Design collection
+
+The exact [Design collection](https://www.instagram.com/irfanmsg/saved/design/18053857588866309/) was visible in the user's existing logged-in desktop Chrome session. No additional login was needed. Around twelve thumbnails were visible across two grid positions; the collection's total was not shown. Three representative saved posts were inspected, so these schemes describe that selection rather than the entire collection.
+
+| Proposed scheme | Saved reference and creator | Observed decor | Proposed implementation and limits |
+| --- | --- | --- | --- |
+| Light timber & woven textiles (`saved_linen_timber`) | [DclJJ7wmeQX](https://www.instagram.com/p/DclJJ7wmeQX/) — dfym2023 | Cream built-in upholstered bench, timber bookshelf/cabinet fronts, neutral woven rug, sheer curtains, framed art, plants and warm pendants | Seating/storage/lamp/curtain geometry with a restrained timber and textile palette. The image's built-project authenticity is unverified; comments question AI generation. It supplies no reliable physical dimensions. |
+| Warm evening lounge (`saved_evening_lounge`) | [Dce9CWFqgnn](https://www.instagram.com/p/Dce9CWFqgnn/) — byronhartzel | Muted beige/olive seating, timber console and tables, graphic posters, patterned throw, books, plant and pale rug. Three practical lights are visible: large opal floor globe, amber console lamp and white mushroom side lamp | Distinct lamp geometry and local warm light pools, with graphic art and layered textiles. Colours are affected by lighting/exposure; exact Kelvin, lux, fabric and timber species are unknown. A representative video frame was inspected, not the complete video. |
+| Botanical cane & terracotta (`saved_botanical_cane`) | [DYi4XJVod1V](https://www.instagram.com/p/DYi4XJVod1V/) — hirals_homey_home | Cane chair backs/headboard/cabinet fronts, broad-leaf and trailing plants, pale textured upholstery, terracotta cushions, botanical/mustard textiles, sheer curtains, small framed gallery, woven shades and round timber table | Freestanding cane furniture forms, woven lamp shades, plant groupings and botanical accents distinguish this scheme from the clean timber bench/bookcase scheme. Four decoded frames across the 29.98-second video were inspected. Exact products, dimensions and built-state provenance remain unverified. |
+
+These are decor schemes derived from observations. They do not authorize changes to room dimensions, door access, source flooring classes or furniture scale. A teal bedroom was visible only as a collection thumbnail and is not counted as an inspected reference. No messages, comments, likes or save-state changes were made. Authentication values were not read, copied or exported.
 
 ## Additional primary project references
 
@@ -35,4 +47,4 @@ Keep specified flooring, wet-area finishes and door connections fixed. Develop a
 
 Record added decor, chosen colours, light settings, furniture models and inferred placements as illustrative decisions. Reference photography is for review and inspiration; no project photograph or reel frame has been added as an application texture or presented as this apartment's rendering.
 
-Browser evidence and sampled images are retained locally under `output/qa/interior-research/` (ignored by Git). No implementation or streaming settings changed during this research.
+Browser evidence and sampled images are retained locally under `output/qa/interior-research/` (ignored by Git). Reference research itself did not modify implementation or streaming settings.

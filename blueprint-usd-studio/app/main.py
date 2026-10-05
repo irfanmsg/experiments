@@ -148,14 +148,31 @@ def _normalize_image(source: Path, destination: Path) -> tuple[int, int, int]:
         raise HTTPException(400, "The uploaded image could not be opened") from exc
 
 
+def _preview_urls(project_id: str, plan: dict) -> dict:
+    directory = OUTPUT / project_id / 'previews'
+    try:
+        saved = json.loads((directory / 'manifest.json').read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+    fingerprint = hashlib.sha256(json.dumps(plan, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    if saved.get('plan_sha256') != fingerprint:
+        return {}
+    return {style: f'/api/projects/{project_id}/preview/{style}'
+            for style in saved.get('styles', []) if style in PALETTES and (directory / f'{style}.png').is_file()}
+
+
 def _project_response(project_id: str) -> dict:
     plan = _read_plan(project_id)
+    previews = _preview_urls(project_id, plan)
     return {
         "id": project_id,
         "plan": plan,
         "image_url": f"/api/projects/{project_id}/image",
         "page_count": int(plan.get("page_count", 1)),
-        "styles": [{"id": key, "label": value["label"], "category": value["category"], "description": value["description"], "wall_color": value["wall"][0], "floor_color": value["floor"][0]} for key, value in PALETTES.items()],
+        "styles": [{"id": key, "label": value["label"], "category": value["category"], "description": value["description"], "wall_color": value["wall"][0], "floor_color": value["floor"][0],
+                    "is_design_scheme": value.get('is_design_scheme', False), "design_features": value.get('design_features', []),
+                    "reference_urls": value.get('reference_urls', []), "requires_reference": value.get('requires_reference', False),
+                    "preview_url": previews.get(key)} for key, value in PALETTES.items()],
     }
 
 
@@ -358,6 +375,13 @@ def get_usd(project_id: str, style: str):
     if not path.exists():
         raise HTTPException(404, "Generate this style first")
     return FileResponse(path, media_type="model/vnd.usda", filename=f"{style}.usda")
+
+
+@app.get('/api/projects/{project_id}/preview/{style}')
+def project_preview(project_id: str, style: str):
+    if style not in _preview_urls(project_id, _read_plan(project_id)):
+        raise HTTPException(404, 'A rendered preview for the current layout is not available')
+    return FileResponse(OUTPUT / project_id / 'previews' / f'{style}.png', media_type='image/png')
 
 
 @app.get("/api/projects/{project_id}/pack")

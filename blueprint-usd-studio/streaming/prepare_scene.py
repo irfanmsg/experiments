@@ -160,6 +160,11 @@ def prepare_scene(source: Path, destination: Path, width: int, height: int) -> d
 
     wrapper.GetRootLayer().Save()
     repository = Path(__file__).resolve().parents[1]
+    style = root.GetCustomDataByKey('style')
+    preview_path = None
+    if (source.parent.parent == repository / 'output' and root.GetCustomDataByKey('isDesignScheme')
+            and style == source.stem and all(char in 'abcdefghijklmnopqrstuvwxyz0123456789_-' for char in style)):
+        preview_path = str(source.parent / 'previews' / f'{style}.png')
     source_image = None
     if source.parent.parent == repository / 'output':
         for filename in ('plan.jpg', 'plan.png'):
@@ -197,6 +202,9 @@ def prepare_scene(source: Path, destination: Path, width: int, height: int) -> d
         "assets": json.loads(root.GetCustomDataByKey('assetImports') or '[]'),
         "presentation_decisions": json.loads(root.GetCustomDataByKey('presentationDecisions') or '[]'),
         "reference_manifest": json.loads(root.GetCustomDataByKey('referenceManifest') or '{}'),
+        "style": style,
+        "preview_path": preview_path,
+        "plan_fingerprint": root.GetCustomDataByKey('planFingerprint'),
         "up_axis": str(axis),
         "meters_per_unit": units,
         "camera": CAMERA_PATH,
