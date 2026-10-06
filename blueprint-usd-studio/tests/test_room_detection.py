@@ -168,6 +168,26 @@ def test_repeated_room_names_do_not_borrow_another_labels_dimensions(tmp_path):
     assert report['scale_proposal'] is None, 'One room alone must not become independent calibration evidence'
 
 
+def test_fixture_strokes_do_not_exhaust_outer_wall_candidates(tmp_path):
+    image = np.full((800, 1000, 3), 255, np.uint8)
+    for x in (100, 500):
+        cv2.rectangle(image, (x, 100), (x+300, 610), (20,20,20), 10)
+    # Thin paired furniture strokes must not crowd out the observed far wall.
+    for y in (535, 538, 551, 554, 565, 568):
+        cv2.line(image, (130, y), (290, y), (20,20,20), 1)
+    path = tmp_path/'furniture-near-wall.png'
+    cv2.imwrite(str(path), image)
+    labels = [{'name': f'Bedroom {i+1}', 'bbox': [x,340,x+80,365]} for i,x in enumerate((210,610))]
+    text = {'room_labels': labels, 'dimensions': [
+        {'text':'3m x 5.1m', 'dimensions_m':[3,5.1], 'room_label_bbox':label['bbox']}
+        for label in labels], 'warnings':[]}
+    report = vision.analyze_drawing(path, text_data=text)
+    room = next(item for item in report['suggestions'] if item['name']=='Bedroom 1')
+    assert Polygon(room['pixel_polygon']).covers(Point(250,595)), 'Room must reach the far wall past the furniture'
+    bottom = next(edge for edge in room['wall_evidence'] if edge['side']=='bottom')
+    assert bottom['structural_wall_support'] > .9
+
+
 @pytest.mark.skipif(not (_UPLOADED_PLAN.is_file() and (_UPLOADED_PLAN.parents[2] / 'output/qa/labeled-room-final.json').is_file()),
                     reason='Optional local QA: private upload and OCR evidence are not committed')
 def test_grouped_room_covers_label_without_missing_boundary_warning():
@@ -177,7 +197,10 @@ def test_grouped_room_covers_label_without_missing_boundary_warning():
     assert any(item['name'] == 'Dining / Living' for item in report['suggestions'])
     assert not any(warning.startswith('Dining: no sufficiently supported room boundary') for warning in report['warnings'])
     servant = next(item for item in report['suggestions'] if item['name'] == 'Servant Room')
-    assert servant['max_dimension_relative_error'] > .075
+    assert servant['max_dimension_relative_error'] < .075
+    assert Polygon(servant['pixel_polygon']).covers(Point(140,423)), 'Include the floor beyond the bed and entrance threshold'
+    bottom = next(edge for edge in servant['wall_evidence'] if edge['side']=='bottom')
+    assert bottom['structural_wall_support'] > .9 and not bottom['gaps']
     assert not any(warning.startswith('Toilet: no sufficiently supported room boundary') for warning in report['warnings'])
     assert sum(item['name'] == 'Toilet' for item in report['suggestions']) == 3
 

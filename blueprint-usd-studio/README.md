@@ -87,6 +87,8 @@ cd experiments/blueprint-usd-studio
 
 Printed room names and dimensions use the optional native Tesseract engine with English language data. On Ubuntu, install it with `sudo apt-get install tesseract-ocr tesseract-ocr-eng`, then restart Studio. Image and text analysis runs on the host machine. Without the engine, the editor retains basic enclosed-outline detection and manual scale entry.
 
+Automatic outlining runs in the application's Python pipeline, not a conversational agent: Tesseract reads text, OpenCV finds wall strokes and contours, and geometric rules check candidate spaces and dimensions. The upload path has no coordinates specific to the example apartment. It does use an English room vocabulary, image thresholds and architectural heuristics, so it is not yet validated as reliable across arbitrary drawings. Current checks cover the reference upload and synthetic cases; a separate set of unseen real plans is needed to measure generalization. Unselected proposals remain visible for review without becoming accepted rooms.
+
 Open [http://127.0.0.1:8001](http://127.0.0.1:8001). Port 8001 is used on the development machine because another app occupies port 8000. For optional GPU rendering, WebRTC streaming and PhysX, install the runtime and restart Studio:
 
 ```bash

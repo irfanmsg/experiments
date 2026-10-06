@@ -28,6 +28,9 @@ def assert_reconstructed_rooms(suggestions):
         'bedroom 2': {'inside': [(923, 710), (840, 620)],
                       'outside': [(850, 450), (650, 760), (1100, 820)],
                       'area': (50000, 115000), 'dimensions': [3.9624, 3.3528]},
+        'servant room': {'inside': [(140, 300), (140, 423)],
+                         'outside': [(120, 170), (140, 470), (300, 370)],
+                         'area': (28000, 34000), 'dimensions': [2.1336, 2.5146]},
     }
     matched = {}
     for name, truth in expected.items():
@@ -102,7 +105,17 @@ def main():
                 assert item['label_evidence']['review_note'] in page.locator('#suggestions .suggestion').nth(index).inner_text()
             disagreements = [(index, item) for index, item in enumerate(detected)
                              if (item.get('max_dimension_relative_error') or 0) > .075]
-            assert disagreements, 'The undersized Servant Room must be flagged for review.'
+            servant = matched['servant room']
+            assert servant['selected'] and servant['max_dimension_relative_error'] <= .075
+            assert next(edge for edge in servant['wall_evidence'] if edge['side'] == 'bottom')['structural_wall_support'] > .9
+            servant_check = page.get_by_role('checkbox', name=f'Use proposed room {detected.index(servant)+1}', exact=True)
+            page.evaluate('''() => { window.outlineLabels=[]; window.originalFillText=ctx.fillText;
+                ctx.fillText=function(text,...args) { window.outlineLabels.push(text); return window.originalFillText.call(this,text,...args); }; }''')
+            servant_check.uncheck()
+            assert 'Servant Room · not selected' in page.evaluate('window.outlineLabels')
+            assert page.evaluate('state.plan.rooms.length') == len(reference.get('rooms', []))
+            servant_check.check()
+            page.evaluate('ctx.fillText=window.originalFillText')
             for index, item in disagreements:
                 assert not item['selected']
                 assert not page.get_by_role('checkbox', name=f'Use proposed room {index+1}', exact=True).is_checked()

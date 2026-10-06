@@ -328,7 +328,6 @@ function refreshReconstructionReview() {
     };
     audit.room_dimensions = (plan.rooms || []).map(room => {
       const modeled = room.source_evidence && room.polygon.length === 4 ? [distance(room.polygon[0], room.polygon[1]), distance(room.polygon[1], room.polygon[2])] : polygonSpans(room.polygon);
-      if (room.source_evidence?.dimension?.rotation_deg === 90 || room.source_evidence?.dimension?.rotation_deg === 270) modeled.reverse();
       if (room.dimension_mode === "average_depth" && modeled.length) {
         const axis = Number(room.span_axis) === 1 ? 1 : 0;
         modeled[1 - axis] = modeled[axis] > 0 ? polygonArea(room.polygon) / modeled[axis] : null;
@@ -446,11 +445,12 @@ function draw() {
     ctx.fillStyle='#284b35';ctx.font='24px sans-serif';ctx.textAlign='left';ctx.fillText('1 grid square = 1 m × 1 m',35,40);
   } else ctx.drawImage(state.image, 0, 0);
   state.suggestions.forEach((suggestion, index) => {
-    if (!suggestion.selected) return;
     const pixels = suggestion.pixel_polygon;
     ctx.beginPath(); ctx.moveTo(...pixels[0]); pixels.slice(1).forEach(p => ctx.lineTo(...p)); ctx.closePath();
-    ctx.fillStyle = '#f4b64c25'; ctx.strokeStyle = '#ba6a0b'; ctx.lineWidth = Math.max(2, canvas.width / 500); ctx.setLineDash([8, 5]); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
-    const [x, y] = centroid(pixels); ctx.font = `${Math.max(14, canvas.width / 65)}px sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = '#713f08'; ctx.fillText(suggestion.reviewName || `Proposed room ${index + 1}`, x, y);
+    ctx.fillStyle = suggestion.selected ? '#f4b64c25' : '#87559e0d'; ctx.strokeStyle = suggestion.selected ? '#ba6a0b' : '#87559e';
+    ctx.lineWidth = Math.max(2, canvas.width / 500); ctx.setLineDash(suggestion.selected ? [8, 5] : [3, 6]); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+    const label = (suggestion.reviewName || `Proposed room ${index + 1}`) + (suggestion.selected ? '' : ' · not selected');
+    const [x, y] = centroid(pixels); ctx.font = `${Math.max(14, canvas.width / 65)}px sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = suggestion.selected ? '#713f08' : '#68407b'; ctx.fillText(label, x, y);
   });
   const footprint = state.plan.footprint?.polygon || [];
   if (footprint.length >= 3) drawPolygon(footprint, "#1caa86", "#41b89917", 5);

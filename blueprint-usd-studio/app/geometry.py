@@ -96,8 +96,7 @@ def measured_scale_audit(plan: dict) -> dict:
             modeled = [x1-x0, y1-y0]
             if room.get('source_evidence') and len(room['polygon']) == 4:
                 modeled = [segment_length(room['polygon'][0], room['polygon'][1]), segment_length(room['polygon'][1], room['polygon'][2])]
-                if (room['source_evidence'].get('dimension') or {}).get('rotation_deg') in (90, 270):
-                    modeled.reverse()
+                # Caption rotation describes text, not the room's width/depth axes.
             if room.get('dimension_mode') == 'average_depth':
                 axis = int(room['span_axis'])
                 modeled[1-axis] = polygon_area(room['polygon']) / modeled[axis]

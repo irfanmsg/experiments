@@ -268,7 +268,11 @@ def analyze_drawing(image_path: str | Path, max_results: int = 60, *, text_data=
             return result[:6]
         if anchor['label']['name'].lower() in {'toilet', 'bathroom', 'powder room'}:
             return distinct(before), distinct(after)
-        return before[:6], after[:6]
+        # Thin furniture/duplicate strokes must not exhaust the candidate
+        # budget before the nearest substantial wall gets considered.
+        strong_before = sorted({line['hi']+1 for line in options if line['strong'] and line['hi'] < c-10}, reverse=True)
+        strong_after = sorted({line['lo']-1 for line in options if line['strong'] and line['lo'] > c+10})
+        return list(dict.fromkeys(before[:6]+strong_before[:1])), list(dict.fromkeys(after[:6]+strong_after[:1]))
 
     observations = []
     for anchor in anchors:
