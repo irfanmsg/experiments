@@ -73,6 +73,8 @@ function setTool(tool) {
 }
 function markChanged() {
   state.revision++;
+  state.styles.forEach(style => { style.preview_url = null; });
+  renderStyles();
   invalidateGenerated();
   $("saveState").textContent = "Saving…";
   clearTimeout(state.saveTimer);
@@ -95,8 +97,7 @@ async function savePlan() {
 }
 async function setProject(data) {
   state.project = data.id; state.plan = data.plan; state.styles = data.styles || [];
-  if (state.plan.source?.primary_crop === 'agreement_unit_crop.jpg' && state.styles.some(style => style.id === 'home_specification')) state.style = 'home_specification';
-  $('finishPresetNote').textContent = state.plan.reference_manifest ? 'The B1-1502 specified finishes follow the agreement. Other presets are illustrative materials and lighting.' : 'Presets change surface materials and lighting. Your reviewed room dimensions stay in metres.';
+  if (state.plan.source?.primary_crop === 'agreement_unit_crop.jpg') state.style = availableStyles().find(style => style.is_design_scheme)?.id || availableStyles().find(style => style.id === 'home_specification')?.id || 'contemporary';
   state.reviewOpening = null;
   state.generated = null; state.selectedAsset = null; state.revision = 0;
   $("generateStatus").textContent = "";
@@ -450,23 +451,76 @@ function handleCanvasUp(event) {
     createRoom([[Math.min(a[0], b[0]), Math.min(a[1], b[1])], [Math.max(a[0], b[0]), Math.min(a[1], b[1])], [Math.max(a[0], b[0]), Math.max(a[1], b[1])], [Math.min(a[0], b[0]), Math.max(a[1], b[1])]]);
   } catch (error) { toast(error.message); }
 }
-function renderStyles() {
+function availableStyles() {
   const category = state.plan?.structure_type || "home";
-  const styles = state.styles.filter(style => (category === "other" || style.category === category) && (style.id !== 'home_specification' || state.plan?.source?.primary_crop === 'agreement_unit_crop.jpg'));
+  const isReferencePlan = state.plan?.source?.primary_crop === 'agreement_unit_crop.jpg';
+  return state.styles.filter(style => (category === "other" || style.category === category) && (!(style.requires_reference || style.id === 'home_specification') || isReferencePlan));
+}
+function renderStyles() {
+  const styles = availableStyles();
   if (!styles.some(style => style.id === state.style)) state.style = styles[0]?.id || "contemporary";
-  const container = $("styleChoices"); container.replaceChildren();
+  const schemes = styles.filter(style => style.is_design_scheme);
+  $('styleChoices').setAttribute('aria-label', schemes.length ? 'Interior scheme or finish preset' : 'Finish preset');
+  $('interiorSchemes').hidden = !schemes.length;
+  $('finishPresets').hidden = !styles.some(style => !style.is_design_scheme);
+  $('designOptionsTitle').textContent = schemes.length ? 'Choose an interior scheme for this layout.' : 'Choose finishes for this layout.';
+  $('finishPresetNote').textContent = schemes.length
+    ? 'Room dimensions follow the agreement. Furniture placement, colours and lighting are design proposals; the specified finishes remain available as a preset.'
+    : state.plan?.reference_manifest ? 'The B1-1502 specified finishes follow the agreement. Other presets are illustrative materials and lighting.' : 'Presets change surface materials and lighting. Your reviewed room dimensions stay in metres.';
+  $('allStylesButton').textContent = schemes.length ? 'Export all options' : 'Export all finishes';
+  $('schemeChoices').replaceChildren(); $('finishChoices').replaceChildren();
   styles.forEach(style => {
     const button = document.createElement("button"); button.type = "button"; button.className = `style-choice${state.style === style.id ? " selected" : ""}`;
     button.setAttribute("role", "radio"); button.setAttribute("aria-checked", String(state.style === style.id));
-    const preview = document.createElement("div"); preview.className = "style-preview";
-    const wall = document.createElement("span"); wall.style.background = hex(style.wall_color);
-    const floor = document.createElement("span"); floor.style.background = hex(style.floor_color);
-    preview.append(wall, floor);
+    button.setAttribute('aria-label', style.label); button.tabIndex = state.style === style.id ? 0 : -1; button.dataset.styleId = style.id;
     const name = document.createElement("strong"); name.textContent = style.label;
     const detail = document.createElement("small"); detail.textContent = style.description || "";
-    button.append(preview, name, detail);
-    button.onclick = () => { if (state.style !== style.id) { state.style = style.id; state.revision++; invalidateGenerated(); renderStyles(); } };
-    container.append(button);
+    if (style.is_design_scheme) {
+      const card = document.createElement('article'); card.className = `scheme-card${state.style === style.id ? ' selected' : ''}`;
+      button.classList.add('scheme-choice');
+      const preview = document.createElement('span'); preview.className = 'scheme-preview';
+      const pending = document.createElement('span'); pending.className = 'scheme-preview-pending'; pending.textContent = 'Preview appears when the 3D view is opened'; preview.append(pending);
+      if (style.preview_url) {
+        const image = document.createElement('img'); image.src = style.preview_url; image.alt = `${style.label} rendered from this layout`; image.loading = 'lazy';
+        const caption = document.createElement('span'); caption.className = 'scheme-preview-caption'; caption.textContent = 'Rendered from this layout';
+        image.onload = () => { pending.hidden = true; caption.hidden = false; };
+        image.onerror = () => { image.remove(); caption.remove(); pending.hidden = false; };
+        caption.hidden = true; preview.append(image, caption);
+      }
+      button.append(preview, name, detail); card.append(button);
+      if (style.design_features?.length) {
+        const features = document.createElement('ul'); features.className = 'scheme-features'; features.id = `scheme-features-${style.id}`;
+        style.design_features.forEach(feature => { const item = document.createElement('li'); item.textContent = feature; features.append(item); });
+        button.setAttribute('aria-describedby', features.id); card.append(features);
+      }
+      const references = document.createElement('div'); references.className = 'scheme-references';
+      (style.reference_urls || []).forEach((value, index) => {
+        let url; try { url = new URL(value); } catch { return; }
+        if (!['https:', 'http:'].includes(url.protocol)) return;
+        const link = document.createElement('a'); link.href = url.href; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = `Design reference ${index + 1} ↗`; references.append(link);
+      });
+      if (references.childElementCount) card.append(references);
+      $('schemeChoices').append(card);
+    } else {
+      const preview = document.createElement('span'); preview.className = 'style-preview'; preview.setAttribute('aria-hidden', 'true');
+      const wall = document.createElement('span'); wall.style.background = hex(style.wall_color);
+      const floor = document.createElement('span'); floor.style.background = hex(style.floor_color);
+      preview.append(wall, floor); button.append(preview, name, detail); $('finishChoices').append(button);
+    }
+    button.onclick = () => {
+      if (state.style === style.id) return;
+      const restoreFocus = document.activeElement === button;
+      state.style = style.id; state.revision++; invalidateGenerated(); renderStyles();
+      if (restoreFocus) [...$('styleChoices').querySelectorAll('[role="radio"]')].find(radio => radio.dataset.styleId === style.id)?.focus({ preventScroll: true });
+    };
+    button.onkeydown = event => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const radios = [...$('styleChoices').querySelectorAll('[role="radio"]')]; const index = radios.indexOf(button);
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? radios.length - 1 : (index + (['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : -1) + radios.length) % radios.length;
+      const id = radios[next].dataset.styleId; radios[next].click();
+      [...$('styleChoices').querySelectorAll('[role="radio"]')].find(radio => radio.dataset.styleId === id)?.focus({ preventScroll: true });
+    };
   });
 }
 async function generate(all = false) {
@@ -477,7 +531,7 @@ async function generate(all = false) {
   try {
     await savePlan();
     if (state.project !== projectId || state.revision !== revision) throw new Error("The plan changed. Create the scene again when edits are saved.");
-    $("generateStatus").textContent = all ? "Creating all finish files…" : "Creating a measured USD scene…";
+    $("generateStatus").textContent = all ? "Creating all design and finish files…" : "Creating a measured USD scene…";
     $("generateButton").disabled = true; $("allStylesButton").disabled = true;
     const result = await request(`/api/projects/${projectId}/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ style: all ? "all" : selectedStyle }) });
     if (state.project !== projectId || state.revision !== revision) throw new Error("The plan changed while the scene was building. Create it again to include your edits.");
@@ -496,6 +550,7 @@ async function generate(all = false) {
 }
 async function startStream() {
   if (!state.generated) return;
+  const projectId = state.project, revision = state.revision;
   clearInterval(startStream.poller); startStream.poller = null;
   const link = $("streamLink");
   link.hidden = true; link.removeAttribute("href");
@@ -512,6 +567,10 @@ async function startStream() {
         link.href = url; link.textContent = url; link.hidden = false;
         message.textContent = "Open the address on this laptop or another machine on the same network. The view connects automatically. Drag to rotate and scroll to zoom.";
         clearInterval(startStream.poller);
+        request(`/api/projects/${projectId}`).then(data => {
+          if (state.project !== projectId || state.revision !== revision) return;
+          state.styles = data.styles || []; renderStyles();
+        }).catch(() => {});
         return true;
       } else if (progress.phase === "error" || (!progress.running && progress.phase !== "loading")) {
         message.textContent = "The RTX stream stopped. Check the runtime setup or try again.";
@@ -614,7 +673,7 @@ $("starterFurniture").onclick = async () => {
   if (!state.project) return;
   try {
     const project = await request(`/api/projects/${state.project}/starter-furniture`, { method: "POST" });
-    state.plan = project.plan; state.revision++; invalidateGenerated(); refreshAll(); toast(`${state.plan.asset_placements.length} SimReady furnishings in this layout`);
+    state.plan = project.plan; state.styles = project.styles || []; state.revision++; invalidateGenerated(); refreshAll(); toast(`${state.plan.asset_placements.length} SimReady furnishings in this layout`);
   } catch (error) { toast(error.message); }
 };
 $("showLabels").onchange = draw;

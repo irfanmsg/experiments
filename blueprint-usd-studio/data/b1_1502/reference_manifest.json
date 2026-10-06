@@ -738,10 +738,24 @@
     "urls": [
       "https://www.instagram.com/reel/DbCm12AS6Tk/",
       "https://www.instagram.com/tvarasharma/",
+      "https://www.instagram.com/p/DclJJ7wmeQX/",
+      "https://www.instagram.com/p/Dce9CWFqgnn/",
+      "https://www.instagram.com/p/DYi4XJVod1V/",
       "https://www.studiolotus.in/projects/jor-bagh-house",
       "https://www.studiolotus.in/projects/the-quadrant-house",
       "https://www.architecturebrio.com/projects/casa-brio-apartment-mumbai/"
     ],
-    "role": "Decor and material-composition inspiration; not measured geometry or evidence of this apartment finishes"
+    "role": "Decor and material-composition inspiration; not measured geometry or evidence of this apartment finishes",
+    "saved_collection_review": {
+      "url": "https://www.instagram.com/irfanmsg/saved/design/18053857588866309/",
+      "access": "Existing signed-in desktop browser",
+      "scope": "Three representative posts inspected; collection size and completeness not established",
+      "schemes": [
+        {"id": "saved_linen_timber", "post": "DclJJ7wmeQX", "observed": "Cream upholstery, light timber cabinetry, linen curtains, woven rug, art, plants and warm pendants"},
+        {"id": "saved_evening_lounge", "post": "Dce9CWFqgnn", "observed": "Beige and olive upholstery, low timber furniture, graphic art, books, plants and local warm lamps"},
+        {"id": "saved_botanical_cane", "post": "DYi4XJVod1V", "observed": "Cane furniture and fronts, woven off-white textiles, terracotta cushions, plants, sheers and woven lamp shades"}
+      ],
+      "limit": "Reference authenticity is not established. Modeled decor, sizes, placements and lighting are illustrative assumptions."
+    }
   }
 }

@@ -28,7 +28,7 @@ The dependencies are already installed on this laptop; port 8000 is occupied by 
 
 Asset downloads are optional for basic USD export. `./omni_setup/fetch_simready.sh` retrieves NVIDIA's Furniture & Misc pack outside this Git repository. This laptop has FurnitureMisc01 and its RTX-compatible overlay installed under `/localhome/local-mirfan/Repos/OmniverseAssets`: the gallery offers 11 home/office objects, and the sample B1 layout contains 15 placements. Warehouse 01 is an optional separate download via `./omni_setup/fetch_simready_warehouse.sh`. Gallery availability depends on installed packs.
 
-Placements convert source units and up-axis to the metre-based, Z-up building, preserve source materials and anchor each geometry bottom to its placement height. Furniture keeps its physical size; it is not resized to fit rooms. The app selects authored collision variants where available and builds a bounds collider where needed. Select **Movable in simulation**, set a starting height, and enable **Simulate physics** to see an object move. Referenced assets need the local pack and overlay when the authored USD is moved to another machine. [omni_setup/README.md](omni_setup/README.md) describes the asset setup.
+Placements convert source units and up-axis to the metre-based, Z-up building and anchor each geometry bottom to its placement height. Furniture keeps its physical size; it is not resized to fit rooms. Source materials are retained except for the interior schemes' scene-local upholstery overrides; source asset files remain unchanged. The app selects authored collision variants where available and builds a bounds collider where needed. Select **Movable in simulation**, set a starting height, and enable **Simulate physics** to see an object move. Referenced assets need the local pack and overlay when the authored USD is moved to another machine. [omni_setup/README.md](omni_setup/README.md) describes the asset setup.
 
 For Internet viewing, the current LAN stream needs HTTPS, authentication, network routing, and an appropriate TURN server. Set `OVSTREAM_ICE_SERVERS` for an existing STUN/TURN service as described in [streaming/README.md](streaming/README.md). Do not expose the unauthenticated local editor or signaling port directly to the public Internet.
 
@@ -111,10 +111,21 @@ cameras, mouse rotation and zoom, and full screen. Screenshots are written to
 The scene follows source room dimensions, door connections and specified finish
 categories, while exact materials, lighting, door swing details and furniture
 placements remain illustrative. It does not yet provide a construction-verified
-or finished photorealistic interior, ceilings or fully
-detailed kitchen/bathroom fit-out. Room camera movement
+or finished photorealistic interior or fully detailed kitchen/bathroom fit-out. Room camera movement
 does not yet stop at walls. Room spans are constrained; exact wall construction, relative offsets and balcony profiles still need field confirmation.
 
 The eleven JPEGs in `Under_Construction` were individually reviewed: eight construction exteriors and three builder sales-office site-model photos. Their hashes and roles are included in the reference manifest. Several show floor 15, but tower/unit identity and metric calibration are not established. They guide qualitative exterior review and do not override apartment dimensions or specified finishes. See [construction-photo-review.md](docs/construction-photo-review.md).
 
-The supplied Instagram reel/profile and three primary designer projects were inspected for decor inspiration. Observed details and proposed applications are recorded in [interior-references.md](docs/interior-references.md). Current cards are finish presets; they do not claim to deliver complete regional interior designs.
+## Interior schemes from saved references
+
+The B1-1502 example offers three coordinated schemes, separately from the existing finish presets:
+
+- **Linen & light timber** (`saved_linen_timber`): cream upholstery, timber, sheer curtains and a neutral rug, informed by [dfym2023's saved post](https://www.instagram.com/p/DclJJ7wmeQX/).
+- **Warm evening lounge** (`saved_evening_lounge`): beige/olive upholstery, graphic art and warm lamp lighting, informed by [byronhartzel's saved post](https://www.instagram.com/p/Dce9CWFqgnn/).
+- **Botanical cane & terracotta** (`saved_botanical_cane`): cane details, woven shades, plants and terracotta accents, informed by [hirals_homey_home's saved video](https://www.instagram.com/p/DYi4XJVod1V/).
+
+Select a scheme, choose **Create 3D scene**, then open the live RTX view. Its card gains an actual rendered preview of the saved layout after the stream initializes. Rendering each scheme populates its own card; editing the plan clears obsolete previews. The first scheme is selected by default for a freshly opened agreement example. Other uploaded projects retain their category's finish presets.
+
+These schemes add modeled furnishings, textiles, art and lights while retaining measured room geometry and documented floor-finish categories. Exact products, decorative dimensions, colours, lighting and ceiling height are design assumptions recorded in the reconstruction trace. The posts establish visual inspiration; their built-project authenticity is unverified. Three representative saved posts were inspected, not the entire saved collection. The supplied public Instagram reel/profile and three primary designer projects were also reviewed; observed details and proposed applications are recorded in [interior-references.md](docs/interior-references.md).
+
+After at least one scheme has been rendered, run `.venv/bin/python tests/check_interior_scheme_cards.py --project PROJECT_ID` against Studio on port 8001. This read-only Playwright check covers real preview images, source links, keyboard selection, mobile cards and invalidation on an unsaved edit. It does not start or stop the live stream.

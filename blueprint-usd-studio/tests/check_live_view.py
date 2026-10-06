@@ -18,12 +18,13 @@ def main():
     parser.add_argument('--url', default='http://127.0.0.1:8088/?signal_port=49100')
     parser.add_argument('--width', type=int, default=1280)
     parser.add_argument('--height', type=int, default=720)
+    parser.add_argument('--artifact-prefix', help='Filename prefix for comparing rendered schemes')
     args = parser.parse_args()
     url = urlsplit(args.url)
     origin = f'{url.scheme}://{url.netloc}'
     artifacts = Path(__file__).parents[1] / 'output/qa'
     artifacts.mkdir(parents=True, exist_ok=True)
-    prefix = f'viewer-{args.width}x{args.height}'
+    prefix = args.artifact_prefix or f'viewer-{args.width}x{args.height}'
     errors = []
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(executable_path='/opt/google/chrome/chrome', headless=True,
