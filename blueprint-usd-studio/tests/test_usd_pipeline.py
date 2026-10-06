@@ -22,11 +22,18 @@ def test_b1_1502_area_and_authoritative_room_dimensions(tmp_path):
     # RERA is a source net-area schedule, not the generated gross slab area.
     assert plan['area_schedule_m2']['total'] == 207.77
     assert polygon_area(plan['footprint']['polygon']) == pytest.approx(plan['footprint']['modeled_gross_area_m2'])
-    assert plan['dimension_model'] == 'b1-clear-dimensions-v1'
+    assert plan['dimension_model'] == 'b1-agreement-dimensions-v3'
     rooms = {room["id"]: room for room in plan["rooms"]}
     assert rooms["living_dining"]["dimensions_m"] == [9.83, 4.03]
     assert rooms["kitchen"]["dimensions_m"] == [2.75, 4.12]
     assert rooms["bedroom_outer_south"]["dimensions_m"] == [4.65, 3.65]
+    assert rooms["powder_room"]["dimensions_m"] == [1.38, 1.38]
+    assert rooms["bathroom_north"]["dimensions_m"] == [1.38, 2.46]
+    assert plan['reference_manifest']['primary_layout']['pdf_page'] == 35
+    assert len(plan['reference_manifest']['sources']) == 20
+    photos = [source for source in plan['reference_manifest']['sources'] if source['id'].startswith('photo_')]
+    assert len(photos) == 11 and all(source['geometry'] is False for source in photos)
+    assert plan['reference_manifest']['construction_photo_review']['summary']['apartment_interior_count'] == 0
 
     report = build_usd(plan, tmp_path / "b1-1502.usda", "contemporary")
     stage = Usd.Stage.Open(report["usd_path"])
@@ -67,13 +74,10 @@ def test_concave_floor_triangulation_preserves_area():
 
 
 def test_simready_placements_compose_vendor_colliders_and_proxy_fallback(tmp_path):
-    catalog = json.loads((ROOT / "data/simready_catalog.json").read_text())
-    asset_root = Path("/home/ovqa/Repos/OmniverseAssets/SimReady_Furniture_Misc_01_overlay")
-    if not asset_root.is_dir():
-        asset_root = Path(catalog["asset_root"])
-    assets = {item["name"]: asset_root / item["usd_path"] for item in catalog["assets"]}
+    from app.asset_library import catalog
+    assets = {item["name"]: Path(item["usd_path"]) for item in catalog()["assets"]}
     needed = ("Crestwood Sofa", "Desk", "Serving Bowl", "Armchair")
-    if not all(assets[name].is_file() for name in needed):
+    if not all(name in assets and assets[name].is_file() for name in needed):
         pytest.skip("SimReady furniture pack is not installed")
 
     plan = {

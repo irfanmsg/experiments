@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import math
 import socket
 import shutil
 import subprocess
 import sys
+import tempfile
 import uuid
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -18,19 +21,30 @@ from fastapi.staticfiles import StaticFiles
 from PIL import Image
 
 from .asset_library import b1_starter_furniture, catalog
-from .geometry import validate_plan
+from .auto_furnish import furniture_layout
+from .geometry import measured_scale_audit, validate_plan
 from .usd_builder import PALETTES, build_style_variants, build_usd
 from .vision import suggest_rooms
+from .runtime_trace import runtime_trace
+from .source_files import router as source_router, source_manifest
 
 
 ROOT = Path(__file__).resolve().parents[1]
 UPLOADS = ROOT / "uploads"
 OUTPUT = ROOT / "output"
 EXAMPLE = ROOT / "data" / "b1_1502"
+STREAM_RESOLUTIONS = {
+    "standard": (640, 360),
+    "hd": (1280, 720),
+    "full_hd": (1920, 1080),
+    "qhd": (2560, 1440),
+    "uhd": (3840, 2160),
+}
 for directory in (UPLOADS, OUTPUT):
     directory.mkdir(exist_ok=True)
 
 app = FastAPI(title="Blueprint to USD Studio", version="0.1.0")
+app.include_router(source_router)
 app.mount("/static", StaticFiles(directory=ROOT / "app" / "static"), name="static")
 _stream_process: subprocess.Popen | None = None
 _stream_project: str | None = None
@@ -62,6 +76,38 @@ def _read_plan(project_id: str) -> dict:
     if not path.exists():
         raise HTTPException(404, "Plan not found")
     plan = json.loads(path.read_text())
+    if plan.get('example') == 'B1-1502' and plan.get('dimension_model') == 'b1-clear-dimensions-v1':
+        # Match the original v1 geometry, allowing JSON's int/float round trip.
+        # Edited geometry is preserved rather than replaced by a new template.
+        def normalized(value):
+            if isinstance(value, dict):
+                return {key: normalized(item) for key, item in value.items()}
+            if isinstance(value, list):
+                return [normalized(item) for item in value]
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                return round(float(value), 8) or 0.0
+            return value
+        geometry_keys = ('rooms', 'wall_segments', 'openings', 'footprint')
+        geometry = normalized({key: plan.get(key) for key in geometry_keys})
+        fingerprint = hashlib.sha256(json.dumps(geometry, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+        if fingerprint != '4543b206e0cf26682afae1da1a3672012e79a5ed760026f08dfa2182041078c7':
+            raise HTTPException(409, 'This older B1 reconstruction has geometry edits. Your project is preserved; open the updated B1 example to use the corrected reconstruction.')
+        updated = json.loads((EXAMPLE / 'plan.json').read_text())
+        if plan.get('asset_placements'):
+            from .dimensioned_b1 import relocate_assets
+            original_rooms = {room['id']: room for room in plan['rooms']}
+            relocation_rooms = [dict(room, source_polygon=original_rooms[room['id']]['polygon'])
+                                for room in updated['rooms'] if room['id'] in original_rooms]
+            plan['asset_placements'] = relocate_assets(plan['asset_placements'], relocation_rooms)
+        for key in (*geometry_keys, 'dimension_model', 'dimension_note', 'reconstruction_decisions', 'scale_audit', 'source', 'calibration', 'image_size', 'reference_manifest', 'coordinate_system', 'source_footprint', 'source_wall_segments'):
+            plan[key] = updated[key]
+        if plan.get('asset_placements'):
+            plan['reconstruction_decisions'].append({'id': 'legacy_furniture_relocation', 'kind': 'assumption',
+                'summary': 'Earlier furniture positions moved with their nearest room; physical size, rotation and placement height retained.',
+                'basis': 'The agreement reconstruction changes room registration. Relative offsets are preserved; fitted placement and door clearance need review.',
+                'status': 'needs-review'})
+        _save_plan(project_id, plan)
+        shutil.copy2(EXAMPLE / updated['source'].get('primary_crop', 'approved_crop.jpg'), _project_dir(project_id) / 'plan.jpg')
     if plan.get('example') == 'B1-1502' and not plan.get('dimension_model'):
         raw = json.loads((EXAMPLE / 'raster_trace.json').read_text())
         keys = ('rooms', 'wall_segments', 'openings', 'footprint')
@@ -69,12 +115,17 @@ def _read_plan(project_id: str) -> dict:
             from .dimensioned_b1 import build_dimensioned_plan
             plan = build_dimensioned_plan(plan)
             _save_plan(project_id, plan)
+            shutil.copy2(EXAMPLE / plan['source'].get('primary_crop', 'approved_crop.jpg'), _project_dir(project_id) / 'plan.jpg')
         else:
             raise HTTPException(409, 'This older B1 project has geometry edits. Open the updated B1 example to use dimensioned rooms; your edited project is preserved.')
+    if (_project_dir(project_id) / 'sources' / 'index.json').is_file():
+        plan['supporting_sources'] = source_manifest(project_id)['sources']
     return plan
 
 
 def _save_plan(project_id: str, plan: dict) -> None:
+    if plan.get('scale_audit'):
+        plan['scale_audit'] = measured_scale_audit(plan)
     path = _project_dir(project_id) / "plan.json"
     temporary = path.with_suffix(".tmp")
     temporary.write_text(json.dumps(plan, indent=2, ensure_ascii=False))
@@ -105,14 +156,34 @@ def _normalize_image(source: Path, destination: Path) -> tuple[int, int, int]:
         raise HTTPException(400, "The uploaded image could not be opened") from exc
 
 
+def _preview_urls(project_id: str, plan: dict) -> dict:
+    directory = OUTPUT / project_id / 'previews'
+    try:
+        saved = json.loads((directory / 'manifest.json').read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+    fingerprint = hashlib.sha256(json.dumps(plan, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    if saved.get('plan_sha256') != fingerprint:
+        return {}
+    return {style: f'/api/projects/{project_id}/preview/{style}'
+            for style in saved.get('styles', []) if style in PALETTES and (directory / f'{style}.png').is_file()}
+
+
 def _project_response(project_id: str) -> dict:
     plan = _read_plan(project_id)
+    previews = _preview_urls(project_id, plan)
+    reference = plan.get('source', {}).get('primary_crop') == 'agreement_unit_crop.jpg'
     return {
         "id": project_id,
         "plan": plan,
         "image_url": f"/api/projects/{project_id}/image",
         "page_count": int(plan.get("page_count", 1)),
-        "styles": [{"id": key, "label": value["label"], "category": value["category"], "description": value["description"], "wall_color": value["wall"][0], "floor_color": value["floor"][0]} for key, value in PALETTES.items()],
+        "editable_objects": {path.stem.replace('.objects', ''): json.loads(path.read_text())
+                             for path in (OUTPUT / project_id).glob('*.objects.json')},
+        "styles": [{"id": key, "label": value["label"], "category": value["category"], "description": value["description"] if reference else value.get('generic_description', value['description']), "wall_color": value["wall"][0], "floor_color": value["floor"][0],
+                    "is_design_scheme": value.get('is_design_scheme', False), "design_features": value.get('design_features', []) if reference else value.get('generic_design_features', value.get('design_features', [])),
+                    "reference_urls": value.get('reference_urls', []), "requires_reference": value.get('requires_reference', False),
+                    "preview_url": previews.get(key)} for key, value in PALETTES.items()],
     }
 
 
@@ -124,6 +195,36 @@ def home():
 @app.get("/api/health")
 def health():
     return {"ok": True, "app": "Blueprint to USD Studio", "styles": list(PALETTES)}
+
+
+@app.get("/api/runtime-trace")
+def library_action_trace():
+    from pxr import Usd
+    return runtime_trace(openusd_version='.'.join(map(str, Usd.GetVersion())))
+
+
+@app.post("/api/assets/import")
+async def upload_asset(file: UploadFile = File(...)):
+    from tempfile import TemporaryDirectory
+    from .asset_uploads import import_asset
+    suffix = Path(file.filename or '').suffix.lower()
+    if suffix not in {'.usd', '.usda', '.usdc', '.usdz'}:
+        raise HTTPException(400, 'Import a self-contained USD or USDZ asset with its materials packaged inside')
+    with TemporaryDirectory(prefix='blueprint-asset-') as directory:
+        path = Path(directory) / ('asset' + suffix)
+        total = 0
+        with path.open('wb') as output:
+            while chunk := await file.read(1024 * 1024):
+                total += len(chunk)
+                if total > 200 * 1024 * 1024:
+                    raise HTTPException(413, 'Use an asset smaller than 200 MB')
+                output.write(chunk)
+        try:
+            result = import_asset(path, file.filename or 'Imported asset')
+            result['runtime_trace'] = runtime_trace(executed=['asset_upload'])
+            return result
+        except (ValueError, RuntimeError) as exc:
+            raise HTTPException(400, str(exc)) from exc
 
 
 @app.post("/api/projects/upload")
@@ -181,14 +282,22 @@ async def upload_blueprint(file: UploadFile = File(...), page: int = Form(1)):
 @app.post("/api/examples/b1-1502")
 def load_flat_example():
     source_plan = EXAMPLE / "plan.json"
-    source_image = EXAMPLE / "approved_crop.jpg"
-    if not source_plan.exists() or not source_image.exists():
+    if not source_plan.exists():
         raise HTTPException(503, "B1-1502 source tracing is still being prepared")
+    plan = json.loads(source_plan.read_text())
+    primary_crop = plan.get('source', {}).get('primary_crop', 'approved_crop.jpg')
+    if primary_crop not in {'approved_crop.jpg', 'agreement_unit_crop.jpg'}:
+        raise HTTPException(503, 'Unknown B1 source image')
+    source_image = EXAMPLE / primary_crop
+    if not source_image.exists():
+        raise HTTPException(503, "B1-1502 source image is unavailable")
     project_id = uuid.uuid4().hex[:12]
     directory = UPLOADS / project_id
     directory.mkdir()
     shutil.copy2(source_image, directory / "plan.jpg")
-    plan = json.loads(source_plan.read_text())
+    manifest = EXAMPLE / 'reference_manifest.json'
+    if manifest.is_file():
+        plan['reference_manifest'] = json.loads(manifest.read_text())
     plan["id"] = project_id
     plan["example"] = "B1-1502"
     plan["structure_type"] = "home"
@@ -200,6 +309,24 @@ def load_flat_example():
 @app.get("/api/projects/{project_id}")
 def get_project(project_id: str):
     return _project_response(project_id)
+
+
+@app.get("/api/projects/{project_id}/reconstruction-trace")
+def project_reconstruction_trace(project_id: str):
+    plan = _read_plan(project_id)
+    trace = {"project_id": project_id, "source": plan.get("source", {}),
+             "supporting_sources": plan.get('supporting_sources', []),
+             "dimension_model": plan.get("dimension_model"),
+             "decisions": plan.get("reconstruction_decisions", []),
+             "scale_audit": measured_scale_audit(plan),
+             "openings": plan.get("openings", []),
+             "reference_manifest": plan.get('reference_manifest', {}),
+             "asset_placements": plan.get("asset_placements", [])}
+    export = OUTPUT / project_id / "reconstruction_trace.json"
+    if export.is_file():
+        trace["last_export"] = json.loads(export.read_text())
+    return JSONResponse(trace, headers={
+        "Content-Disposition": f'attachment; filename="{project_id}-reconstruction-trace.json"'})
 
 
 @app.put("/api/projects/{project_id}/plan")
@@ -272,6 +399,17 @@ async def generate(project_id: str, request: Request):
             result["download_url"] = f"/api/projects/{project_id}/usd/{style}"
     except (ValueError, RuntimeError) as exc:
         raise HTTPException(400, str(exc)) from exc
+    trace = {"style": style, "dimension_model": plan.get("dimension_model"),
+             "supporting_sources": plan.get('supporting_sources', []),
+             "runtime_trace": result.get('runtime_trace', runtime_trace()),
+             "asset_imports": result.get("asset_imports", []),
+             "presentation_decisions": result.get('presentation_decisions', []),
+             "reference_manifest": plan.get('reference_manifest', {}),
+             "styles": result.get("styles", {}) if style == "all" else {}}
+    (destination / "reconstruction_trace.json").write_text(json.dumps(trace, indent=2))
+    reports = result['styles'] if style == 'all' else {style: result}
+    for name, report in reports.items():
+        (destination / f'{name}.objects.json').write_text(json.dumps(report.get('editable_objects', [])))
     return result
 
 
@@ -286,6 +424,13 @@ def get_usd(project_id: str, style: str):
     return FileResponse(path, media_type="model/vnd.usda", filename=f"{style}.usda")
 
 
+@app.get('/api/projects/{project_id}/preview/{style}')
+def project_preview(project_id: str, style: str):
+    if style not in _preview_urls(project_id, _read_plan(project_id)):
+        raise HTTPException(404, 'A rendered preview for the current layout is not available')
+    return FileResponse(OUTPUT / project_id / 'previews' / f'{style}.png', media_type='image/png')
+
+
 @app.get("/api/projects/{project_id}/pack")
 def get_style_pack(project_id: str):
     _project_dir(project_id)
@@ -298,6 +443,50 @@ def get_style_pack(project_id: str):
 @app.get("/api/assets")
 def assets():
     return catalog()
+
+
+@app.post("/api/projects/{project_id}/suggest-furniture")
+def suggest_furniture(project_id: str, style: str = 'contemporary'):
+    plan = _read_plan(project_id)
+    if style not in PALETTES:
+        raise HTTPException(400, 'Unknown style')
+    calibration = plan.get('calibration') or {}
+    if not isinstance(calibration, dict):
+        calibration = {}
+    scale = next((calibration[key] for key in ('pixels_per_meter', 'pixels_per_metre', 'px_per_m', 'scale_px_per_m') if key in calibration), 0)
+    try:
+        scaled = math.isfinite(float(scale)) and float(scale) > 0
+    except (ValueError, TypeError):
+        scaled = False
+    if not scaled and not plan.get('dimension_model'):
+        raise HTTPException(400, 'Confirm one printed measurement before placing physical-size assets.')
+    errors = validate_plan(plan)
+    if errors:
+        raise HTTPException(400, {'errors': errors})
+    # Propose only; the editor applies this snapshot after checking for newer edits.
+    try:
+        from pxr import Usd, UsdGeom
+        # Reuse the scene builder to include current procedural furnishings and
+        # their edits. Saved object lists may belong to an older layout or style.
+        obstacles = []
+        with tempfile.TemporaryDirectory(prefix='blueprint-furnishing-') as directory:
+            path = Path(directory) / 'review.usda'
+            build_usd(plan, path, style)
+            stage = Usd.Stage.Open(str(path))
+            bounds = UsdGeom.BBoxCache(Usd.TimeCode.Default(), ['default', 'render'])
+            for prim in stage.Traverse():
+                if not (prim.GetCustomDataByKey('assumedFixture') or prim.GetCustomDataByKey('interiorDecor')):
+                    continue
+                box = bounds.ComputeWorldBound(prim).ComputeAlignedBox()
+                low, high = box.GetMin(), box.GetMax()
+                if not box.IsEmpty() and high[2] > .05 and low[2] < 1.8:
+                    obstacles.append({'id': str(prim.GetPath()), 'name': prim.GetName(),
+                                      'bounds_xy_m': [low[0], low[1], high[0], high[1]]})
+            result = furniture_layout(plan, catalog()['assets'], occupied_objects=obstacles)
+            result['runtime_trace'] = runtime_trace(executed=('usd_authoring', 'furniture_suggestion'), openusd_version=Usd.GetVersion())
+            return result
+    except (ValueError, TypeError, KeyError, IndexError, RuntimeError) as exc:
+        raise HTTPException(400, 'Review the room boundaries, openings and asset positions before furnishing.') from exc
 
 
 @app.post("/api/projects/{project_id}/starter-furniture")
@@ -349,9 +538,9 @@ async def start_stream(project_id: str, request: Request):
     physics = body.get("physics", False)
     if not isinstance(physics, bool):
         raise HTTPException(400, "Physics setting must be true or false")
-    if quality not in {"standard", "hd"}:
+    if quality not in STREAM_RESOLUTIONS:
         raise HTTPException(400, "Unknown stream quality")
-    width, height = (640, 360) if quality == "standard" else (1280, 720)
+    width, height = STREAM_RESOLUTIONS[quality]
     if style not in PALETTES and style != "all_styles":
         raise HTTPException(400, "Unknown style")
     path = OUTPUT / project_id / f"{style}.usda"

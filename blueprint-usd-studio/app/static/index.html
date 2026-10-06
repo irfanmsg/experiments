@@ -11,8 +11,8 @@
 <body>
   <header class="topbar">
     <a class="brand" href="/" aria-label="Blueprint Studio home"><span class="brand-mark">▧</span><span>Blueprint <strong>Studio</strong></span></a>
-    <span class="top-caption">Your space, ready to explore</span>
-    <span id="connection" class="connection"><span class="status-dot"></span> Ready on this laptop</span>
+    <span class="top-caption">Your space, ready to explore</span><a href="https://github.com/irfanmsg/experiments/issues/new" target="_blank" rel="noopener" class="feedback-link">Give feedback ↗</a>
+    <span id="connection" class="connection"><span class="status-dot"></span> Studio connected</span>
   </header>
 
   <main class="app-shell">
@@ -25,30 +25,33 @@
 
       <ol class="steps" aria-label="Workflow">
         <li class="active" id="step-upload"><span>1</span><div><strong>Bring your plan</strong><small>PDF or image</small></div></li>
-        <li id="step-measure"><span>2</span><div><strong>Check the scale</strong><small>One known distance</small></div></li>
-        <li id="step-outline"><span>3</span><div><strong>Review the spaces</strong><small>Rooms, perimeter, openings</small></div></li>
-        <li id="step-create"><span>4</span><div><strong>Create and explore</strong><small>Style, USD and live view</small></div></li>
+        <li id="step-measure"><span>2</span><div><strong>Set the drawing scale</strong><small>Match a printed length to the drawing</small></div></li>
+        <li id="step-outline"><span>3</span><div><strong>Review the rooms</strong><small>Accept or correct the suggested outlines</small></div></li>
+        <li id="step-create"><span>4</span><div><strong>Create and explore</strong><small>Finishes, USD and live view</small></div></li>
       </ol>
 
       <section class="card source-card">
         <div class="card-heading"><span class="icon">↥</span><div><h2>Start with a drawing</h2><p>PDF, PNG, JPG, WebP or TIFF</p></div></div>
         <label class="upload-target" for="fileInput"><span class="upload-illustration">⌁</span><strong>Choose a file</strong><small>or drop it here · up to 200 MB</small></label>
         <input id="fileInput" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.tif,.tiff" hidden>
-        <button id="exampleButton" type="button" class="text-button">Open the B1-1502 flat example <span>→</span></button>
+        <button id="exampleButton" type="button" class="text-button">Open a measured apartment example <span>→</span></button>
         <p id="sourceNote" class="source-note" hidden></p>
+        <details id="supportingSources"><summary>Supporting sources</summary><p class="helper">Attach measurements, photos, finish schedules or design references. These remain evidence for review; uploading does not automatically change the geometry.</p><label for="sourceRole">Source role</label><select id="sourceRole"><option value="measurement">Measurements</option><option value="detail">Detail drawing</option><option value="photo">Site photo</option><option value="finish">Finish schedule</option><option value="style">Design reference</option><option value="other">Other evidence</option></select><label for="sourceNotes">What should this source establish?</label><input id="sourceNotes" maxlength="2000" placeholder="e.g. measured kitchen wall length"><label class="secondary-button" for="sourceFilesInput">Attach PDFs or images</label><input id="sourceFilesInput" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.tif,.tiff" hidden disabled><p id="sourceUploadStatus" class="helper">Open or upload a project first.</p><div id="sourceFilesList"></div></details>
         <div id="pageControls" class="field-row" hidden><label for="pageSelect">PDF page</label><select id="pageSelect"></select></div>
       </section>
 
       <section class="card" id="measureCard">
-        <div class="card-heading"><span class="icon">↔</span><div><h2>Make it true to size</h2><p>Click two ends of a printed dimension</p></div></div>
-        <div class="field-row"><label for="distanceInput">Known distance</label><div class="unit-input"><input id="distanceInput" type="number" min="0.01" step="0.01" value="4.03"><span>metres</span></div></div>
-        <button id="calibrateButton" type="button" class="secondary-button" disabled>Mark the two points</button>
+        <div class="card-heading"><span class="icon">↔</span><div><h2>Set the drawing scale</h2><p>Tell us how long one line in the image is in real life</p></div></div>
+        <p class="helper" id="measurementHelp">Printed dimensions are not read automatically yet. Enter one room length, then select the wall faces at each end of that same length on the drawing. This keeps the rooms and furniture at the same physical scale.</p>
+        <div class="field-row"><label for="distanceInput">Length printed on the plan</label><input id="distanceInput" type="text" placeholder="e.g. 13'3&quot; or 4.03 m" aria-describedby="measurementHelp distanceFormat"></div>
+        <p id="distanceFormat" class="helper">Use feet and inches (13'3&quot;), feet (13 ft), or metres (4.03 m). A number without a unit means metres.</p>
+        <button id="calibrateButton" type="button" class="secondary-button" disabled>Select this length on the drawing</button>
         <p id="scaleSummary" class="helper">Upload a drawing to begin.</p>
       </section>
 
       <section class="card" id="outlineCard">
-        <div class="card-heading"><span class="icon">◇</span><div><h2>Show the spaces</h2><p>Trace only what you want to model</p></div></div>
-        <div class="field-row"><label for="roomName">Space name</label><input id="roomName" type="text" placeholder="e.g. Living room"></div>
+        <div class="card-heading"><span class="icon">◇</span><div><h2>Review your rooms</h2><p>Bedrooms, kitchen, bathrooms, balconies and other areas</p></div></div>
+        <p id="suggestionStatus" class="helper" role="status">Upload a plan and we will look for room outlines. Names are optional.</p><button id="suggestButton" type="button" class="subtle-button" disabled>Find room outlines</button><div id="suggestions" class="suggestions" hidden></div><button id="acceptSuggestions" type="button" class="primary-button" hidden disabled>Use selected room outlines</button><details id="manualTools"><summary>Draw or correct outlines manually</summary><div class="field-row"><label for="roomName">Room name (optional)</label><input id="roomName" type="text" placeholder="e.g. Living room"></div>
         <div class="tool-grid">
           <button class="tool" data-tool="room-rectangle" disabled>▭<span>Room rectangle</span></button>
           <button class="tool" data-tool="room-polygon" disabled>⬠<span>Room outline</span></button>
@@ -59,39 +62,55 @@
         </div>
         <button id="finishOutline" type="button" class="secondary-button" hidden>Finish this outline</button>
         <div id="openingWidthRow" class="field-row" hidden><label for="openingWidth">Opening width</label><div class="unit-input"><input id="openingWidth" type="number" min="0.2" max="6" step="0.05" value="0.9"><span>metres</span></div></div>
-        <button id="suggestButton" type="button" class="subtle-button" disabled>Find likely rooms in the image</button>
-        <p class="helper">Suggestions always need your review. You can edit the plan before creating 3D.</p>
-        <div id="suggestions" class="suggestions" hidden></div>
+        <p class="helper">Draw only rooms or openings that need correction.</p></details>
         <div id="roomList" class="room-list"></div>
       </section>
 
       <section class="card" id="detailCard">
-        <div class="card-heading"><span class="icon">⌂</span><div><h2>Building details</h2><p>Change what the drawing cannot tell us</p></div></div>
-        <div class="field-row"><label for="structureType">This is a</label><select id="structureType"><option value="home">Home</option><option value="factory">Factory</option><option value="office">Office</option><option value="showroom">Showroom</option><option value="other">Other structure</option></select></div>
-        <div class="field-row"><label for="heightInput">Wall height</label><div class="unit-input"><input id="heightInput" type="number" min="1.5" max="15" step="0.05" value="2.9"><span>metres</span></div></div>
-        <p id="heightStatus" class="helper">Wall height defaults to 2.9 m until you confirm it.</p>
-        <details class="assets-panel"><summary>Add SimReady objects</summary><button id="starterFurniture" type="button" class="secondary-button" hidden>Add sample B1-1502 layout</button><div id="assetList" class="asset-list">The asset library is being prepared.</div><div id="placementList" class="room-list"></div><p class="helper">Choose an item, then click where it belongs on the plan. Source materials stay linked. To see an object fall, mark it movable, give it a starting height, and enable physics in the live view.</p></details>
+        <div class="card-heading"><span class="icon">⌂</span><div><h2>Furnish your layout</h2><p>Add objects when you are ready</p></div></div>
+        <details id="modelSettings"><summary>Optional: building type and height</summary><p class="helper">You can create 3D without changing these settings. Height gives the walls their vertical size; when the plan has no height, we keep a labeled estimate.</p><div class="field-row"><label for="structureType">This is a</label><select id="structureType"><option value="home">Home</option><option value="factory">Factory</option><option value="office">Office</option><option value="showroom">Showroom</option><option value="other">Other structure</option></select></div>
+        <div class="field-row"><label for="heightInput">Room height</label><div class="unit-input"><input id="heightInput" type="number" min="1.5" max="15" step="0.05" value="2.9"><span>metres</span></div></div>
+        <p id="heightStatus" class="helper">2.9 m is an estimate for the preview, not a measurement from your plan.</p></details>
+        <details class="assets-panel" open><summary>Assets: add, move, rotate or remove</summary><p class="helper">Drag an object marker on the plan, or use its Move and coordinate controls. Regenerate to update the 3D view.</p><button id="suggestFurniture" type="button" class="secondary-button" disabled>Suggest furnishings</button><p id="furnitureStatus" class="helper" role="status">Confirm scale and room outlines to suggest full-size furnishings. Name home rooms, such as Living or Bedroom, to guide the choices.</p><details id="furnitureReview" hidden><summary>Review furnishing assumptions</summary><ul id="furnitureDecisions"></ul></details><label class="secondary-button" for="assetImportInput">Import USD / USDZ asset</label><input id="assetImportInput" type="file" accept=".usd,.usda,.usdc,.usdz" hidden><p id="assetImportStatus" class="helper">Package external materials and references inside USDZ. Imported USD is not automatically SimReady.</p><button id="starterFurniture" type="button" class="secondary-button" hidden>Add sample B1-1502 layout</button><div id="assetList" class="asset-list">The asset library is being prepared.</div><div id="placementList" class="room-list"></div><p class="helper">Choose an item, then click where it belongs on the plan. Source materials stay linked. Generated furnishings become editable after creating a scene. To see an imported object fall, enable Dynamic physics, give it a starting height, and enable physics in the live view.</p></details>
       </section>
     </aside>
 
     <section class="workspace">
       <div class="workspace-header">
-        <div><div class="eyebrow">WORKSPACE</div><h2 id="projectTitle">Your drawing will appear here</h2><p id="projectSubtitle">Start with your own blueprint or explore the B1-1502 example.</p></div>
+        <div><div class="eyebrow">WORKSPACE</div><h2 id="projectTitle">Your drawing will appear here</h2><p id="projectSubtitle">Upload your own blueprint or explore the optional measured example.</p></div>
         <div class="workspace-actions"><span id="saveState" class="save-state"></span><button id="clearTool" type="button" class="subtle-button" hidden>Exit tool</button></div>
       </div>
-      <div id="emptyState" class="empty-state"><div class="empty-graphic"><span class="plan-line"></span><span class="plan-line second"></span><span class="plan-line third"></span><span class="plan-door"></span></div><h3>Picture the space before it is built.</h3><p>Open the B1-1502 example to see a real, measured flat plan.</p><button id="emptyExample" class="primary-button" type="button">Explore B1-1502 <span>→</span></button></div>
-      <div id="canvasArea" class="canvas-area" hidden><div class="canvas-toolbar"><span id="toolHint">Review the traced plan, or choose a tool on the left.</span><label class="canvas-toggle"><input id="showLabels" type="checkbox" checked> Show labels</label><span id="canvasScale"></span></div><div class="canvas-scroll"><canvas id="planCanvas" aria-label="Blueprint editor"></canvas></div><div class="canvas-footer"><span><i class="legend-swatch perimeter"></i> Perimeter</span><span><i class="legend-swatch room"></i> Spaces</span><span><i class="legend-swatch opening"></i> Openings</span><span>Click a space in the list to remove it</span></div></div>
-      <div id="drawingInfo" class="drawing-info" hidden><div class="info-title">Measurements and source</div><div id="measurementBadges" class="measurement-badges"></div><p id="provenanceText"></p></div>
+      <div id="emptyState" class="empty-state"><div class="empty-graphic"><span class="plan-line"></span><span class="plan-line second"></span><span class="plan-line third"></span><span class="plan-door"></span></div><h3>Picture the space before it is built.</h3><p>Upload your blueprint to start a project, or explore a measured example.</p><button id="emptyExample" class="primary-button" type="button">Explore a sample layout <span>→</span></button></div>
+      <div id="canvasArea" class="canvas-area" hidden><div class="canvas-toolbar"><span id="toolHint">Review the traced plan, or choose a tool on the left.</span><label class="canvas-toggle"><input id="showLabels" type="checkbox" checked> Show labels</label><span id="canvasScale"></span></div><div class="canvas-scroll"><canvas id="planCanvas" aria-label="Blueprint editor"></canvas></div><div class="canvas-footer"><span><i class="legend-swatch perimeter"></i> Perimeter</span><span><i class="legend-swatch room"></i> Rooms</span><span><i class="legend-swatch opening"></i> Openings</span><span>Review or rename rooms in the list</span></div></div>
+      <div id="drawingInfo" class="drawing-info" hidden><div class="info-title">Measurements and source</div><div id="measurementBadges" class="measurement-badges"></div><p id="provenanceText"></p>
+        <details id="reconstructionReview" class="reconstruction-review" hidden>
+          <summary>Review reconstruction assumptions</summary>
+          <p id="reconstructionCounts"></p>
+          <p>Review the source evidence and estimated values below. Use the item IDs when requesting a correction.</p>
+          <section id="referenceContext" hidden><h3>Reference files</h3><div id="referenceLedger"></div><h3>Specified finishes</h3><div id="finishSpecification"></div></section>
+          <h3>Scale check</h3><div id="reconstructionScale"></div>
+          <h3>Reconstruction decisions</h3><ul id="reconstructionDecisions" class="review-list" tabindex="0" aria-label="Reconstruction decisions"></ul>
+          <h3>Openings and access</h3><ol id="reconstructionOpenings" class="review-list" tabindex="0" aria-label="Opening evidence and dimensions"></ol>
+          <a id="reconstructionTrace" class="secondary-button" download>Download reconstruction trace</a>
+        </details>
+      </div>
 
       <section class="create-panel" id="createPanel">
-        <div class="create-copy"><div class="eyebrow">MAKE IT YOURS</div><h2>Choose a look for the same measured space.</h2><p>Styles change finishes and lighting. The traced floor plan stays in metres.</p></div>
-        <div id="styleChoices" class="style-choices" role="radiogroup" aria-label="Architectural style"></div>
-        <div class="create-actions"><button id="generateButton" type="button" class="primary-button" disabled>Create 3D scene <span>→</span></button><button id="allStylesButton" type="button" class="secondary-button" disabled>Export all styles</button><span id="generateStatus" class="helper"></span></div>
-        <div id="resultPanel" class="result-panel" hidden><div><strong>Your USD scene is ready.</strong><p id="resultDetails"></p></div><div class="result-actions"><a id="downloadLink" class="secondary-button" href="#" download>Download USD</a><select id="streamQuality" aria-label="Stream quality"><option value="hd">HD · clearer detail</option><option value="standard">Standard · lower bandwidth</option></select><label class="physics-option"><input id="streamPhysics" type="checkbox"> Simulate physics</label><button id="streamButton" class="primary-button" type="button">Explore live on another screen <span>↗</span></button></div></div>
-        <div id="streamPanel" class="stream-panel" hidden><div><strong>Live RTX view</strong><p>Open this address on this laptop or another machine on the same network. The view connects automatically. Drag to rotate and scroll to zoom.</p><a id="streamLink" href="#" target="_blank" rel="noopener"></a></div><button id="stopStreamButton" type="button" class="subtle-button">Stop stream</button></div>
+        <div id="legacyProjectNotice" class="stream-panel" hidden role="note">
+          <div><strong>This browser reopened an older saved layout.</strong><p>Refreshing keeps this layout open. Interior schemes now work with this layout too. For the corrected example dimensions and existing previews, open the updated agreement layout below; your older project stays saved.</p><a id="liveProjectLink" hidden>Open the layout currently in the 3D view</a><p><a id="updatedExampleLink" href="/?example=b1-1502">Create a separate copy of the updated B1-1502 example</a></p></div>
+        </div>
+        <div class="create-copy"><div class="eyebrow">DESIGN OPTIONS</div><h2 id="designOptionsTitle">Choose finishes for this layout.</h2><p id="finishPresetNote">Presets change surface materials and lighting. Your reviewed room dimensions stay in metres.</p></div>
+        <div id="styleChoices" class="style-choices" role="radiogroup" aria-label="Interior scheme or finish preset">
+          <section id="interiorSchemes" class="style-section" hidden aria-labelledby="interiorSchemesTitle"><h3 id="interiorSchemesTitle">Interior schemes</h3><p>Coordinated furniture, materials and lighting. Review each scheme’s choices and design references before creating the scene.</p><div id="schemeChoices" class="scheme-choices"></div></section>
+          <section id="finishPresets" class="style-section" aria-labelledby="finishPresetsTitle"><h3 id="finishPresetsTitle">Finish presets</h3><p>Surface materials and lighting alternatives.</p><div id="finishChoices" class="finish-choices"></div></section>
+        </div>
+        <div class="create-actions"><button id="generateButton" type="button" class="primary-button" disabled>Create 3D scene <span>→</span></button><button id="allStylesButton" type="button" class="secondary-button" disabled>Export all finishes</button><span id="generateStatus" class="helper"></span></div>
+        <div id="resultPanel" class="result-panel" hidden><div><strong>Your USD scene is ready.</strong><p id="resultDetails"></p></div><div class="result-actions"><a id="downloadLink" class="secondary-button" href="#" download>Download USD</a><select id="streamQuality" aria-label="Stream quality"><option value="hd">720p · HD</option><option value="full_hd">1080p · Full HD</option><option value="qhd">1440p · QHD</option><option value="uhd">4K · UHD (3840 × 2160)</option></select><label class="physics-option"><input id="streamPhysics" type="checkbox"> Simulate physics</label><button id="streamButton" class="primary-button" type="button">Explore live on another screen <span>↗</span></button></div></div>
+        <div id="streamPanel" class="stream-panel" hidden><div><strong>Live RTX view</strong><p>Open this address on this laptop or another machine on the same network. The view connects automatically. Drag to rotate and scroll to zoom.</p><a id="streamLink" href="#" target="_blank" rel="noopener"></a></div><button id="stopStreamButton" type="button" class="subtle-button">Stop shared 3D view</button></div>
       </section>
     </section>
   </main>
+  <details id="libraryTracePanel" class="card library-trace"><summary>Libraries and APIs</summary><p>Installed versions and the APIs behind each action. Observed operations appear after generation.</p><button id="refreshLibraryTrace" type="button" class="secondary-button">Refresh installed versions</button> <a id="downloadLibraryTrace" class="secondary-button" href="/api/runtime-trace" download="blueprint-library-trace.json">Download trace</a><div id="libraryTraceContent"></div></details>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <script src="/static/app.js" defer></script>
 </body>

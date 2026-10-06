@@ -44,6 +44,15 @@ its affiliates is strictly prohibited.
             #plan-map text { fill:#253223; font-size:.34px; pointer-events:none; text-anchor:middle; dominant-baseline:middle; }
             #room-name { margin:16px 0 5px; font-weight:600; }
             #room-dimensions, .note { color:#aebbb2; font-size:12px; line-height:1.55; }
+            aside details { margin:12px 0; font-size:12px; line-height:1.5; }
+            aside summary { cursor:pointer; color:#d6e8b0; }
+            #runtime-trace { max-width:900px; }
+            #runtime-trace .trace-body { position:fixed; bottom:52px; right:18px; width:min(900px,calc(100vw - 36px)); max-height:70vh; overflow:auto; padding:12px; background:#16201c; border:1px solid #496052; z-index:6; }
+            #runtime-trace h2 { font-size:14px; }
+            #runtime-trace pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:11px; }
+            #runtime-trace ul { padding-left:20px; }
+            #runtime-trace li { margin:10px 0; overflow-wrap:anywhere; }
+            aside ul { padding-left:18px; } aside li { margin:8px 0; }
             #room-select { width:100%; margin:12px 0 8px; }
             .room-actions { display:flex; flex-wrap:wrap; gap:6px; }
             .stream-content { position:relative; min-width:0; min-height:0; display:flex; justify-content:center; align-items:center; overflow:hidden; background:#d2d1cb; }
@@ -64,7 +73,7 @@ its affiliates is strictly prohibited.
     </head>
     <body>
         <div class="container">
-            <header><div><h1 id="scene-name">Blueprint Studio · Explore</h1><div class="subtitle" id="scene-summary">Live 3D view from your laptop</div></div><span id="status" class="status connecting">Opening view</span></header>
+            <header><div><h1 id="scene-name">Blueprint Studio · Explore</h1><div class="subtitle" id="scene-summary">Shared live RTX view</div></div><span id="status" class="status connecting">Opening view</span></header>
             <div class="toolbar">
                 <button class="control" id="overview-button" aria-pressed="true">3D overview</button>
                 <button class="control" id="plan-button" aria-pressed="false">Top view</button>
@@ -84,18 +93,21 @@ its affiliates is strictly prohibited.
                     <label for="room-select" class="note">Choose a room to explore</label>
                     <select id="room-select" class="control"><option value="">Whole home</option></select>
                     <div class="room-actions"><button class="control" id="room-button" disabled>View room</button><button class="control" id="interior-button" disabled>Eye level</button></div>
-                    <div id="room-name">Whole home</div><div id="room-dimensions"></div>
+                    <div id="room-name">Whole home</div><div id="room-dimensions"></div><div id="room-access" class="note"></div>
+                    <p class="note" id="scale-summary"></p>
+                    <details id="reconstruction-details"><summary>Source and reconstruction assumptions</summary><ul id="reconstruction-list"></ul></details>
+                    <details id="asset-scale-details" hidden><summary>Furniture dimensions in metres</summary><ul id="asset-scale-list"></ul></details>
                     <p class="note" id="geometry-note"></p>
-                    <p class="note">Furniture is an illustrative layout, not part of the approved drawing.</p>
+                    <p class="note">Furniture models and unprinted placement details are illustrative; their assumptions remain available for review.</p>
                 </aside>
                 <div class="stream-content">
                     <video id="remote-video" autoplay muted playsinline tabindex="0" aria-label="Interactive 3D view"></video>
                     <audio id="remote-audio" autoplay muted></audio>
-                    <svg id="source-compare" hidden aria-label="Source blueprint with reconstructed walls highlighted"></svg>
+                    <svg id="source-compare" hidden aria-label="Source blueprint with traced room boundaries highlighted"></svg>
                     <div id="loading-info">Opening your 3D view…</div>
                 </div>
             </div>
-            <footer><span id="view-help">Drag to rotate · Scroll to zoom · Choose a room for a closer look</span><details><summary>Connection</summary><div class="control-panel"><label for="server-ip">Server</label><input type="text" id="server-ip" class="control" placeholder="Rendering host"><label for="signal-port">Port</label><input type="number" id="signal-port" class="control port" value="49100" min="1" max="65535"><button id="connect-button" class="control">Connect</button><button id="disconnect-button" class="control" disabled>Disconnect</button></div></details></footer>
+            <footer><span id="view-help">Drag to rotate · Scroll to zoom · Choose a room for a closer look</span><details id="runtime-trace"><summary>Libraries and APIs</summary><div class="trace-body"><p id="trace-note">Loading runtime metadata…</p><button class="control" id="trace-refresh">Refresh</button> <button class="control" id="trace-download">Download JSON</button><h2>Installed libraries</h2><ul id="trace-libraries"></ul><h2>Action-to-API map</h2><ul id="trace-actions"></ul></div></details><details><summary>Connection</summary><div class="control-panel"><label for="server-ip">Server</label><input type="text" id="server-ip" class="control" placeholder="Rendering host"><label for="signal-port">Port</label><input type="number" id="signal-port" class="control port" value="49100" min="1" max="65535"><button id="connect-button" class="control">Connect</button><button id="disconnect-button" class="control" disabled>Disconnect</button></div></details></footer>
         </div>
 
         <!--
@@ -117,6 +129,60 @@ its affiliates is strictly prohibited.
             const disconnectButton = document.getElementById('disconnect-button');
             const statusEl = document.getElementById('status');
             const loadingInfo = document.getElementById('loading-info');
+            let browserStarts = 0;
+            let traceSnapshot = null;
+            function renderTrace(trace) {
+                traceSnapshot = structuredClone(trace);
+                const browser = traceSnapshot.actions.find(action => action.id === 'browser_connect');
+                if (browser && browserStarts) {
+                    browser.status = 'executed';
+                    browser.observed_calls = browserStarts;
+                    browser.observation_source = 'browser successful stream-start callback';
+                }
+                document.getElementById('trace-note').textContent = traceSnapshot.note;
+                const libraries = document.getElementById('trace-libraries');
+                libraries.replaceChildren();
+                for (const library of traceSnapshot.libraries) {
+                    const item = document.createElement('li');
+                    const state = library.installed === true ? 'installed' : library.installed === false ? 'not installed' : 'not checked';
+                    item.textContent = `${library.name}: ${library.version || 'version unknown'} · ${state}. ${library.version_source}`;
+                    if (library.sha256) {
+                        const hash = document.createElement('pre');
+                        hash.textContent = `Bundle SHA-256: ${library.sha256}`;
+                        item.append(hash);
+                    }
+                    libraries.append(item);
+                }
+                const actions = document.getElementById('trace-actions');
+                actions.replaceChildren();
+                for (const action of traceSnapshot.actions) {
+                    const item = document.createElement('li');
+                    item.textContent = `${action.label}: ${action.status.replaceAll('_', ' ')} · ${action.observed_calls} observed operation(s). ${action.condition || ''}`;
+                    const apis = document.createElement('pre');
+                    apis.textContent = action.apis.join('\n') + '\nSource: ' + action.source;
+                    item.append(apis);
+                    actions.append(item);
+                }
+            }
+            async function refreshTrace() {
+                const response = await fetch('/api/runtime-trace');
+                if (!response.ok) throw new Error('Runtime metadata unavailable');
+                renderTrace(await response.json());
+            }
+            function showTraceError(error) { document.getElementById('trace-note').textContent = error.message; }
+            document.getElementById('runtime-trace').addEventListener('toggle', event => {
+                if (event.currentTarget.open) refreshTrace().catch(showTraceError);
+            });
+            document.getElementById('trace-refresh').onclick = () => refreshTrace().catch(showTraceError);
+            document.getElementById('trace-download').onclick = async () => {
+                try {
+                    await refreshTrace();
+                    const url = URL.createObjectURL(new Blob([JSON.stringify(traceSnapshot, null, 2)], {type:'application/json'}));
+                    const link = document.createElement('a');
+                    link.href = url; link.download = 'runtime-trace.json'; link.click();
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                } catch (error) { showTraceError(error); }
+            };
 
             // The page is served from the rendering laptop. A remote browser
             // must signal to that laptop, rather than to its own loopback.
@@ -187,6 +253,8 @@ its affiliates is strictly prohibited.
                             onStart: (msg) => {
                                 if (msg.action !== 'start') return;
                                 if (msg.status === 'success') {
+                                    browserStarts += 1;
+                                    if (traceSnapshot) renderTrace(traceSnapshot);
                                     setStatus('connecting', 'Loading view');
                                     setLoading('Connected. Waiting for the first picture…');
                                     for (const id of ['remote-video', 'remote-audio']) {
@@ -291,6 +359,9 @@ its affiliates is strictly prohibited.
                 remoteVideo.addEventListener('mouseenter', () => {
                     if (connected) remoteVideo.focus();
                 });
+                remoteVideo.addEventListener('pointerdown', () => {
+                    if (connected) remoteVideo.focus({preventScroll: true});
+                }, {capture: true});
             }
 
             let selectedRoom = null;
@@ -330,19 +401,53 @@ its affiliates is strictly prohibited.
                 const dims = measured || selectedRoom?.dimensions;
                 const label = measured ? (selectedRoom.dimension_mode === 'average_depth' ? ' m · modeled span / average depth' : ' m · modeled clear dimensions') : ' m · printed dimensions';
                 document.getElementById('room-dimensions').textContent = dims?.length ? dims.map(x => Number(x).toFixed(2)).join(' × ') + label : '';
+                const access = (scene.openings || []).filter(opening => selectedRoom && opening.connects?.includes(id));
+                document.getElementById('room-access').textContent = access.map(opening => {
+                    const other = opening.connects.find(name => name !== id);
+                    const name = scene.rooms.find(room => room.id === other)?.name || (other === 'north_circulation' ? 'shared recess' : other);
+                    return `${opening.type === 'opening' ? 'Open access' : 'Door'} to ${name} · ${Number(opening.width_m).toFixed(2)} m (${opening.provenance?.width || 'width needs review'})`;
+                }).join('; ');
                 document.querySelectorAll('#plan-map polygon').forEach(p => p.classList.toggle('selected', p.dataset.room === id));
             }
             let scene = {rooms:[]};
             fetch('/api/scene').then(response => {if(!response.ok) throw new Error('Scene controls unavailable'); return response.json();}).then(data => {
                 scene = data;
+                if (data.runtime_trace) renderTrace(data.runtime_trace);
                 document.getElementById('scene-name').textContent = data.name || 'Blueprint Studio';
                 document.getElementById('scene-summary').textContent = `${data.width} × ${data.height} · ${data.asset_count || 0} furnishings · 1 unit = 1 m · Live RTX`;
                 document.getElementById('geometry-note').textContent = data.geometry_note;
+                const audit = data.scale_audit || {};
+                const spans = audit.footprint_span_m;
+                document.getElementById('scale-summary').textContent = spans?.length ? `Footprint ${spans.map(n => Number(n).toFixed(2)).join(' × ')} m. Room labels show clear floor dimensions. Wall height and doorway assemblies are assumed.` : 'Room and furniture measurements share metre units.';
+                const review = document.getElementById('reconstruction-list');
+                const reference = data.reference_manifest?.primary_layout;
+                if (reference) {
+                    const item = document.createElement('li');
+                    item.textContent = `Layout: ${reference.file}, page ${reference.pdf_page}, Annexure ${reference.annexure}. ${(data.reference_manifest.sources || []).length} reference files reviewed; conflicting revisions remain recorded.`;
+                    review.append(item);
+                }
+                [...(data.reconstruction_decisions || []), ...(data.presentation_decisions || [])].forEach(decision => {
+                    const item = document.createElement('li');
+                    item.textContent = `${decision.id}: ${decision.summary} ${decision.basis || ''}`;
+                    review.append(item);
+                });
+                (data.openings || []).forEach(opening => {
+                    const item = document.createElement('li');
+                    const evidence = opening.provenance || {};
+                    item.textContent = `${opening.id}: ${evidence.topology || 'needs review'}; ${Number(opening.width_m).toFixed(2)} m wide (${evidence.width || 'unconfirmed'}). ${evidence.basis || ''}`;
+                    review.append(item);
+                });
+                (data.assets || []).forEach(asset => {
+                    const item = document.createElement('li');
+                    item.textContent = `${asset.name || asset.id}: ${(asset.size_xyz_m || []).map(n => Number(n).toFixed(2)).join(' × ')} m; source unit ${asset.source_units_m} m, converted without fitting to the room. Bottom anchored at placement height.`;
+                    document.getElementById('asset-scale-list').append(item);
+                });
+                document.getElementById('asset-scale-details').hidden = !(data.assets || []).length;
                 const svg = document.getElementById('plan-map');
                 const points = data.rooms.flatMap(r => r.polygon);
                 if (points.length) {
                     const xs = points.map(p => p[0]), ys = points.map(p => p[1]);
-                    svg.setAttribute('viewBox', `${Math.min(...xs)-.5} ${-Math.max(...ys)-.5} ${Math.max(...xs)-Math.min(...xs)+1} ${Math.max(...ys)-Math.min(...ys)+1}`);
+                    svg.setAttribute('viewBox', `${Math.min(...xs)-.5} ${-Math.max(...ys)-.5} ${Math.max(...xs)-Math.min(...xs)+1} ${Math.max(...ys)-Math.min(...ys)+2}`);
                 }
                 data.rooms.forEach((room, index) => {
                     const option = document.createElement('option'); option.value=room.id; option.textContent=room.name; roomSelect.append(option);
@@ -354,6 +459,17 @@ its affiliates is strictly prohibited.
                     label.setAttribute('x',(room.min[0]+room.max[0])/2);label.setAttribute('y',-(room.min[1]+room.max[1])/2);label.textContent=String(index+1);svg.append(label);
                     option.textContent = `${index+1}. ${room.name}`;
                 });
+                if (points.length) {
+                    const x = Math.min(...points.map(p => p[0]));
+                    const y = -Math.min(...points.map(p => p[1])) + .7;
+                    const length = Math.min(5, Math.max(...points.map(p => p[0])) - x);
+                    const ruler = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    ruler.id = 'metric-ruler';
+                    for (const [key, value] of Object.entries({x1:x, x2:x+length, y1:y, y2:y, stroke:'#253223', 'stroke-width':.08})) ruler.setAttribute(key, value);
+                    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+                    label.setAttribute('x',x+length/2);label.setAttribute('y',y+.35);label.textContent=`${length.toFixed(1)} m`;
+                    svg.append(ruler, label);
+                }
                 const cal = data.calibration || {};
                 const scale = cal.pixels_per_metre || cal.pixels_per_meter;
                 const origin = cal.origin_in_crop_px || cal.pixel_origin;
@@ -385,7 +501,7 @@ its affiliates is strictly prohibited.
             document.getElementById('source-button').onclick = (event) => {
                 const drawing = document.getElementById('source-compare'); const hidden = drawing.toggleAttribute('hidden');
                 event.currentTarget.setAttribute('aria-pressed',String(!hidden));
-                document.getElementById('view-help').textContent = hidden ? 'Drag to rotate · Scroll to zoom' : 'Orange: source raster trace. The corrected model uses printed meter dimensions · Choose Top view to compare';
+                document.getElementById('view-help').textContent = hidden ? 'Drag to rotate · Scroll to zoom' : 'Orange: approximate source boundaries. The model uses printed metric dimensions; the cropped outer arc remains inferred · Choose Top view to compare';
             };
             document.getElementById('reset-button').onclick = () => {chooseRoom('');camera({view:'overview'});};
             document.getElementById('room-button').onclick = () => camera({view:'room',room:selectedRoom.id});

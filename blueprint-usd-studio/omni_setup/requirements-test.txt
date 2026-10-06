@@ -1,0 +1,3 @@
+# Optional TestClient dependency for supporting-source API regression checks.
+# Install after requirements-core.txt; browser checks also use Playwright.
+httpx2==2.13.1

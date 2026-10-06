@@ -1,90 +1,166 @@
 # Blueprint Studio
 
-Blueprint Studio turns a reviewed PDF or image floor plan into a metre-based OpenUSD scene. It has a guided browser editor for buyers and planners: upload a drawing, mark one known distance, review or trace spaces and openings, choose a style, generate USD, and open a live RTX/WebRTC view on another screen.
+Blueprint Studio is a workflow for turning blueprints and supporting source material into measured, editable **OpenUSD 3D scenes**, with optional **RTX ray-traced rendering** streamed to a browser. The aim is to reconstruct the space accurately, furnish it with physically scaled assets, compare interior designs, and keep every inferred decision open to review.
 
-The app accepts drawings of homes, factories, offices, showrooms, and other structures. A buyer can upload a PDF or image, mark one printed dimension, and outline the perimeter or rooms with simple clicks. Image-assisted room suggestions are deliberately reviewable; scans with folds, small labels, or incomplete wall lines still need a person to confirm the geometry. The style picker offers home, factory, office, and showroom presets. Styles preserve the traced layout and change PBR finishes, glazing, and lighting.
+B1-1502 is the first worked example and regression fixture. It helped establish the measurement, source-review and rendering workflow; the product is intended for other homes, offices, factories and showrooms.
 
-## Start on this laptop
+## Workflow
 
-This project is published in the `blueprint-usd-studio` folder of
-[`irfanmsg/experiments`](https://github.com/irfanmsg/experiments). For a fresh
-checkout:
+```text
+Blueprint + measurements + supporting evidence
+                  ↓
+Review sources, resolve conflicts, establish scale
+                  ↓
+Trace and review rooms, walls, doors and windows
+                  ↓
+Author a metre-based, Z-up OpenUSD scene
+                  ↓
+Place editable SimReady assets and choose a design
+                  ↓
+Inspect the ray-traced 3D view → revise → regenerate/export
+```
+
+1. **Collect the sources.** Start with a dimensioned floor plan. Use elevations, sections, finish schedules, survey measurements, construction photos and furniture references to fill specific gaps. Record which building, floor, unit and revision each source describes.
+2. **Establish scale and source authority.** Prefer relevant documented measurements over apparent image size. Identify the source that governs each decision; keep conflicting dimensions or revisions visible instead of averaging them together. Convert feet and inches explicitly: `metres = feet × 0.3048 + inches × 0.0254`.
+3. **Review the reconstruction.** Check room spans, wall boundaries, opening widths, door connections and circulation. Record any inferred height, wall thickness, missing connection or uncertain contour with its source, reason and review status.
+4. **Furnish and design.** Place individual referenced assets at their physical size. Use interior references to choose materials, textiles, furniture, art and lighting without silently changing the measured shell.
+5. **Render, inspect and iterate.** Generate OpenUSD, explore the RTX view, then edit the saved layout and regenerate. Export the scene and its reconstruction trace so measurements and assumptions remain reviewable.
+
+Supporting evidence has different roles. A finish schedule can establish a floor material; a construction photo can show an opening or unfinished surface; an interior video can suggest a furniture composition. An uncalibrated photo or style reference does not establish room dimensions. Supplied documents also need to be checked for the correct floor and revision.
+
+## What works today, and what is next
+
+| Capability | Current implementation |
+| --- | --- |
+| Bring your own blueprint | Upload a primary PDF or image and select a PDF page. Attach up to 20 supporting PDFs/images with a role and notes; each file is limited to 200 MB. PNG, JPEG, WebP and TIFF are supported. |
+| Set scale and trace a plan | Room outlines are proposed automatically after upload. Confirm one known distance, review the highlighted candidates and accept selected rooms; names are optional. Manual tracing remains available for corrections. |
+| Generate OpenUSD | Author building geometry, openings, PBR finishes, lighting and referenced assets in metres with Z up; export a scene or style variants. |
+| Furnish a layout | Add, move, rotate and remove individual objects from the installed SimReady gallery. X/Y controls use metres; rotation uses degrees. |
+| Explore the model | Optional RTX/WebRTC viewer with orbit, zoom, top and room views; 720p, 1080p, 1440p and 4K output. |
+| Review supporting evidence | Every project can retain supporting files, their roles, notes, original bytes and SHA-256 hashes separately from plan edits. Source conflict resolution and dimension constraints remain curated in the B1-1502 example; new uploads are not automatically interpreted. |
+| Apply interior schemes | Five schemes dress reviewed home layouts with room-aware decor, textiles and lighting. Placements respect room boundaries, openings and imported assets; items that do not fit are skipped and recorded. The B1-1502 example also has fitted details based on its source documents. |
+
+Supporting sources can now be collected and assigned roles for any project. The next step is to apply source precedence, extract and reconcile dimensions, and review proposed geometry and missing details across those files. **Automatic multi-source reconstruction is not yet implemented.** The generic upload path currently relies on calibration and reviewed tracing; it does not automatically enforce every printed dimension as the worked example does. Scheme proposals still need a person to review furniture placement and clearances.
+
+## Editable assets and SimReady
+
+An editable furnishing is a separate object in the layout, rather than furniture baked into a single building mesh. Add an asset from the gallery, click its location on the plan, then use its **X**, **Y** and **Rotation** fields in the placement list to reposition it. **Remove** deletes that placement. Each placement is saved independently and authored as an OpenUSD reference with its own transform. Regenerate the scene to render the changed arrangement.
+
+The importer converts source units and up-axis to the building's metre-based, Z-up coordinates and anchors the geometry bottom to its placement height. Furniture retains its physical size; the importer does not shrink it to fit a room. Original asset files stay unchanged. Scheme-specific upholstery changes are authored in the generated scene.
+
+**Layout editing and physics movement are separate controls.** An object can be positioned in a design while remaining static during simulation. **Dynamic physics**, a starting height and **Simulate physics** enable dynamic behaviour in the live view. Authored collision variants are used where available; otherwise the app can use a bounds collider. Using a SimReady source asset does not certify the entire generated building or every procedural furnishing as simulation-ready for every application.
+
+The placement controls edit imported assets independently. After generation, procedural furnishings also appear as separate objects with placement and removal controls; their edits are saved for that scheme. Moving an object preserves its dimensions and records a user edit. Review clearances after repositioning generated objects.
+
+The browser editor operates on the saved plan; regenerate and reopen the live view to inspect edits. Direct asset manipulation inside the streamed 3D view is not implemented. Source packs and material dependencies must remain available when a referenced USD scene is moved to another machine.
+
+### Bring in new assets
+
+In **Assets: add, move, rotate or remove**, use **Import USD / USDZ asset** and click the plan to place the imported item. Standalone `.usd`, `.usda` and `.usdc` must be self-contained; package referenced USD layers and textures in `.usdz`. Imports require explicit units, Y/Z up-axis, a default prim and bounded geometry. The importer checks dependency containment before composing the stage and retains imported assets in the host library across restarts.
+
+The installed NVIDIA gallery is sourced from SimReady packs. Uploaded USD is labeled **Imported USD (SimReady not verified)**, and generated furniture is labeled **Procedural USD**. Being editable or carrying physics properties does not establish SimReady compliance. Drag an object marker on the plan or use its **Move**, coordinate and rotation controls; then regenerate the scene.
+
+## Interior styles
+
+A **finish preset** changes surface materials and lighting. An **interior scheme** coordinates those finishes with textiles, decor, furniture treatment and lighting fixtures. All five schemes are available for reviewed home layouts; the B1-1502 example is optional:
+
+- **Linen & light timber** — cream upholstery, pale timber, sheer curtains and a neutral rug.
+- **Warm evening lounge** — beige/olive upholstery, graphic art and pools of warm lamp light.
+- **Botanical cane & terracotta** — cane details, woven shades, planting and terracotta accents.
+- **Contemporary Indian** — geometric textile borders, crafted timber lattice, brass pendant shades and ochre/indigo accents.
+- **Bohemian** — layered patterned rugs, knotted textile wall decor, woven shades and mixed indigo/terracotta textiles.
+
+Contemporary Indian is a named interpretation informed by a documented Indian design project, not a claim to represent every Indian tradition. Regional directions from the supplied reel remain separate references for future schemes. Bohemian adds modeled textile layers and woven decor. The reviewed references, observed features and proposed additions are recorded separately in [the interior reference ledger](docs/interior-references.md).
+
+Select a scheme, choose **Create 3D scene**, then open the live RTX view. A scheme card receives an actual rendered preview after its stream initializes; editing the plan invalidates outdated previews. Generic layouts receive decor that fits their reviewed geometry; they do not inherit the example apartment's floor specifications or fitted cabinetry. Exact products, decorative dimensions, colours and lighting are design assumptions, not measurements recovered from reference images.
+
+## Run locally
+
+Python 3.10–3.13 is required. The core editor and USD exporter do not require an RTX GPU or asset downloads.
 
 ```bash
 git clone https://github.com/irfanmsg/experiments.git
 cd experiments/blueprint-usd-studio
-./omni_setup/setup.sh runtime
-./run.sh
+./omni_setup/setup.sh
+./run.sh --port 8001
 ```
 
-The existing development checkout on this laptop can also be started directly:
+Open [http://127.0.0.1:8001](http://127.0.0.1:8001). Port 8001 is used on the development machine because another app occupies port 8000. For optional GPU rendering, WebRTC streaming and PhysX, install the runtime and restart Studio:
 
 ```bash
-cd /home/ovqa/Repos/GitHub/blueprint-usd-studio
-./run.sh
+./omni_setup/setup.sh runtime
+./run.sh --port 8001
 ```
 
-The dependencies are already installed on this laptop. On a fresh machine, run `./omni_setup/setup.sh runtime` first. Open `http://127.0.0.1:8000`. For the dimensioned flat example, click **Open the B1-1502 flat example**, or open `http://127.0.0.1:8000/?example=b1-1502`. The editor can be made available to other machines on the local network with `./run.sh --lan`; it has no login yet, so use that option only on a network you trust. The RTX browser view launched from the app binds to the laptop's LAN address and streams with WebRTC. HD (1280×720) is the default; the viewer fits the workspace without stretching and offers an original-size mode. Standard quality (640×360) remains available for lower bandwidth. The first shader build may take several minutes. **Simulate physics** is optional in the live view; authored static colliders remain fixed, while dynamic objects can move.
+The live renderer requires a compatible NVIDIA GPU/driver and the runtime dependencies. The first shader build may take several minutes. [Omniverse setup](omni_setup/README.md) describes dependencies and asset preparation; [streaming setup](streaming/README.md) covers the renderer and network configuration.
 
-Asset downloads are optional for basic USD export. `./omni_setup/fetch_simready.sh` retrieves NVIDIA's Furniture & Misc pack, and `./omni_setup/fetch_simready_warehouse.sh` retrieves Warehouse 01, both outside this Git repository. This laptop has both extracted packs and lightweight RTX-compatible overlays. The **Add SimReady objects** gallery offers 11 home/office furnishings and 14 factory/warehouse items, with measured model bounds. Placements keep NVIDIA's source materials; the app selects authored collision variants where available and builds a bounds collider where needed. Select **Movable in simulation**, set a starting height, and enable **Simulate physics** to see an object move. Referenced assets need the local pack and overlay when the authored USD is moved to another machine. [omni_setup/README.md](omni_setup/README.md) describes the asset setup.
+To make the editor reachable on a trusted local network, use `./run.sh --lan --port 8001`. The app has no login yet. The live view opens through the address supplied by Studio. For persistent hosting on this workstation, use the [systemd installation and NVIDIA LAN/VPN instructions](docs/hosting.md); the installer prepares a single-worker service, preserves its environment configuration and defaults to loopback. The internal deployment is a shared pilot with one GPU stream and no account or project isolation. Remote network access still needs to be tested from a colleague's machine.
 
-For Internet viewing, the current LAN stream needs HTTPS, authentication, network routing, and an appropriate TURN server. Set `OVSTREAM_ICE_SERVERS` for an existing STUN/TURN service as described in [streaming/README.md](streaming/README.md). Do not expose the unauthenticated local editor or signaling port directly to the public Internet.
+### Optional SimReady library
 
-## B1-1502 deliverables
+Keep downloaded assets outside Git. Set a shared asset location explicitly, since some download helpers retain a machine-specific default:
 
-The B1-1502 example uses **one USD unit = one meter**. Printed dimensions
-now drive its geometry: 18 rectangular spaces have exact clear floor spans,
-and the two irregular balconies enforce their printed span and average depth.
-For example, the kitchen is 2.75 × 4.12 m and the outer upper bedroom is
-3.96 × 3.40 m. Walls are placed outside the clear spaces, shared wall solids
-are deduplicated, and door openings are cut through those solids. Export
-validation rejects a dimensioned room whose vertices disagree with its labels.
+```bash
+export BLUEPRINT_STUDIO_ASSET_ROOT="$HOME/Repos/OmniverseAssets"
+./omni_setup/fetch_simready.sh
+.venv/bin/python omni_setup/prepare_simready_overlay.py
+./run.sh --port 8001
+```
 
-`data/b1_1502/trace.py` preserves the old pixel trace as `raster_trace.json`,
-then rebuilds `plan.json` through the dimension-driven layout. Changing the
-60.4 pixels/meter raster calibration no longer changes the reconstructed room
-sizes. Existing unedited B1 example projects migrate when loaded; geometry
-edits are preserved and require opening the updated example instead.
+The furniture pack download is about 9 GiB. Overlay preparation requires the installed RTX runtime and preserves the original pack. The gallery shows installed, catalogued assets; basic USD export works without them. An optional warehouse pack and catalog-refresh instructions are documented in [omni_setup/README.md](omni_setup/README.md). NVIDIA's asset and runtime terms apply separately to those downloads.
 
-The approved metric plan remains the dimensional source. Pages 32–35 of
-`Sales Presenter Mergred Web.pdf` were reviewed: page 32 is the detailed 02/05
-unit, page 33 the typical floor, page 34 the first floor, and page 35 refuge
-floors 8/13/18. Brochure feet/inches are converted with 0.3048 m/ft and
-0.0254 m/in. Differences from the approved drawing are recorded in
-[`source_comparison.json`](data/b1_1502/source_comparison.json).
+## Use your own blueprint
 
-Wall thickness (0.15 m), height (2.8 m), orthogonal alignment and detailed
-balcony curves remain assumptions. Printed average balcony depths do not
-uniquely determine the curved boundary. The modeled gross slab is approximately
-222.45 m²; the approved 207.77 m² net-area schedule remains separate source
-metadata. The published area schedule and room/average-depth labels do not
-establish a single exact surveyed perimeter; we do not globally shrink rooms
-to force these different measurements to agree.
+1. Upload a PDF or image and choose the relevant page.
+2. Set the drawing scale using one printed room length, such as `13'3"`, `13 ft` or `4.03 m` (a bare number means metres). Select the wall faces at each end of that same length on the drawing, not the printed text. The original entry, converted metres and selected pixel endpoints are retained in the calibration record. Printed dimensions are not automatically extracted yet, and setting scale does not detect room boundaries.
+3. Uncheck incorrect proposals and choose **Use selected room outlines**. Room names are optional and can be edited later. Use the manual tools for missed rooms, doors, windows or boundary corrections. A distorted scan may need more than one measurement to validate the result.
 
-Regenerate the ready-to-open binary USD and five home style variants:
+   **Room height is optional.** A new uploaded plan starts with an explicitly assumed 2.9 m height for the preview; it is not extracted from the drawing. Change it only when known under **Optional: building type and height**. Existing project heights are retained. Room detection removes thin furniture linework and suggests areas enclosed by substantial dark wall strokes. It does not recognize room labels, dimensions or furniture semantically. Door openings, glazing, thin walls and cropped drawings can prevent suggestions entirely; those plans still require tracing. Complex outlines are never replaced with bounding rectangles.
+4. Choose the building category and review the starter furnishings. After calibrated rooms are accepted or drawn, an empty arrangement automatically receives compatible installed assets where room purpose and available space support them. For homes, names such as **Living**, **Dining**, **Bedroom** or **Study** guide selection; unnamed rooms are skipped. A single unnamed office, factory or showroom room can receive a starter arrangement with an explicit room-use assumption. **Suggest furnishings** can fill missing roles later without replacing existing placements. Asset source dimensions are retained; unsuitable or unavailable assets are skipped. **Review furnishing assumptions** and the reconstruction trace explain each choice. These placements are proposals, not recognized furniture positions from the drawing. Choose an interior scheme or category-specific finish preset, and move or remove furnishings as needed.
+5. Generate the scene, download USD or open the live view at the desired resolution. Review scale, access and placement before refining the layout.
+
+Attach additional PDFs/images as supporting sources, assigning a role such as blueprint, detail, measurement, photo, finish or style and adding notes about their relevance. The source manifest retains the original filenames, file hashes and download links independently of plan autosaves. These uploads remain marked **supporting evidence; not automatically extracted**: adding a file does not change the scale, room geometry or source precedence automatically.
+
+A ray-traced view is a way to inspect the authored scene, not proof that its source geometry is complete or construction-verified. Camera navigation currently does not stop at walls. Exact wall construction, heights and other undocumented details require confirmation.
+
+## Libraries, APIs and feedback
+
+Open **Libraries and APIs** in the editor or live viewer to inspect installed library versions and the APIs used for authoring, stage preparation, RTX frames, streaming and optional physics. Each service also exposes `GET /api/runtime-trace`. The trace distinguishes an installed package or source-code mapping from successfully observed operations in that process. A frame submitted to the streaming server does not by itself prove playback in a remote browser; the browser connection observation is reported separately. The vendored browser library has an exact file hash when its package version cannot be established.
+
+This runtime trace complements **Download reconstruction trace**, which records geometry evidence, design assumptions, asset measurements and user edits. Use the relevant trace when reporting an issue, and remove private project details before posting to [the repository's feedback tracker](https://github.com/irfanmsg/experiments/issues/new).
+
+## Worked example: B1-1502
+
+Use **Open a measured apartment example** in Studio, or visit [the example link](http://127.0.0.1:8001/?example=b1-1502). This fixture demonstrates agreement-based room dimensions, doors and shared walls, source comparisons, fitted details, physical furniture scale and traceable interior schemes.
+
+The agreement's unit plan governs this example; finish specifications, approved comparison drawings, the furnished brochure and construction photos have distinct recorded roles. Its assumptions and source conflicts remain visible in **Review reconstruction assumptions** and **Download reconstruction trace**. See [the example notes](data/b1_1502/README.md), [source manifest](data/b1_1502/reference_manifest.json), [dimension comparisons](data/b1_1502/source_comparison.json) and [construction-photo review](docs/construction-photo-review.md).
+
+To regenerate the standalone example and its style pack:
 
 ```bash
 .venv/bin/python build_b1_1502.py
 ```
 
-The results are `output/b1-1502/B1-1502.usd` and `output/b1-1502/B1-1502-style-pack.zip`. With the SimReady pack installed, the script also exports `output/b1-1502/B1-1502-furnished.usd` as an illustrative 12-object layout. The ZIP includes `all_styles.usda` with an `architecturalStyle` variant set and its referenced style files. [data/b1_1502/README.md](data/b1_1502/README.md) describes the source pages, dimensions, and confidence in more detail.
+Outputs go under `output/b1-1502/`, including `B1-1502.usd` and `B1-1502-style-pack.zip`. The pack contains an `architecturalStyle` variant set and referenced style files. These scripts and fixture-specific geometry are a starting point for generalization, not requirements for a new uploaded project.
 
-## Libraries and checks
+## Implementation and verification
 
-The authoring path uses NVIDIA [usd-exchange](https://github.com/NVIDIA-Omniverse/usd-exchange) to create a metre-based OpenUSD stage. The optional live runtime composes [ovstage](https://github.com/NVIDIA-Omniverse/ovstage), [ovrtx](https://github.com/NVIDIA-Omniverse/ovrtx), [ovstream](https://github.com/NVIDIA-Omniverse/ovstream), and [ovphysx](https://github.com/NVIDIA-Omniverse/PhysX/tree/main/ovphysx). Official reference repositories are cloned as siblings of this app, with no modifications to those clones. SimReady assets come from NVIDIA's [downloadable packs](https://docs.omniverse.nvidia.com/usd/latest/usd_content_samples/downloadable_packs.html) and have separate [NVIDIA terms](https://docs.omniverse.nvidia.com/usd/latest/common/NVIDIA_Omniverse_License_Agreement.html).
+The authoring path uses NVIDIA [usd-exchange](https://github.com/NVIDIA-Omniverse/usd-exchange). The optional renderer combines [ovstage](https://github.com/NVIDIA-Omniverse/ovstage), [ovrtx](https://github.com/NVIDIA-Omniverse/ovrtx), [ovstream](https://github.com/NVIDIA-Omniverse/ovstream) and [ovphysx](https://github.com/NVIDIA-Omniverse/PhysX/tree/main/ovphysx). Core and runtime dependencies are pinned separately under `omni_setup/`; do not install `usd-core` into the same environment as `usd-exchange`.
 
-Run `.venv/bin/pytest -q` for plan, unit-scale, USD, style-variant, and opening checks. `node --check app/static/app.js` verifies browser script syntax. The RTX/WebRTC path was tested with a generated B1-1502 scene on this laptop's GPU and a local Chrome browser; another physical machine has not yet been tested.
+```bash
+.venv/bin/python -m pip install -r omni_setup/requirements-test.txt
+.venv/bin/python -m pytest -q
+node --check app/static/app.js
+node tests/check_stream_link.js
+```
 
-### Live viewer acceptance checks
+The live checks need Playwright, local Google Chrome and a running stream. They inspect actual WebRTC frames and write screenshots to `output/qa/`:
 
-Run `.venv/bin/python tests/check_live_view.py` against the running HD stream
-on this laptop (requires `pip install playwright` and local Google Chrome).
-It checks real WebRTC playback, desktop/mobile sizing, drawing comparison, room
-cameras, mouse rotation and zoom, and full screen. Screenshots are written to
-`output/qa/`. Geometry and camera regression checks run with
-`.venv/bin/python -m pytest -q`.
+```bash
+.venv/bin/python tests/check_live_view.py --width 3840 --height 2160
+.venv/bin/python tests/check_interior_scheme_cards.py --project PROJECT_ID
+.venv/bin/python tests/check_asset_editing.py
+.venv/bin/python tests/check_generic_workflow.py
+```
 
-The scene is a dimension-driven architectural visualization with illustrative furnishings,
-not a finished photorealistic interior or a construction-verified model. It has
-no ceilings or fully detailed kitchen/bathroom fit-out. Room camera movement
-does not yet stop at walls. Room spans are constrained; exact wall construction, relative offsets and balcony profiles still need field confirmation.
+The first command expects a 4K stream; omit the size arguments for the default HD check. The second checks rendered scheme cards after at least one scheme has been streamed. The third creates a scratch project and verifies adding, moving, rotating and removing an installed asset through the editor and exported USD, without resizing it. The detailed reconstruction assertions currently use the B1-1502 fixture. Local GPU/browser testing does not establish compatibility with every GPU or remote client.

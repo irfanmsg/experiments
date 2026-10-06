@@ -1,36 +1,39 @@
-# B1-1502 dimensioned plan
+# B1-1502 worked example
 
-`plan.json` contains the meter-based reconstruction. `raster_trace.json`
-preserves the original approximate pixel trace for source comparisons.
-Run `python data/b1_1502/trace.py` from the project root to rebuild both.
+This fixture exercises Blueprint Studio's measured reconstruction and evidence-review workflow. It is not the product's only intended layout. The current model is **`b1-agreement-dimensions-v3`**: 21 spaces and 24 openings, in metres with Z up.
 
-The approved source is `B1-Building-3.pdf`, PDF page 1, sheet 63/69 dated
-22 April 2024. The agreement outline identifies B1-1502. The room dimensions
-in that approved sheet drive the clear room boundaries, independently of
-raster calibration. Walls sit outside those boundaries; shared solids and
-openings are generated from room adjacency.
+## Source authority
 
-There are 18 rectangular spaces and two irregular balconies. Rectangles use
-the printed clear width and length. Irregular balconies use the labelled span
-and average depth (area divided by span), with a provisional curve/slope.
-The exact curve, wall thickness, height and relative alignment are not
-established by the room labels. The layout uses 0.15 m partitions and 2.8 m
-wall height as assumptions, clearly distinct from the constrained dimensions.
+**Miami PWC House Documents.pdf, page 35, Annexure G** is the primary geometry source because it specifically demarcates B1-1502. **Page 28, Annexure F** supplies the finish schedule. The approved typical-floor drawing (`B1-Building-3.pdf`, sheet 63/69) is a comparison source, not the controlling apartment layout. It differs in the powder room and some door connections; revision supersession and the actual built state remain unverified.
 
-Pages 32–35 of `Sales Presenter Mergred Web.pdf` were reviewed. Page 32 shows
-the detailed type-02/05 apartment in feet/inches; page 33 is the typical floor.
-Pages 34 and 35 describe first/refuge floors, not floor 15. See
-[source_comparison.json](source_comparison.json) for unit conversions and
-source differences. The approved metric values remain primary.
+The [reference manifest](reference_manifest.json) records the supplied documents and images, checksums, page references, roles and unresolved questions. [Source comparisons](source_comparison.json) retain differences from the furnished brochure and convert its feet/inches measurements explicitly. The eleven construction-folder images include eight construction exteriors and three builder site-model views; their tower/unit identity and metric calibration are unknown. See [the photo review](../../docs/construction-photo-review.md).
 
-The 172.00 + 32.72 + 3.05 = 207.77 m² source schedule is retained, not used
-as a scaling factor. The generated gross footprint is about 222.45 m² and
-includes assumed wall construction and balcony geometry. It is not equivalent
-to the source net-area schedule. Matching total area alone cannot validate
-individual room dimensions.
+## Geometry and assumptions
 
-`approved_crop.jpg`, `agreement_unit_crop.jpg`, and `trace_overlay.jpg` remain
-source images. The live **Source drawing** view shows the original raster
-trace over the scan. The editor shows the corrected geometry on a 1-meter
-grid; it does not pretend that a single pixel scale registers the corrected
-layout onto the distorted scan.
+Printed agreement dimensions constrain the clear spans of 19 rectangular spaces and the labelled span/average depth of two irregular balconies. The powder room is included, and the toilet beside the upper bedroom connects directly to that bedroom. Walls sit outside clear room boundaries, shared wall solids are deduplicated and door openings cut through them.
+
+One USD unit equals one metre. Room dimensions do not change when the raster calibration changes. The kitchen, for example, remains 2.75 × 4.12 m. Furniture imports retain physical size when source units and up-axis are converted.
+
+Wall thickness (0.15 m), height (2.8 m), relative offsets and some alignments remain assumptions. The cropped main balcony arc is completed using the approved comparison contour as an explicitly recorded prior. It is not an exact surveyed perimeter.
+
+The source area schedule is **172.00 + 32.72 + 3.05 = 207.77 m²**. The current inferred gross footprint is approximately **224.02 m²**, while the agreement raster trace is approximately **211.51 m²**. These measures use different boundaries and uncertain registration. The model does not globally shrink rooms to make them agree. The editor's live scale audit recomputes measurements from the current geometry.
+
+Specified flooring categories remain separate from decorative choices: wood in the master bedroom, vitrified tile in other dry spaces and matte tile in wet spaces. Exact fixture models, colours, tile selection, lighting and decorative placement remain illustrative. [The interior reference ledger](../../docs/interior-references.md) records style observations and proposed applications.
+
+## Files and regeneration
+
+- `plan.json` contains the dimension-driven model and reconstruction metadata.
+- `raster_trace.json` preserves the earlier approximate pixel trace for comparison.
+- `agreement_unit_crop.jpg` is the active source image; `approved_crop.jpg` and `trace_overlay.jpg` retain earlier comparison material.
+- `reference_manifest.json`, `source_comparison.json` and `construction_photo_review.json` preserve source roles and review evidence.
+
+Run from the project root:
+
+```bash
+.venv/bin/python data/b1_1502/trace.py
+.venv/bin/python build_b1_1502.py
+```
+
+The trace script rebuilds fixture data; the build script exports USD and a style pack under `output/b1-1502/`. In the application, **Review reconstruction assumptions**, **Source drawing** and **Download reconstruction trace** expose the measurements, opening evidence and inferred decisions. The source comparison does not imply that one pixel scale can register a dimension-corrected model perfectly onto a distorted scan.
+
+Unedited older raster/v1 examples migrate to v3 with furniture moved relative to its room, preserving object size and rotation. Saved v2 examples remain preserved with an older-reconstruction notice. Modified older geometry is protected from automatic replacement; open a fresh example to compare the corrected reconstruction.
