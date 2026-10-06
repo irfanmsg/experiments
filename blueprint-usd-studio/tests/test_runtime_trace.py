@@ -33,6 +33,7 @@ def test_missing_optional_packages_are_explicit(monkeypatch):
     def missing(name):
         raise metadata.PackageNotFoundError(name)
     monkeypatch.setattr(trace_module.metadata, 'version', missing)
+    monkeypatch.setattr(trace_module, '_ocr_version', lambda: None)
     trace = trace_module.runtime_trace()
     optional = [library for library in trace['libraries'] if library.get('optional')]
     assert optional and all(not library['installed'] and library['version'] is None for library in optional)

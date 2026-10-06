@@ -7,6 +7,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 from playwright.sync_api import sync_playwright
+from check_room_reconstruction import assert_reconstructed_rooms
 
 
 def main():
@@ -48,10 +49,10 @@ def main():
 
             page.route('**/api/**', read_only)
             page.goto(f'{origin}/?project={args.reference_project}')
-            page.wait_for_function('state.image && !state.suggesting && document.getElementById("suggestionStatus").textContent.includes("0 room outlines detected")')
-            assert page.evaluate('state.suggestions.length') == 0
-            assert page.request.get(f'{origin}/api/projects/{args.reference_project}/suggest').json()['suggestions'] == []
-            assert 'Setting the scale will not create the missing outlines' in page.locator('#suggestionStatus').inner_text()
+            page.wait_for_function('state.image && !state.suggesting && state.scaleProposal && state.suggestions.length > 0', timeout=120000)
+            actual_suggestions = page.evaluate('state.suggestions')
+            assert_reconstructed_rooms(actual_suggestions)
+            assert page.locator('#useDetectedScale').is_visible()
             assert not writes
             assert page.request.get(f'{origin}/api/projects/{args.reference_project}').json()['plan'] == reference
             capture('#canvasArea', 'furniture-room-detection-after.png')
@@ -156,7 +157,7 @@ def main():
             assert all(final_stream.get(key) == initial_stream.get(key) for key in ['running', 'project_id', 'style'])
             assert not errors, errors
             report = {'passed': True, 'reference_project_unchanged': args.reference_project,
-                      'real_image_suggestions': 0, 'scratch_project': project, 'structural_rooms': 2,
+                      'real_image_suggestions': len(actual_suggestions), 'scratch_project': project, 'structural_rooms': 2,
                       'automatic_furnishings': len(placements), 'physical_sizes_match_usd': True,
                       'move_saved': True, 'repeat_no_duplicates': True, 'building_type_preserves_edits': True,
                       'unknown_room_explained': True, 'stale_furniture_response_ignored': True,

@@ -41,17 +41,20 @@
       </section>
 
       <section class="card" id="measureCard">
-        <div class="card-heading"><span class="icon">↔</span><div><h2>Set the drawing scale</h2><p>Tell us how long one line in the image is in real life</p></div></div>
-        <p class="helper" id="measurementHelp">Printed dimensions are not read automatically yet. Enter one room length, then select the wall faces at each end of that same length on the drawing. This keeps the rooms and furniture at the same physical scale.</p>
+        <div class="card-heading"><span class="icon">↔</span><div><h2>Review the drawing scale</h2><p>We check printed dimensions against the room walls</p></div></div>
+        <p id="detectedScaleStatus" class="helper" role="status">Upload a drawing to look for printed measurements.</p><button id="useDetectedScale" type="button" class="primary-button" hidden>Confirm detected scale</button><ul id="scaleEvidence" class="helper" hidden></ul>
+        <details id="manualScale"><summary>Set scale manually if needed</summary>
+        <p class="helper" id="measurementHelp">Use this fallback if a printed dimension cannot be read reliably. Enter one room length, then select the wall faces at each end of that same length on the drawing.</p>
         <div class="field-row"><label for="distanceInput">Length printed on the plan</label><input id="distanceInput" type="text" placeholder="e.g. 13'3&quot; or 4.03 m" aria-describedby="measurementHelp distanceFormat"></div>
         <p id="distanceFormat" class="helper">Use feet and inches (13'3&quot;), feet (13 ft), or metres (4.03 m). A number without a unit means metres.</p>
         <button id="calibrateButton" type="button" class="secondary-button" disabled>Select this length on the drawing</button>
+        </details>
         <p id="scaleSummary" class="helper">Upload a drawing to begin.</p>
       </section>
 
       <section class="card" id="outlineCard">
         <div class="card-heading"><span class="icon">◇</span><div><h2>Review your rooms</h2><p>Bedrooms, kitchen, bathrooms, balconies and other areas</p></div></div>
-        <p id="suggestionStatus" class="helper" role="status">Upload a plan and we will look for room outlines. Names are optional.</p><button id="suggestButton" type="button" class="subtle-button" disabled>Find room outlines</button><div id="suggestions" class="suggestions" hidden></div><button id="acceptSuggestions" type="button" class="primary-button" hidden disabled>Use selected room outlines</button><details id="manualTools"><summary>Draw or correct outlines manually</summary><div class="field-row"><label for="roomName">Room name (optional)</label><input id="roomName" type="text" placeholder="e.g. Living room"></div>
+        <p id="suggestionStatus" class="helper" role="status">Upload a plan and we will look for room outlines. Names are optional.</p><p id="detectionWarnings" class="helper" role="status" hidden></p><button id="suggestButton" type="button" class="subtle-button" disabled>Find room outlines</button><div id="suggestions" class="suggestions" hidden></div><button id="acceptSuggestions" type="button" class="primary-button" hidden disabled>Use selected room outlines</button><details id="manualTools"><summary>Draw or correct outlines manually</summary><div class="field-row"><label for="roomName">Room name (optional)</label><input id="roomName" type="text" placeholder="e.g. Living room"></div>
         <div class="tool-grid">
           <button class="tool" data-tool="room-rectangle" disabled>▭<span>Room rectangle</span></button>
           <button class="tool" data-tool="room-polygon" disabled>⬠<span>Room outline</span></button>

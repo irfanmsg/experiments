@@ -85,21 +85,26 @@ def bbox(polygons: Iterable[Iterable[Iterable[float]]]) -> tuple[float, float, f
 def measured_scale_audit(plan: dict) -> dict:
     """Remeasure current geometry while retaining the source comparison evidence."""
     audit = dict(plan.get('scale_audit') or {})
-    if not audit:
+    if not audit and not any(room.get('printed_dimensions_m') for room in plan.get('rooms', [])):
         return audit
+    audit.setdefault('meters_per_unit', 1.0)
     rows = []
     for room in plan.get('rooms', []):
         modeled = []
         try:
             x0, y0, x1, y1 = bbox([room['polygon']])
             modeled = [x1-x0, y1-y0]
+            if room.get('source_evidence') and len(room['polygon']) == 4:
+                modeled = [segment_length(room['polygon'][0], room['polygon'][1]), segment_length(room['polygon'][1], room['polygon'][2])]
+                if (room['source_evidence'].get('dimension') or {}).get('rotation_deg') in (90, 270):
+                    modeled.reverse()
             if room.get('dimension_mode') == 'average_depth':
                 axis = int(room['span_axis'])
                 modeled[1-axis] = polygon_area(room['polygon']) / modeled[axis]
         except (KeyError, ValueError, TypeError, IndexError, ZeroDivisionError):
             modeled = []
         rows.append({'id': room.get('id'), 'name': room.get('name'),
-                     'printed': room.get('dimensions_m', []), 'modeled': modeled,
+                     'printed': room.get('printed_dimensions_m') or room.get('dimensions_m', []), 'modeled': modeled,
                      'dimension_mode': room.get('dimension_mode', 'raster')})
     audit['room_dimensions'] = rows
     footprint = plan.get('footprint', {})

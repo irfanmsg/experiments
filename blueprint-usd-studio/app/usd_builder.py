@@ -1283,7 +1283,9 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
                 finish = materials['balcony'] if category == 'balcony' else materials['tile'] if category in {'bathroom','kitchen','service'} else materials['floor']
             _slab(stage, str(room_prim.GetPath()) + '/Floor', room['polygon'], finish, modules, top=.008, depth=.008)
 
-        room_prim.SetCustomDataByKey("printedDimensionsM", json.dumps(room.get("dimensions_m", [])))
+        room_prim.SetCustomDataByKey("printedDimensionsM", json.dumps(room.get("printed_dimensions_m", room.get("dimensions_m", []))))
+        if 'source_evidence' in room:
+            room_prim.SetCustomDataByKey('sourceEvidence', json.dumps(room['source_evidence'], ensure_ascii=False))
         room_prim.SetCustomDataByKey("tracedAreaM2", round(polygon_area(room["polygon"]), 4))
         room_prim.SetCustomDataByKey("confidence", str(room.get("confidence", "reviewed")))
         room_prim.SetCustomDataByKey("provenance", json.dumps(room.get("provenance", {}), ensure_ascii=False))
@@ -1366,6 +1368,11 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
                 piece += 1
                 _wall_piece(stage, base, piece, a, b, start, end, sill, top, min(0.025, thickness / 4), materials["glass"], modules)
                 piece += 1
+            elif kind == 'opening':
+                if not opening.get('no_header'):
+                    head = min(wall_height - 0.1, float(opening.get('height_m', 2.1)))
+                    _wall_piece(stage, base, piece, a, b, start, end, head, wall_height, thickness, wall_material, modules)
+                    piece += 1
             else:
                 door_height = min(wall_height - 0.1, float(opening.get("height_m", 2.1)))
                 _wall_piece(stage, base, piece, a, b, start, end, door_height, wall_height, thickness, wall_material, modules)

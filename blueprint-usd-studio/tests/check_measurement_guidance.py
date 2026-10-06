@@ -7,6 +7,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 from playwright.sync_api import sync_playwright
+from check_room_reconstruction import assert_reconstructed_rooms
 
 
 def main():
@@ -45,12 +46,11 @@ def main():
             initial_stream = page.request.get(origin + '/api/stream/status').json()
             page.route('**/api/**', read_only)
             page.goto(f'{origin}/?project={args.reference_project}')
-            page.wait_for_function('state.image && !state.suggesting && document.getElementById("suggestionStatus").textContent.includes("0 room outlines detected")')
-            assert page.evaluate('state.suggestions.length') == 0
-            assert 'Setting the scale will not create the missing outlines' in page.locator('#suggestionStatus').inner_text()
-            assert 'not read automatically' in page.locator('#measurementHelp').inner_text()
-            assert 'does not detect rooms' in page.locator('#scaleSummary').inner_text()
-            assert page.locator('#acceptSuggestions').is_hidden()
+            page.wait_for_function('state.image && !state.suggesting && state.scaleProposal && state.suggestions.length > 0', timeout=120000)
+            assert_reconstructed_rooms(page.evaluate('state.suggestions'))
+            assert page.locator('#useDetectedScale').is_visible()
+            assert page.locator('#manualScale').get_attribute('open') is None
+            assert page.locator('#scaleEvidence li').count() >= 2
             capture('#measureCard', 'measurement-guidance-real-plan.png')
             capture('#outlineCard', 'room-review-real-plan.png')
             assert not writes
@@ -64,9 +64,11 @@ def main():
             image.save(png, format='PNG')
             page.locator('#fileInput').set_input_files({'name': 'measurement-guidance.png',
                                                        'mimeType': 'image/png', 'buffer': png.getvalue()})
-            page.wait_for_function('(previous) => state.project !== previous && state.image && !state.suggesting', arg=args.reference_project)
+            page.wait_for_function('(previous) => state.project !== previous && state.image && state.image.width === 800 && !state.suggesting', arg=args.reference_project, timeout=120000)
             project = page.evaluate('state.project')
             assert page.evaluate('state.suggestions.length') == 0
+            assert page.locator('#manualScale').get_attribute('open') is not None
+            assert 'Setting the scale will not create the missing outlines' in page.locator('#suggestionStatus').inner_text()
             for value in ['', 'thirteen cubits']:
                 page.locator('#distanceInput').fill(value)
                 page.locator('#calibrateButton').click()

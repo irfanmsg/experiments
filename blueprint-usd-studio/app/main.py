@@ -12,6 +12,7 @@ import sys
 import tempfile
 import uuid
 from pathlib import Path
+from functools import lru_cache
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pymupdf as fitz
@@ -24,7 +25,7 @@ from .asset_library import b1_starter_furniture, catalog
 from .auto_furnish import furniture_layout
 from .geometry import measured_scale_audit, validate_plan
 from .usd_builder import PALETTES, build_style_variants, build_usd
-from .vision import suggest_rooms
+from .vision import analyze_drawing
 from .runtime_trace import runtime_trace
 from .source_files import router as source_router, source_manifest
 
@@ -370,7 +371,16 @@ async def select_page(project_id: str, request: Request):
 def suggest(project_id: str):
     directory = _project_dir(project_id)
     path = directory / ("plan.png" if (directory / "plan.png").exists() else "plan.jpg")
-    return {"suggestions": suggest_rooms(path)}
+    stat = path.stat()
+    return _drawing_analysis(str(path), stat.st_mtime_ns, stat.st_size)
+
+
+@lru_cache(maxsize=16)
+def _drawing_analysis(path: str, modified_ns: int, size: int):
+    # The source image is immutable except when its PDF page changes.
+    result = analyze_drawing(path)
+    result['runtime_trace'] = runtime_trace(executed=('room_detection',))
+    return result
 
 
 @app.post("/api/projects/{project_id}/generate")

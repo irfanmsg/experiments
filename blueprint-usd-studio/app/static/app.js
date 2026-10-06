@@ -63,6 +63,7 @@ function polygonArea(points) {
 function centroid(points) { return [points.reduce((s, p) => s + p[0], 0) / points.length, points.reduce((s, p) => s + p[1], 0) / points.length]; }
 function hex(rgb) { return `#${rgb.map(n => Math.round(n * 255).toString(16).padStart(2, "0")).join("")}`; }
 function dimensions(room) {
+  if (room.printed_dimensions_m?.length === 2) return `${room.printed_dimensions_m.map(n => n == null ? '?' : Number(n).toFixed(2)).join(' × ')} m printed · ${polygonArea(room.polygon).toFixed(1)} m² traced`;
   const d = room.dimensions_m;
   if (Array.isArray(d) && d.length >= 2) return `${Number(d[0]).toFixed(2)} × ${Number(d[1]).toFixed(2)} m`;
   if (d && typeof d === "object" && d.width && d.length) return `${d.width} × ${d.length} m`;
@@ -118,6 +119,10 @@ function savePlan() {
 async function setProject(data) {
   state.project = data.id; state.plan = data.plan; state.styles = data.styles || [];
   state.suggestions = []; state.suggesting = false;
+  state.scaleProposal = null;
+  $('useDetectedScale').hidden = true; $('scaleEvidence').hidden = true; $('scaleEvidence').replaceChildren();
+  $('manualScale').open = false; $('detectionWarnings').hidden = true;
+  $('detectedScaleStatus').textContent = state.plan.calibration || state.plan.dimension_model ? 'Your saved scale is retained.' : 'Reading printed dimensions and checking room walls…';
   state.furnishing = false;
   const savedLength = state.plan.calibration?.reference_dimensions?.[0];
   $('distanceInput').value = savedLength?.entered_length || (savedLength?.distance_m ? `${savedLength.distance_m} m` : '');
@@ -272,7 +277,7 @@ function refreshPlacements() {
 function refreshMeasurements() {
   const cal = calibration();
   const reference = state.plan?.calibration?.reference_dimensions?.[0];
-  $("scaleSummary").textContent = state.plan?.dimension_model ? "Printed meter dimensions enforced. Each grid square is 1 m × 1 m." : cal ? `Scale set${reference?.distance_m ? `: the selected length represents ${Number(reference.distance_m).toFixed(3)} m` : ''}. Rooms and furniture now share this scale. Check another printed dimension if the image is distorted.` : state.project ? "Scale has not been set. Enter a printed length above to begin; setting scale does not detect rooms." : "Upload a drawing to begin.";
+  $("scaleSummary").textContent = state.plan?.dimension_model ? "Printed meter dimensions enforced. Each grid square is 1 m × 1 m." : cal ? `Scale set${reference?.distance_m ? `: the reference length represents ${Number(reference.distance_m).toFixed(3)} m` : ''}. Rooms and furniture now share this scale. Check another printed dimension if the image is distorted.` : state.scaleProposal ? "Review the detected dimensions and confirm the proposed scale above. No points need to be selected." : state.project ? "Scale has not been set. Use the manual fallback only if a reliable scale cannot be detected." : "Upload a drawing to begin.";
   $("canvasScale").textContent = cal ? `1 m ≈ ${cal.scale.toFixed(1)} px` : "Scale not set";
   const badges = $("measurementBadges"); badges.replaceChildren();
   if (!state.plan) { $("drawingInfo").hidden = true; return; }
@@ -322,12 +327,13 @@ function refreshReconstructionReview() {
       return [Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)];
     };
     audit.room_dimensions = (plan.rooms || []).map(room => {
-      const modeled = polygonSpans(room.polygon);
+      const modeled = room.source_evidence && room.polygon.length === 4 ? [distance(room.polygon[0], room.polygon[1]), distance(room.polygon[1], room.polygon[2])] : polygonSpans(room.polygon);
+      if (room.source_evidence?.dimension?.rotation_deg === 90 || room.source_evidence?.dimension?.rotation_deg === 270) modeled.reverse();
       if (room.dimension_mode === "average_depth" && modeled.length) {
         const axis = Number(room.span_axis) === 1 ? 1 : 0;
         modeled[1 - axis] = modeled[axis] > 0 ? polygonArea(room.polygon) / modeled[axis] : null;
       }
-      return { id: room.id, name: room.name, printed: room.dimensions_m, modeled, dimension_mode: room.dimension_mode };
+      return { id: room.id, name: room.name, printed: room.printed_dimensions_m || room.dimensions_m, modeled, dimension_mode: room.dimension_mode };
     });
     audit.footprint_span_m = polygonSpans(plan.footprint?.polygon);
     audit.gross_area_m2 = polygonArea(plan.footprint?.polygon) - (plan.footprint?.holes || []).reduce((area, hole) => area + polygonArea(hole), 0);
@@ -366,6 +372,23 @@ function refreshReconstructionReview() {
     text(item, "p", `${readable(opening.type)} · ${metric(opening.width_m)} m wide × ${metric(opening.height_m)} m high · ${(opening.connects || []).map(roomName).join(" ↔ ") || "connected spaces unrecorded"}`);
     text(item, "p", `Access: ${provenance.topology || "unrecorded"}; width: ${provenance.width || "unrecorded"}; height: ${provenance.height || "unrecorded"}; ${provenance.review_status || "needs review"}.`);
     text(item, "p", `Basis: ${provenance.basis || opening.confidence || "unrecorded"}. Placement: ${provenance.placement || "unrecorded"}.`);
+    if (opening.image_inferred) {
+      const control = document.createElement('select'); control.setAttribute('aria-label', `Type of ${opening.name}`);
+      for (const [value, label] of [['unclassified','Unclassified gap'], ['passage','Open passage'], ['door','Door'], ['window','Window']]) {
+        const option = document.createElement('option'); option.value = value; option.textContent = label; control.append(option);
+      }
+      control.value = opening.classification || 'unclassified';
+      control.onchange = () => {
+        opening.classification = control.value;
+        opening.type = ['door','window'].includes(control.value) ? control.value : 'opening';
+        opening.no_header = opening.type === 'opening';
+        if (opening.no_header) delete opening.height_m; else opening.height_m = opening.type === 'door' ? 2.1 : 1.3;
+        opening.provenance.review_status = control.value === 'unclassified' ? 'Classification still needs review' : `Classified as ${control.value} by the user`;
+        opening.provenance.height = opening.no_header ? 'Kept open full height' : `${opening.height_m} m preview assumption; not read from the plan`;
+        markChanged();
+      };
+      item.append(control);
+    }
     const reference = provenance.source_reference;
     if (reference) {
       if (typeof reference === "string") text(item, "p", `Source: ${reference}`);
@@ -427,7 +450,7 @@ function draw() {
     const pixels = suggestion.pixel_polygon;
     ctx.beginPath(); ctx.moveTo(...pixels[0]); pixels.slice(1).forEach(p => ctx.lineTo(...p)); ctx.closePath();
     ctx.fillStyle = '#f4b64c25'; ctx.strokeStyle = '#ba6a0b'; ctx.lineWidth = Math.max(2, canvas.width / 500); ctx.setLineDash([8, 5]); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
-    const [x, y] = centroid(pixels); ctx.font = `${Math.max(14, canvas.width / 65)}px sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = '#713f08'; ctx.fillText(`Proposed room ${index + 1}`, x, y);
+    const [x, y] = centroid(pixels); ctx.font = `${Math.max(14, canvas.width / 65)}px sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = '#713f08'; ctx.fillText(suggestion.reviewName || `Proposed room ${index + 1}`, x, y);
   });
   const footprint = state.plan.footprint?.polygon || [];
   if (footprint.length >= 3) drawPolygon(footprint, "#1caa86", "#41b89917", 5);
@@ -462,6 +485,8 @@ function draw() {
 }
 function createRoom(polygon, category = "room", suggestedName = null) {
   const name = (suggestedName === null ? $("roomName").value.trim() : suggestedName.trim()) || (category === "balcony" ? "Balcony" : `Room ${state.plan.rooms.length + 1}`);
+  if (category === 'room') category = [[/\bkitchen\b/i,'kitchen'], [/\b(bathroom|toilet|powder)\b/i,'bathroom'], [/\bbedroom\b/i,'bedroom'],
+    [/\bbalcony\b/i,'balcony'], [/\b(servant|utility|laundry)\b/i,'service'], [/\b(corridor|passage|lobby)\b/i,'hallway']].find(([pattern]) => pattern.test(name))?.[1] || category;
   const room = { id: `space_${Date.now()}_${state.plan.rooms.length}`, name, category, polygon, confidence: "user-reviewed", geometry_provenance: suggestedName === null ? "traced in Blueprint Studio" : "image suggestion accepted by user; scaled using the confirmed distance" };
   state.plan.rooms.push(room);
   if (suggestedName !== null) {
@@ -472,6 +497,7 @@ function createRoom(polygon, category = "room", suggestedName = null) {
   }
   $("roomName").value = ""; markChanged(); toast(`${name} added`);
   queueMicrotask(() => suggestFurniture(true));
+  return room;
 }
 function finishOutline() {
   if (state.points.length < 3) { toast("Mark at least three corners"); return; }
@@ -825,31 +851,71 @@ function updateSuggestionReady() {
   $('acceptSuggestions').disabled = !calibration() || !state.suggestions.some(item => item.selected);
   if (state.suggestions.length) $('suggestionStatus').textContent = calibration()
     ? 'Review the dashed outlines. Uncheck mistakes, then use the selected rooms. Names can be changed later.'
-    : 'Proposed rooms are shown with dashed outlines. Confirm one printed measurement to set their size before using them.';
+    : state.scaleProposal ? 'Review the named outlines, then confirm the detected scale to use them. Gaps in walls remain unclassified until you review them as passages, doors or windows.' : 'Proposed rooms are shown with dashed outlines. A reliable drawing scale is still needed before using them.';
 }
+function showScaleProposal(proposal) {
+  state.scaleProposal = proposal && Number.isFinite(proposal.pixels_per_meter) && proposal.pixels_per_meter > 0 ? proposal : null;
+  $('useDetectedScale').hidden = !state.scaleProposal || !!calibration();
+  $('scaleEvidence').replaceChildren(); $('scaleEvidence').hidden = !state.scaleProposal;
+  if (state.scaleProposal) {
+    for (const observation of proposal.observations || []) {
+      const row = document.createElement('li');
+      row.textContent = `${observation.room_name}: ${observation.text || ''} → ${Number(observation.dimension_m).toFixed(3)} m ${observation.axis === 'x' ? 'horizontal' : 'vertical'} span${Number.isFinite(observation.relative_error) ? ` · ${(observation.relative_error * 100).toFixed(1)}% scale difference` : ''}`;
+      $('scaleEvidence').append(row);
+    }
+    $('detectedScaleStatus').textContent = (calibration() ? 'A scale estimate was found; your existing scale is retained.' : 'A scale estimate was found from printed lengths and matching room walls. Review the readings below, then confirm. No points need to be marked.') + ' ' + (proposal.warnings || []).join(' ');
+  } else $('detectedScaleStatus').textContent = calibration() ? 'Your saved scale is retained.' : 'A consistent scale could not be established from the printed dimensions. The manual fallback is available below.';
+  $('manualScale').open = !calibration() && (!state.scaleProposal || !!$('distanceInput').value.trim());
+  refreshMeasurements();
+}
+$('useDetectedScale').onclick = () => {
+  const proposal = state.scaleProposal;
+  if (!state.plan || !proposal || calibration()) return;
+  state.plan.calibration = {pixel_origin:[0, canvas.height], pixels_per_meter:proposal.pixels_per_meter,
+    basis:'Printed dimensions matched to structural wall spans; OCR and scale estimate reviewed by the user',
+    reference_dimensions:(proposal.observations || []).map(item => ({...item, distance_m:item.dimension_m})),
+    review_note:proposal.review_note, warnings:proposal.warnings || []};
+  state.plan.scale_audit = {meters_per_unit:1, notes:'Uniform scale inferred from OCR and structural wall spans. Printed dimensions are source readings; modeled spans remain estimates.'};
+  state.plan.reconstruction_decisions ||= [];
+  state.plan.reconstruction_decisions.push({id:`scale_${Date.now()}`, kind:'drawing-scale', status:'user-confirmed estimate',
+    summary:'The user confirmed scale inferred from printed dimensions and structural wall spans. Image distortion and OCR readings remain reviewable.', parameters:proposal});
+  $('useDetectedScale').hidden = true; $('manualScale').open = false;
+  $('detectedScaleStatus').textContent = 'Detected scale confirmed. Review the room outlines before accepting them.';
+  markChanged();
+};
 async function findRoomSuggestions() {
   if (!state.project || state.suggesting) return;
   const project = state.project, plan = state.plan;
   state.suggesting = true;
-  $('suggestButton').disabled = true; $('suggestButton').textContent = 'Looking for rooms…';
+  $('suggestButton').disabled = true; $('suggestButton').textContent = 'Reading rooms and dimensions…';
   try {
     const data = await request(`/api/projects/${project}/suggest`);
     if (state.project !== project || state.plan !== plan) return;
-    state.suggestions = (data.suggestions || []).slice(0, 25).map(item => ({...item, selected: true, reviewName: ''}));
+    if (data.runtime_trace) renderLibraryTrace(data.runtime_trace);
+    showScaleProposal(data.scale_proposal);
+    $('detectionWarnings').textContent = (data.warnings || []).join(' '); $('detectionWarnings').hidden = !data.warnings?.length;
+    state.suggestions = (data.suggestions || []).slice(0, 25).map(item => ({...item, selected: !(item.max_dimension_relative_error > .075), reviewName: item.name || ''}));
     const container = $('suggestions'); container.replaceChildren(); container.hidden = !state.suggestions.length;
     state.suggestions.forEach((suggestion, index) => {
       const row = document.createElement('div'); row.className = 'suggestion';
-      const check = document.createElement('input'); check.type = 'checkbox'; check.checked = true;
+      const check = document.createElement('input'); check.type = 'checkbox'; check.checked = suggestion.selected;
       check.setAttribute('aria-label', `Use proposed room ${index + 1}`);
       check.onchange = () => { suggestion.selected = check.checked; updateSuggestionReady(); draw(); };
       const name = document.createElement('input'); name.type = 'text'; name.placeholder = `Room ${index + 1} (optional name)`;
+      name.value = suggestion.reviewName;
       name.setAttribute('aria-label', `Name for proposed room ${index + 1}`);
-      name.oninput = () => { suggestion.reviewName = name.value; };
-      row.append(check, name); container.append(row);
+      name.oninput = () => { suggestion.reviewName = name.value; draw(); };
+      const details = document.createElement('div'); details.append(name);
+      if (suggestion.dimension_evidence || suggestion.inferred_boundaries?.length) {
+        const note = document.createElement('small');
+        note.textContent = [suggestion.dimension_evidence?.text, suggestion.max_dimension_relative_error > .075 ? `Not selected: ${(suggestion.max_dimension_relative_error * 100).toFixed(1)}% disagreement with a printed dimension` : '', suggestion.inferred_boundaries?.length ? `${suggestion.inferred_boundaries.length} inferred boundaries; review against walls and doors` : 'Wall-supported outline; review dimensions'].filter(Boolean).join(' · ');
+        details.append(note);
+      }
+      row.append(check, details); container.append(row);
     });
     if (!state.suggestions.length) $('suggestionStatus').textContent = '0 room outlines detected. Automatic room reconstruction could not identify reliable boundaries in this drawing. Setting the scale will not create the missing outlines. You can trace them with the manual tools below; repeating detection on this unchanged image will give the same result.';
     updateSuggestionReady(); draw();
-  } catch (error) { if (state.project === project && state.plan === plan) $('suggestionStatus').textContent = `Room detection could not finish: ${error.message}. You can still use the manual outline tools.`; }
+  } catch (error) { if (state.project === project && state.plan === plan) { $('suggestionStatus').textContent = `Room detection could not finish: ${error.message}. You can still use the manual outline tools.`; showScaleProposal(null); } }
   finally { if (state.project === project && state.plan === plan) { state.suggesting = false; $('suggestButton').disabled = false; $('suggestButton').textContent = 'Retry automatic detection'; } }
 }
 $('suggestButton').onclick = findRoomSuggestions;
@@ -857,17 +923,38 @@ $('acceptSuggestions').onclick = () => {
   if (!calibration()) return;
   const selected = state.suggestions.filter(item => item.selected);
   const before = state.plan.rooms.length;
-  // Review converts pixel outlines to metric rooms; it does not read printed dimensions.
+  const gaps = [];
+  state.plan.openings ||= [];
+  // Keep the image trace and printed readings distinct; OCR does not certify scale.
   for (const suggestion of selected) {
     const polygon = suggestion.pixel_polygon.map(pixelToMetres);
     if (polygonArea(polygon) < .1) continue;
     const center = centroid(polygon);
     if (state.plan.rooms.some(room => distance(centroid(room.polygon), center) < .01 && Math.abs(polygonArea(room.polygon) - polygonArea(polygon)) < .01)) continue;
-    createRoom(polygon, 'room', suggestion.reviewName);
+    const room = createRoom(polygon, 'room', suggestion.reviewName);
+    if (suggestion.dimension_evidence || suggestion.wall_evidence) {
+      room.geometry_provenance = 'Wall-supported image proposal accepted by user; inferred boundaries and printed readings require review';
+      room.printed_dimensions_m = suggestion.dimension_evidence?.dimensions_m || suggestion.dimension_evidence?.dimension_parts_m;
+      room.dimension_provenance = 'OCR reading of the source caption; verify against the drawing. Traced geometry has not been forced to these dimensions.';
+      room.source_evidence = {dimension:suggestion.dimension_evidence, walls:suggestion.wall_evidence, inferred_boundaries:suggestion.inferred_boundaries, review_note:suggestion.review_note};
+      const decision = state.plan.reconstruction_decisions.find(item => item.id === `outline_${room.id}`);
+      decision.summary = 'A wall-supported room outline was accepted, including the recorded inferred boundaries; printed dimensions remain separate from traced geometry.';
+      decision.parameters.evidence = room.source_evidence;
+    }
+    for (const gap of suggestion.pixel_openings || []) gaps.push({...gap, room_id:room.id, room_name:room.name});
+  }
+  for (const [index, gap] of gaps.entries()) {
+    const start = pixelToMetres(gap.pixel_start), end = pixelToMetres(gap.pixel_end);
+    const center = [(start[0]+end[0])/2, (start[1]+end[1])/2], near = nearestWall(center), width = distance(start, end);
+    if (!near || width < .2 || state.plan.openings.some(item => item.wall_id === near.wall.id && item.center && distance(item.center, near.center) < .1)) continue;
+    state.plan.openings.push({id:`inferred_${gap.room_id}_${index}`, name:`${gap.room_name} · ${gap.side || 'wall'} gap`,
+      type:'opening', no_header:true, wall_id:near.wall.id, center:near.center, start, end, width_m:width,
+      image_inferred:true, confidence:'needs-review', room_id:gap.room_id,
+      provenance:{topology:'inferred', width:'Image wall-gap span at the confirmed scale', height:'Unclassified gap kept open full height; door/window height not established', review_status:'Classify as passage, door or window', basis:gap.basis}});
   }
   state.suggestions = []; $('suggestions').replaceChildren(); $('suggestions').hidden = true;
   $('suggestionStatus').textContent = state.plan.rooms.length > before ? 'Room outlines accepted. Names are optional; review doors and any missed boundaries before refining the model.' : 'No rooms added: these outlines are already included or too small. Review the selected outlines and measurement.';
-  updateSuggestionReady(); draw();
+  updateSuggestionReady(); refreshAll();
 };
 $("generateButton").onclick = () => generate(false);
 $("allStylesButton").onclick = () => generate(true);

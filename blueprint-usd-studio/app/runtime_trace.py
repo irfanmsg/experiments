@@ -8,11 +8,16 @@ from datetime import datetime, timezone
 import hashlib
 from importlib import metadata
 from pathlib import Path
+from functools import lru_cache
+import shutil
+import subprocess
 import sys
 
 
 _BUNDLE = Path(__file__).resolve().parents[1] / 'streaming/client/omniverse-webrtc-streaming-library.js'
 _PACKAGES = (
+    ('opencv', 'OpenCV image analysis', 'opencv-python-headless', False),
+    ('numpy', 'NumPy image and geometry arrays', 'numpy', False),
     ('usd_exchange', 'USD Exchange', 'usd-exchange', False),
     ('ovstage', 'Omniverse stage population', 'ovstage', True),
     ('ovrtx', 'Omniverse RTX rendering', 'ovrtx', True),
@@ -24,6 +29,9 @@ _PACKAGES = (
 # These are source mappings, not evidence of execution. Observations are added
 # only after the corresponding operation returns successfully.
 _ACTIONS = (
+    ('room_detection', 'Read printed dimensions and propose wall-supported rooms', ['opencv', 'numpy', 'tesseract'],
+     ['tesseract --psm 11 tsv', 'cv2.morphologyEx', 'cv2.connectedComponentsWithStats'],
+     'app/vision.py:analyze_drawing', 'Image analysis completes; OCR readings and inferred boundaries require review.'),
     ('furniture_suggestion', 'Propose full-size furnishings around existing objects', ['openusd'],
      ['Usd.Stage.Open', 'UsdGeom.BBoxCache.ComputeWorldBound', 'UsdGeom.GetStageMetersPerUnit', 'UsdGeom.GetStageUpAxis'],
      'app/auto_furnish.py:furniture_layout', 'The current scene is inspected and an installed-asset placement proposal completes.'),
@@ -60,6 +68,17 @@ _ACTIONS = (
 )
 
 
+@lru_cache(maxsize=1)
+def _ocr_version():
+    executable = shutil.which('tesseract')
+    if executable:
+        try:
+            return subprocess.run([executable, '--version'], capture_output=True, text=True, check=True, timeout=3).stdout.splitlines()[0].removeprefix('tesseract ').strip()
+        except (OSError, subprocess.SubprocessError, IndexError):
+            pass
+    return None
+
+
 def runtime_trace(*, executed=(), physics_enabled=False, openusd_version=None):
     """Return JSON-safe metadata without initializing native GPU libraries.
 
@@ -68,6 +87,9 @@ def runtime_trace(*, executed=(), physics_enabled=False, openusd_version=None):
     from ``Usd.GetVersion()``; otherwise only an already-loaded Usd is inspected.
     """
     libraries = []
+    ocr_version = _ocr_version()
+    libraries.append({'id':'tesseract', 'name':'Tesseract native OCR', 'version':ocr_version,
+                      'installed':ocr_version is not None, 'optional':True, 'version_source':'native engine --version'})
     for identifier, name, distribution, optional in _PACKAGES:
         try:
             version = metadata.version(distribution)

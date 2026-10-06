@@ -141,7 +141,8 @@ def furniture_layout(plan, catalog_assets, occupied_objects=()):
         a, b = opening.get('start'), opening.get('end')
         width = float(opening.get('width_m') or opening.get('width') or .9)
         if a is not None and b is not None:
-            occupied.append(LineString([a, b]).buffer(max(.65, width)))
+            clearance = .65 if opening.get('no_header') else max(.65, width)
+            occupied.append(LineString([a, b]).buffer(clearance))
         elif opening.get('center') is not None or opening.get('position') is not None:
             occupied.append(Point((opening.get('center') or opening['position'])[:2]).buffer(width+.65))
         else:
