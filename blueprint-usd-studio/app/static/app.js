@@ -133,7 +133,7 @@ async function setProject(data) {
   $('sourceFilesInput').disabled = false;
   loadSupportingSources();
   if (state.plan.source?.primary_crop === 'agreement_unit_crop.jpg') state.style = availableStyles().find(style => style.is_design_scheme)?.id || availableStyles().find(style => style.id === 'home_specification')?.id || 'contemporary';
-  state.reviewOpening = null;
+  state.reviewOpening = null; state.selectedPlacement = null; state.draggingPlacement = null;
   state.generated = null; state.selectedAsset = null; state.revision = 0;
   $("generateStatus").textContent = "";
   localStorage.setItem("blueprint-studio-project", data.id);
@@ -224,7 +224,19 @@ function allPlacements() {
     .map(item => ({...item, ...overrides[item.id], procedural: true}))
     .filter(item => !item.removed)];
 }
+function placementSourceSize(placement) {
+  return placement.source_size_xyz_m || state.assets.find(asset => asset.usd_path === placement.asset_path)?.size_xyz_m || null;
+}
+function placementSize(placement) {
+  const source = placementSourceSize(placement), scale = placement.scale_xyz || [1, 1, 1];
+  return source?.map((value, i) => value * scale[i]) || null;
+}
+function selectPlacement(placement, scroll = false) {
+  state.selectedPlacement = placement.id; refreshPlacements(); draw();
+  if (scroll) { const list = $('placementList'), row = [...list.children].find(item => item.dataset.placementId === placement.id); if (row) list.scrollTop += row.getBoundingClientRect().top - list.getBoundingClientRect().top; }
+}
 function editPlacement(placement, change) {
+  change.edit_history = [...(placement.edit_history || []), {action:'transform', at:new Date().toISOString(), ...change}];
   if (placement.procedural) {
     state.plan.object_overrides ||= {};
     state.plan.object_overrides[state.style] ||= {};
@@ -235,14 +247,18 @@ function editPlacement(placement, change) {
 function refreshPlacements() {
   const list = $("placementList"); list.replaceChildren();
   allPlacements().forEach(placement => {
-    const row = document.createElement("div"); row.className = "room-row";
+    const row = document.createElement("div"); row.className = "room-row placement-row"; row.dataset.placementId = placement.id;
+    row.classList.toggle("selected", state.selectedPlacement === placement.id);
     const details = document.createElement("div"); details.className = "placement-details";
-    const name = document.createElement("strong"); name.textContent = placement.name || placement.id || "Furnishing";
+    const name = document.createElement('button'); name.type = 'button'; name.className = 'placement-select'; name.textContent = placement.name || placement.id || 'Furnishing'; name.setAttribute('aria-label', `Select ${name.textContent}`); name.setAttribute('aria-pressed', state.selectedPlacement === placement.id ? 'true' : 'false'); name.onclick = () => selectPlacement(placement);
     const kind = document.createElement('small'); kind.textContent = placement.asset_kind || (placement.procedural ? 'Procedural USD' : 'NVIDIA SimReady USD');
+    const roomName = state.plan?.rooms?.find(room => room.id === placement.room_id)?.name || placement.room_id;
+    if (roomName) kind.textContent += ` · ${roomName}`;
+    row.setAttribute('role', 'group'); row.setAttribute('aria-label', `${name.textContent}${roomName ? ` in ${roomName}` : ''}`);
     const move = document.createElement('button'); move.type = 'button'; move.textContent = 'Move'; move.setAttribute('aria-label', `Move ${name.textContent}`);
-    move.onclick = () => { state.movingPlacement = placement; state.tool = 'move-placement'; $('canvasArea').scrollIntoView({block:'center'}); $('toolHint').textContent = `Click the new position for ${name.textContent}, or drag its marker.`; toast(`Click the plan to move ${name.textContent}`); };
+    move.onclick = () => { state.selectedPlacement = placement.id; draw(); state.movingPlacement = placement; state.tool = 'move-placement'; $('canvasArea').scrollIntoView({block:'center'}); $('toolHint').textContent = `Click the new position for ${name.textContent}, or drag its marker.`; toast(`Click the plan to move ${name.textContent}`); };
     const controls = document.createElement("div"); controls.className = "placement-controls";
-    for (const [label, axis, unit] of [["X", 0, "metres"], ["Y", 1, "metres"], ["Rotation", null, "degrees"]]) {
+    for (const [label, axis, unit] of [["X", 0, "metres"], ["Y", 1, "metres"], ["Z", 2, "metres"], ["Rotation", null, "degrees"]]) {
       const field = document.createElement("label"); field.textContent = `${label} ${unit === "metres" ? "(m)" : "(°)"} `;
       const input = document.createElement("input"); input.type = "number"; input.step = axis === null ? "1" : "0.01"; input.className = "placement-coordinate";
       const value = axis === null ? placement.rotation_deg || 0 : placement.position?.[axis] || 0;
@@ -256,22 +272,50 @@ function refreshPlacements() {
       };
       field.append(input); controls.append(field);
     }
+    const source = placementSourceSize(placement), currentSize = placementSize(placement);
+    const sizeNote = document.createElement('small');
+    sizeNote.textContent = source ? `Source size: ${source.map(v => Number(v).toFixed(3)).join(' × ')} m. Dimensions below are local width × depth × height, before rotation.` : 'Source size unavailable. Scale factors apply to this object only.';
+    for (const [axis, label] of ['Width', 'Depth', 'Height'].entries()) {
+      const field = document.createElement('label'); field.textContent = `${label} ${source ? '(m)' : 'scale'} `;
+      const input = document.createElement('input'); input.type = 'number'; input.min = '0.001'; input.step = '0.01';
+      input.value = currentSize ? Number(currentSize[axis].toFixed(4)) : (placement.scale_xyz || [1,1,1])[axis];
+      input.setAttribute('aria-label', `${label} of ${name.textContent} ${source ? 'in metres' : 'scale factor'}`);
+      input.onchange = () => {
+        const value = input.valueAsNumber;
+        if (!Number.isFinite(value) || value <= 0 || (source && !(source[axis] > 0))) { toast('Object dimensions must be positive finite numbers'); refreshPlacements(); return; }
+        const scale = [...(placement.scale_xyz || [1,1,1])]; scale[axis] = source ? value / source[axis] : value;
+        editPlacement(placement, {scale_xyz:scale}); markChanged();
+      };
+      field.append(input); controls.append(field);
+    }
+    const reset = document.createElement('button'); reset.type = 'button'; reset.textContent = 'Restore source size'; reset.setAttribute('aria-label', `Restore source size of ${name.textContent}`);
+    reset.onclick = () => { editPlacement(placement, {scale_xyz:[1,1,1]}); markChanged(); };
+    controls.append(reset);
     if (!placement.procedural) {
-    const movableLabel = document.createElement("label");
-    const movable = document.createElement("input"); movable.type = "checkbox"; movable.checked = placement.physics_mode === "dynamic";
-    movable.setAttribute("aria-label", `Dynamic physics for ${name.textContent}`);
-    movable.onchange = () => { placement.physics_mode = movable.checked ? "dynamic" : "static"; if (!movable.checked) placement.position[2] = 0; markChanged(); };
-    movableLabel.append(movable, " Dynamic physics"); controls.append(movableLabel);
-    if (movable.checked) {
-      const heightLabel = document.createElement("label"); heightLabel.textContent = "Start height ";
-      const height = document.createElement("input"); height.type = "number"; height.min = "0"; height.max = "20"; height.step = "0.1"; height.value = Number(placement.position?.[2] || 0).toFixed(1); height.setAttribute("aria-label", `Starting height of ${name.textContent} in metres`);
-      height.onchange = () => { const z = Number(height.value); if (!Number.isFinite(z) || z < 0 || z > 20) { toast("Starting height must be between 0 and 20 metres"); return; } placement.position[2] = z; markChanged(); };
-      heightLabel.append(height, " m"); controls.append(heightLabel);
+      const movableLabel = document.createElement('label'), movable = document.createElement('input');
+      movable.type = 'checkbox'; movable.checked = placement.physics_mode === 'dynamic'; movable.setAttribute('aria-label', `Dynamic physics for ${name.textContent}`);
+      movable.onchange = () => { editPlacement(placement, {physics_mode:movable.checked ? 'dynamic' : 'static'}); markChanged(); };
+      movableLabel.append(movable, ' Dynamic physics'); controls.append(movableLabel);
     }
-    }
+    const replacement = document.createElement('select'); replacement.setAttribute('aria-label', `Replacement asset for ${name.textContent}`);
+    const placeholder = document.createElement('option'); placeholder.value = ''; placeholder.textContent = 'Choose replacement from library'; replacement.append(placeholder);
+    state.assets.forEach(asset => { const option = document.createElement('option'); option.value = asset.usd_path; option.textContent = `${asset.name} · ${asset.asset_kind || 'USD'}`; replacement.append(option); });
+    const replace = document.createElement('button'); replace.type = 'button'; replace.textContent = 'Replace'; replace.disabled = true; replace.setAttribute('aria-label', `Replace ${name.textContent}`);
+    replacement.onchange = () => replace.disabled = !replacement.value;
+    replace.onclick = () => {
+      const asset = state.assets.find(item => item.usd_path === replacement.value); if (!asset) return;
+      const history = [...(placement.edit_history || []), {action:'replace', at:new Date().toISOString(), previous_id:placement.id, previous_asset:placement.asset_path || placement.id, previous_scale_xyz:placement.scale_xyz || [1,1,1], asset_path:asset.usd_path, basis:'User chose replacement; position and rotation retained, replacement uses physical source size'}];
+      if (placement.procedural) editPlacement(placement, {removed:true});
+      const next = {id:placement.procedural ? `asset_${Date.now()}` : placement.id, name:asset.name, asset_kind:asset.asset_kind || 'Imported USD', asset_path:asset.usd_path, position:[...(placement.position || [0,0,0])], rotation_deg:placement.rotation_deg || 0, scale_xyz:[1,1,1], source_size_xyz_m:asset.size_xyz_m, edit_history:history, physics_mode:placement.physics_mode || 'static'};
+      if (placement.procedural) { state.plan.asset_placements ||= []; state.plan.asset_placements.push(next); }
+      else Object.assign(placement, next);
+      state.selectedPlacement = next.id; markChanged(); toast('Replaced at the same position and rotation, using the new asset’s source size. Create 3D scene to apply.');
+    };
+    const replaceNote = document.createElement('small'); replaceNote.textContent = 'Replacement keeps position and rotation, and uses the new asset’s source size. Import USD / USDZ above to add more choices.';
+    controls.append(replacement, replace);
     const remove = document.createElement("button"); remove.type = "button"; remove.textContent = "Remove"; remove.setAttribute("aria-label", `Remove furnishing ${name.textContent}`);
     remove.onclick = () => { if (placement.procedural) editPlacement(placement, {removed:true}); else state.plan.asset_placements = state.plan.asset_placements.filter(item => item !== placement); markChanged(); };
-    details.append(name, kind, move, controls); row.append(details, remove); list.append(row);
+    details.append(name, kind, move, sizeNote, controls, replaceNote); row.append(details, remove); list.append(row);
   });
 }
 function refreshMeasurements() {
@@ -470,8 +514,15 @@ function draw() {
   });
   allPlacements().forEach(placement => {
     const point = metresToPixel(placement.position); if (!point) return;
+    const selected = state.selectedPlacement === placement.id, size = placementSize(placement), cal = calibration();
+    if (size && cal) {
+      ctx.save(); ctx.translate(...point); ctx.rotate(-(placement.rotation_deg || 0) * Math.PI / 180);
+      ctx.fillStyle = selected ? '#7652bf55' : '#8869c422'; ctx.strokeStyle = selected ? '#503089' : '#8869c4'; ctx.lineWidth = selected ? 4 : 2;
+      ctx.fillRect(-size[0]*cal.scale/2, -size[1]*cal.scale/2, size[0]*cal.scale, size[1]*cal.scale);
+      ctx.strokeRect(-size[0]*cal.scale/2, -size[1]*cal.scale/2, size[0]*cal.scale, size[1]*cal.scale); ctx.restore();
+    }
     ctx.beginPath(); ctx.arc(point[0], point[1], Math.max(8, canvas.width / 170), 0, Math.PI * 2);
-    ctx.fillStyle = "#8869c4"; ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = selected ? '#432071' : "#8869c4"; ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
   });
   if (state.points.length) {
     ctx.beginPath(); ctx.moveTo(...state.points[0]); state.points.slice(1).forEach(point => ctx.lineTo(...point));
@@ -543,8 +594,15 @@ function handleCanvasDown(event) {
   }
   if (!state.tool) {
     const radius = 15 * canvas.width / canvas.getBoundingClientRect().width;
-    const placement = allPlacements().reverse().find(item => { const p = metresToPixel(item.position); return p && distance(point, p) < radius; });
-    if (placement) { event.preventDefault(); state.draggingPlacement = placement; state.dragOriginal = [...placement.position]; canvas.setPointerCapture(event.pointerId); }
+    const placement = allPlacements().reverse().find(item => {
+      const p = metresToPixel(item.position); if (!p) return false;
+      if (distance(point, p) < radius) return true;
+      const size = placementSize(item), scale = calibration()?.scale; if (!size || !scale) return false;
+      const angle = (item.rotation_deg || 0) * Math.PI / 180, dx = point[0]-p[0], dy = point[1]-p[1];
+      const x = dx*Math.cos(angle)-dy*Math.sin(angle), y = dx*Math.sin(angle)+dy*Math.cos(angle);
+      return Math.abs(x) <= size[0]*scale/2 && Math.abs(y) <= size[1]*scale/2;
+    });
+    if (placement) { selectPlacement(placement, true); event.preventDefault(); state.dragPointer = point; state.draggingPlacement = placement; state.dragOriginal = [...placement.position]; canvas.setPointerCapture(event.pointerId); }
     return;
   }
   if (state.tool === "room-rectangle") { state.dragStart = point; canvas.setPointerCapture(event.pointerId); draw(); return; }
@@ -575,21 +633,23 @@ function handleCanvasDown(event) {
     } else if (state.tool === "asset") {
       if (!state.selectedAsset) throw new Error("Choose a furnishing first");
       state.plan.asset_placements ||= [];
-      state.plan.asset_placements.push({ id: `asset_${Date.now()}`, name: state.selectedAsset.name, asset_kind: state.selectedAsset.asset_kind || 'NVIDIA SimReady USD', asset_path: state.selectedAsset.usd_path, position: [...metres, 0], rotation_deg: 0 });
-      markChanged(); toast(`${state.selectedAsset.name} placed`);
+      state.plan.asset_placements.push({ id: `asset_${Date.now()}`, name: state.selectedAsset.name, asset_kind: state.selectedAsset.asset_kind || 'NVIDIA SimReady USD', asset_path: state.selectedAsset.usd_path, position: [...metres, 0], rotation_deg: 0, scale_xyz:[1,1,1], source_size_xyz_m:state.selectedAsset.size_xyz_m });
+      state.selectedPlacement = state.plan.asset_placements.at(-1).id; setTool(null); markChanged(); toast(`${state.selectedAsset.name} placed. Drag its marker or edit its dimensions below.`);
     }
   } catch (error) { toast(error.message); }
 }
 function handleCanvasMove(event) {
   if (state.draggingPlacement) {
-    const [x, y] = pixelToMetres(getPixel(event)), placement = state.draggingPlacement;
-    editPlacement(placement, {position:[x, y, state.dragOriginal[2] || 0]}); draw(); return;
+    const pointer = pixelToMetres(getPixel(event)), start = pixelToMetres(state.dragPointer), placement = state.draggingPlacement;
+    const position = [state.dragOriginal[0] + pointer[0] - start[0], state.dragOriginal[1] + pointer[1] - start[1], state.dragOriginal[2] || 0];
+    if (placement.procedural) { state.plan.object_overrides ||= {}; state.plan.object_overrides[state.style] ||= {}; state.plan.object_overrides[state.style][placement.id] = {...state.plan.object_overrides[state.style][placement.id], position}; } else placement.position = position;
+    draw(); return;
   }
   if (!state.tool) return;
   state.hover = getPixel(event); draw();
 }
 function handleCanvasUp(event) {
-  if (state.draggingPlacement) { state.draggingPlacement = null; markChanged(); return; }
+  if (state.draggingPlacement) { const item = allPlacements().find(p => p.id === state.draggingPlacement.id); if (item) editPlacement(item, {position:[...item.position]}); state.draggingPlacement = null; markChanged(); return; }
   if (state.tool !== "room-rectangle" || !state.dragStart) return;
   const end = getPixel(event), start = state.dragStart; state.dragStart = null; state.hover = null;
   if (distance(start, end) < 12) { toast("Drag across the room to outline it"); return; }
@@ -682,6 +742,8 @@ async function generate(all = false) {
     $("generateButton").disabled = true; $("allStylesButton").disabled = true;
     const result = await request(`/api/projects/${projectId}/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ style: all ? "all" : selectedStyle }) });
     if (state.project !== projectId || state.revision !== revision) throw new Error("The plan changed while the scene was building. Create it again to include your edits.");
+    const assetReports = all ? Object.values(result.styles || {}).flatMap(report => report.asset_imports || []) : result.asset_imports || [];
+    assetReports.forEach(report => { const placement = state.plan.asset_placements?.find(item => item.id === report.id); if (placement) placement.source_size_xyz_m = report.source_size_xyz_m; });
     state.generated = { result, style: selectedStyle };
     if (all) { state.editableObjects ||= {}; Object.entries(result.styles || {}).forEach(([id, report]) => { state.editableObjects[id] = report.editable_objects || []; }); refreshPlacements(); draw(); }
     if (!all) { state.editableObjects ||= {}; state.editableObjects[selectedStyle] = result.editable_objects || []; refreshPlacements(); draw(); }
@@ -806,6 +868,7 @@ async function loadAssets() {
     const data = await request("/api/assets");
     const entries = data.assets || data.entries || [];
     state.assets = entries;
+    refreshPlacements();
     renderAssets();
   } catch { $("assetList").textContent = "SimReady library unavailable."; }
 }
@@ -883,6 +946,29 @@ $('useDetectedScale').onclick = () => {
   $('detectedScaleStatus').textContent = 'Detected scale confirmed. Review the room outlines before accepting them.';
   markChanged();
 };
+function renderRoomSuggestions(items) {
+  state.suggestions = (items || []).slice(0, 60).map(item => ({...item, selected: !item.ai_generated && !(item.max_dimension_relative_error > .075), reviewName: item.name || ''}));
+  const container = $('suggestions'); container.replaceChildren(); container.hidden = !state.suggestions.length;
+  state.suggestions.forEach((suggestion, index) => {
+    const row = document.createElement('div'); row.className = 'suggestion';
+    const check = document.createElement('input'); check.type = 'checkbox'; check.checked = suggestion.selected;
+    check.setAttribute('aria-label', `Use proposed room ${index + 1}`);
+    check.onchange = () => { suggestion.selected = check.checked; updateSuggestionReady(); draw(); };
+    const name = document.createElement('input'); name.type = 'text'; name.placeholder = `Room ${index + 1} (optional name)`;
+    name.value = suggestion.reviewName;
+    name.setAttribute('aria-label', `Name for proposed room ${index + 1}`);
+    name.oninput = () => { suggestion.reviewName = name.value; draw(); };
+    const details = document.createElement('div'); details.append(name);
+    if (suggestion.ai_generated || suggestion.dimension_evidence || suggestion.inferred_boundaries?.length) {
+      const note = document.createElement('small');
+      note.textContent = [suggestion.ai_generated ? 'AI inferred proposal; unchecked until you review it' : '', suggestion.inference?.basis, ...(suggestion.inference?.assumptions || []), suggestion.label_evidence?.review_note, suggestion.dimension_evidence?.text, suggestion.max_dimension_relative_error > .075 ? `Not selected: ${(suggestion.max_dimension_relative_error * 100).toFixed(1)}% disagreement with a printed dimension` : '', suggestion.inferred_boundaries?.length ? `${suggestion.inferred_boundaries.length} inferred boundaries; review against walls and doors` : suggestion.ai_generated ? 'Architectural review required' : 'Wall-supported outline; review dimensions'].filter(Boolean).join(' · ');
+      details.append(note);
+    }
+    row.append(check, details); container.append(row);
+  });
+  if (!state.suggestions.length) $('suggestionStatus').textContent = '0 room outlines detected. Automatic room reconstruction could not identify reliable boundaries in this drawing. Setting the scale will not create the missing outlines. You can trace them with the manual tools below; repeating detection on this unchanged image will give the same result.';
+  updateSuggestionReady(); draw();
+}
 async function findRoomSuggestions() {
   if (!state.project || state.suggesting) return;
   const project = state.project, plan = state.plan;
@@ -894,27 +980,7 @@ async function findRoomSuggestions() {
     if (data.runtime_trace) renderLibraryTrace(data.runtime_trace);
     showScaleProposal(data.scale_proposal);
     $('detectionWarnings').textContent = (data.warnings || []).join(' '); $('detectionWarnings').hidden = !data.warnings?.length;
-    state.suggestions = (data.suggestions || []).slice(0, 25).map(item => ({...item, selected: !(item.max_dimension_relative_error > .075), reviewName: item.name || ''}));
-    const container = $('suggestions'); container.replaceChildren(); container.hidden = !state.suggestions.length;
-    state.suggestions.forEach((suggestion, index) => {
-      const row = document.createElement('div'); row.className = 'suggestion';
-      const check = document.createElement('input'); check.type = 'checkbox'; check.checked = suggestion.selected;
-      check.setAttribute('aria-label', `Use proposed room ${index + 1}`);
-      check.onchange = () => { suggestion.selected = check.checked; updateSuggestionReady(); draw(); };
-      const name = document.createElement('input'); name.type = 'text'; name.placeholder = `Room ${index + 1} (optional name)`;
-      name.value = suggestion.reviewName;
-      name.setAttribute('aria-label', `Name for proposed room ${index + 1}`);
-      name.oninput = () => { suggestion.reviewName = name.value; draw(); };
-      const details = document.createElement('div'); details.append(name);
-      if (suggestion.dimension_evidence || suggestion.inferred_boundaries?.length) {
-        const note = document.createElement('small');
-        note.textContent = [suggestion.label_evidence?.review_note, suggestion.dimension_evidence?.text, suggestion.max_dimension_relative_error > .075 ? `Not selected: ${(suggestion.max_dimension_relative_error * 100).toFixed(1)}% disagreement with a printed dimension` : '', suggestion.inferred_boundaries?.length ? `${suggestion.inferred_boundaries.length} inferred boundaries; review against walls and doors` : 'Wall-supported outline; review dimensions'].filter(Boolean).join(' · ');
-        details.append(note);
-      }
-      row.append(check, details); container.append(row);
-    });
-    if (!state.suggestions.length) $('suggestionStatus').textContent = '0 room outlines detected. Automatic room reconstruction could not identify reliable boundaries in this drawing. Setting the scale will not create the missing outlines. You can trace them with the manual tools below; repeating detection on this unchanged image will give the same result.';
-    updateSuggestionReady(); draw();
+    renderRoomSuggestions(data.suggestions);
   } catch (error) { if (state.project === project && state.plan === plan) { $('suggestionStatus').textContent = `Room detection could not finish: ${error.message}. You can still use the manual outline tools.`; showScaleProposal(null); } }
   finally { if (state.project === project && state.plan === plan) { state.suggesting = false; $('suggestButton').disabled = false; $('suggestButton').textContent = 'Retry automatic detection'; } }
 }
@@ -932,13 +998,13 @@ $('acceptSuggestions').onclick = () => {
     const center = centroid(polygon);
     if (state.plan.rooms.some(room => distance(centroid(room.polygon), center) < .01 && Math.abs(polygonArea(room.polygon) - polygonArea(polygon)) < .01)) continue;
     const room = createRoom(polygon, 'room', suggestion.reviewName);
-    if (suggestion.dimension_evidence || suggestion.wall_evidence) {
-      room.geometry_provenance = 'Wall-supported image proposal accepted by user; inferred boundaries and printed readings require review';
+    if (suggestion.ai_generated || suggestion.dimension_evidence || suggestion.wall_evidence) {
+      room.geometry_provenance = suggestion.ai_generated ? 'AI inferred outline accepted; requires architectural review' : 'Wall-supported image proposal accepted by user; inferred boundaries and printed readings require review';
       room.printed_dimensions_m = suggestion.dimension_evidence?.dimensions_m || suggestion.dimension_evidence?.dimension_parts_m;
-      room.dimension_provenance = 'OCR reading of the source caption; verify against the drawing. Traced geometry has not been forced to these dimensions.';
-      room.source_evidence = {label:suggestion.label_evidence, dimension:suggestion.dimension_evidence, walls:suggestion.wall_evidence, inferred_boundaries:suggestion.inferred_boundaries, review_note:suggestion.review_note};
+      room.dimension_provenance = suggestion.ai_generated ? 'AI proposal does not establish physical measurements; existing scale is retained.' : 'OCR reading of the source caption; verify against the drawing. Traced geometry has not been forced to these dimensions.';
+      room.source_evidence = {inference:suggestion.inference, label:suggestion.label_evidence, dimension:suggestion.dimension_evidence, walls:suggestion.wall_evidence, inferred_boundaries:suggestion.inferred_boundaries, review_note:suggestion.review_note};
       const decision = state.plan.reconstruction_decisions.find(item => item.id === `outline_${room.id}`);
-      decision.summary = 'A wall-supported room outline was accepted, including the recorded inferred boundaries; printed dimensions remain separate from traced geometry.';
+      decision.summary = suggestion.ai_generated ? 'AI inferred outline accepted by user; requires architectural review. This is a proposal, not a verified measurement.' : 'A wall-supported room outline was accepted, including the recorded inferred boundaries; printed dimensions remain separate from traced geometry.';
       decision.parameters.evidence = room.source_evidence;
     }
     for (const gap of suggestion.pixel_openings || []) gaps.push({...gap, room_id:room.id, room_name:room.name});

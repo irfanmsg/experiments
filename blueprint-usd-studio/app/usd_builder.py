@@ -1511,11 +1511,15 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
         xform = UsdGeom.Xformable(prim)
         xform.AddTranslateOp().Set(Gf.Vec3d(*position))
         xform.AddRotateZOp().Set(rotation)
+        user_scale = placement.get('scale_xyz', [1., 1., 1.])
+        xform.AddScaleOp(UsdGeom.XformOp.PrecisionDouble, opSuffix='user').Set(Gf.Vec3d(*user_scale))
         # Reference below a placement wrapper: many SimReady roots already
         # author translate/rotate/scale ops and cannot accept duplicate ops.
         model = stage.DefinePrim(str(prim.GetPath()) + "/Model")
         model.GetReferences().AddReference(path)
-        prim.SetCustomDataByKey("simReady", True)
+        prim.SetCustomDataByKey('simReady', placement.get('asset_kind', '').startswith('NVIDIA SimReady'))
+        prim.SetCustomDataByKey('userScale', Gf.Vec3d(*user_scale))
+        prim.SetCustomDataByKey('editProvenance', json.dumps(placement.get('edit_history', [])))
         _configure_asset_physics(stage, prim, model, placement,
                                  physics_materials["Furniture"], modules)
         # Physics variants can author a different root transform stack.
@@ -1550,9 +1554,12 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
             'source_units_m': source_units, 'source_up_axis': source_axis,
             'source_root_reset': source_reset,
             'unit_scale': unit_scale, 'position_m': position,
-            'size_xyz_m': [float(v) for v in box.GetSize()], 'bottom_m': position[2],
+            'source_size_xyz_m': [float(v) for v in box.GetSize()],
+            'scale_xyz': user_scale, 'rotation_deg': rotation,
+            'size_xyz_m': [float(v) * user_scale[i] for i,v in enumerate(box.GetSize())], 'bottom_m': position[2],
+            'edit_history': placement.get('edit_history', []),
             'floor_anchor': floor_anchor, 'floor_anchor_offset_m': anchor,
-            'note': 'Source units and up-axis converted to building metres/Z-up; source transforms and furniture size retained; floor anchoring is an explicit placement assumption'})
+            'note': 'Source units and up-axis converted to building metres/Z-up; source transforms retained; user scale is explicit and defaults to physical source size; floor anchoring is an explicit placement assumption'})
     world.GetPrim().SetCustomDataByKey('assetImports', json.dumps(asset_imports, ensure_ascii=False))
     if style in INTERIOR_SCHEMES:
         dress = _interior_scheme if home_details else _generic_interior_scheme

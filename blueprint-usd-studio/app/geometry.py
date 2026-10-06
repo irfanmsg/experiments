@@ -142,7 +142,8 @@ def measured_scale_audit(plan: dict) -> dict:
 
 
 def validate_plan(plan: dict) -> list[str]:
-    errors: list[str] = []
+    from .editable_objects import validate_asset_edits
+    errors: list[str] = validate_asset_edits(plan)
     if plan.get("units", "m") != "m":
         errors.append("Only metre-based plans are supported")
     rooms = plan.get("rooms", [])

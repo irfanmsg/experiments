@@ -186,3 +186,32 @@ def test_opening_assemblies_keep_assumptions_and_passages_visible(tmp_path):
     assert not stage.GetPrimAtPath("/World/Building/Openings/passage/Leaf")
     full = stage.GetPrimAtPath("/World/Building/Openings/full_height")
     assert full and not list(full.GetChildren())
+
+
+@pytest.mark.parametrize('axis', ['Y', 'Z'])
+def test_user_resize_is_separate_from_native_units_and_floor_anchor(tmp_path, monkeypatch, axis):
+    monkeypatch.setenv('BLUEPRINT_STUDIO_ASSET_ROOT', str(tmp_path))
+    path = tmp_path / 'centimetres.usda'
+    source = Usd.Stage.CreateNew(str(path))
+    UsdGeom.SetStageMetersPerUnit(source, .01)
+    UsdGeom.SetStageUpAxis(source, axis)
+    cube = UsdGeom.Cube.Define(source, '/Asset')
+    source.SetDefaultPrim(cube.GetPrim())
+    cube.CreateSizeAttr(100)
+    cube.AddTranslateOp().Set(Gf.Vec3d(0,0,200))
+    source.GetRootLayer().Save()
+    history = [{'action':'resize', 'basis':'User supplied dimensions'}]
+    plan = {'footprint':{'polygon':[[0,0],[10,0],[10,10],[0,10]]}, 'asset_placements':[
+        {'id':'resize', 'asset_path':str(path), 'position':[2,3,.4], 'rotation_deg':90,
+         'scale_xyz':[2,3,.5], 'edit_history':history, 'asset_kind':'Imported USD (SimReady not verified)'}]}
+    report = build_usd(plan, tmp_path / 'scene.usda')
+    stage = Usd.Stage.Open(report['usd_path'])
+    prim = stage.GetPrimAtPath('/World/Assets/resize')
+    box = UsdGeom.BBoxCache(Usd.TimeCode.Default(), ['default']).ComputeWorldBound(prim).ComputeAlignedBox()
+    assert list(box.GetSize()) == pytest.approx([3,2,.5])
+    assert box.GetMin()[2] == pytest.approx(.4)
+    assert report['asset_imports'][0]['source_size_xyz_m'] == pytest.approx([1,1,1])
+    assert report['asset_imports'][0]['size_xyz_m'] == pytest.approx([2,3,.5])
+    assert report['asset_imports'][0]['edit_history'] == history
+    assert prim.GetCustomDataByKey('simReady') is False
+    assert prim.GetCustomDataByKey('unitScale') == .01

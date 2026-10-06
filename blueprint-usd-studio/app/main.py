@@ -28,6 +28,7 @@ from .usd_builder import PALETTES, build_style_variants, build_usd
 from .vision import analyze_drawing
 from .runtime_trace import runtime_trace
 from .source_files import router as source_router, source_manifest
+from .inference import router as inference_router
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,6 +47,7 @@ for directory in (UPLOADS, OUTPUT):
 
 app = FastAPI(title="Blueprint to USD Studio", version="0.1.0")
 app.include_router(source_router)
+app.include_router(inference_router)
 app.mount("/static", StaticFiles(directory=ROOT / "app" / "static"), name="static")
 _stream_process: subprocess.Popen | None = None
 _stream_project: str | None = None
@@ -332,9 +334,13 @@ def project_reconstruction_trace(project_id: str):
 
 @app.put("/api/projects/{project_id}/plan")
 async def update_plan(project_id: str, request: Request):
+    from .editable_objects import validate_asset_edits
     plan = await request.json()
     if not isinstance(plan, dict):
         raise HTTPException(400, "Expected a plan object")
+    asset_errors = validate_asset_edits(plan)
+    if asset_errors:
+        raise HTTPException(400, asset_errors)
     plan["id"] = project_id
     plan["units"] = "m"
     _save_plan(project_id, plan)
