@@ -115,7 +115,7 @@ def main():
             assert 'Servant Room · not selected' in page.evaluate('window.outlineLabels')
             assert page.evaluate('state.plan.rooms.length') == len(reference.get('rooms', []))
             servant_check.check()
-            page.evaluate('ctx.fillText=window.originalFillText')
+            page.evaluate('() => { ctx.fillText=window.originalFillText; }')
             for index, item in disagreements:
                 assert not item['selected']
                 assert not page.get_by_role('checkbox', name=f'Use proposed room {index+1}', exact=True).is_checked()
