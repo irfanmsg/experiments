@@ -1,13 +1,29 @@
 # Omniverse setup
 
-Run `./omni_setup/setup.sh` once to create a project-local `.venv` with the web
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then run
+`./omni_setup/setup.sh` once to create a project-local `.venv` with the web
 app, blueprint/PDF processing, and OpenUSD authoring libraries. This path does
 not require an RTX GPU or download any asset packs. Run
 `./omni_setup/setup.sh runtime` when RTX rendering, WebRTC streaming, and PhysX
 are needed. The runtime is optional so the blueprint-to-USD editor remains
 usable while GPU components download or initialize. Both commands use Python
-3.10–3.13; this laptop's Python 3.12 is suitable.
-On a fresh Ubuntu host, install `python3.12-venv` before running setup.
+3.10–3.13; this laptop's Python 3.12 is suitable. Set
+`BLUEPRINT_STUDIO_PYTHON=3.12` to let uv select that version.
+
+Dependencies live in `pyproject.toml` and exact resolved versions and hashes in
+`uv.lock`; the old requirements files have been replaced. Setup uses
+`uv sync --locked --inexact`, adding `--extra runtime` for GPU components.
+The inexact sync retains an existing runtime when core setup is rerun. Stop the
+service before changing its environment. `./run.sh` and the installed systemd
+service start the prepared environment directly, without installing packages.
+
+For tests, run `uv sync --locked --inexact --group test`; add `--group browser`
+for Playwright checks (Google Chrome must also be installed). Use
+`uv run --no-sync python -m pytest -q` to run the prepared environment. Verify
+dependency edits with `uv lock --check`; deliberately update with `uv lock`
+and commit both project and lock files. All current Python packages, including
+the optional NVIDIA wheels, resolve from public PyPI; no inference token is
+needed for installation.
 
 The core dependency is NVIDIA's `usd-exchange` 3.0.0. It supplies the `pxr`
 modules used to author USD and must not share an environment with `usd-core`.

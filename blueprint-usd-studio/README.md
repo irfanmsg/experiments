@@ -76,7 +76,7 @@ Select a scheme, choose **Create 3D scene**, then open the live RTX view. A sche
 
 ## Run locally
 
-Python 3.10–3.13 is required. The core editor and USD exporter do not require an RTX GPU or asset downloads.
+Python 3.10–3.13 and [uv](https://docs.astral.sh/uv/getting-started/installation/) are required. The core editor and USD exporter do not require an RTX GPU or asset downloads. Setup installs the committed `uv.lock` into `.venv`; it retains any optional runtime already installed.
 
 ```bash
 git clone https://github.com/irfanmsg/experiments.git
@@ -153,16 +153,16 @@ Outputs go under `output/b1-1502/`, including `B1-1502.usd` and `B1-1502-style-p
 
 ## Implementation and verification
 
-The authoring path uses NVIDIA [usd-exchange](https://github.com/NVIDIA-Omniverse/usd-exchange). The optional renderer combines [ovstage](https://github.com/NVIDIA-Omniverse/ovstage), [ovrtx](https://github.com/NVIDIA-Omniverse/ovrtx), [ovstream](https://github.com/NVIDIA-Omniverse/ovstream) and [ovphysx](https://github.com/NVIDIA-Omniverse/PhysX/tree/main/ovphysx). Core and runtime dependencies are pinned separately under `omni_setup/`; do not install `usd-core` into the same environment as `usd-exchange`.
+The authoring path uses NVIDIA [usd-exchange](https://github.com/NVIDIA-Omniverse/usd-exchange). The optional renderer combines [ovstage](https://github.com/NVIDIA-Omniverse/ovstage), [ovrtx](https://github.com/NVIDIA-Omniverse/ovrtx), [ovstream](https://github.com/NVIDIA-Omniverse/ovstream) and [ovphysx](https://github.com/NVIDIA-Omniverse/PhysX/tree/main/ovphysx). `pyproject.toml` declares core dependencies, the optional `runtime` extra, and `test`/`browser` groups; `uv.lock` pins their resolved versions. Do not install `usd-core` into the same environment as `usd-exchange`. Stop the service before syncing changes to its environment; normal app/service startup never installs packages.
 
 ```bash
-.venv/bin/python -m pip install -r omni_setup/requirements-test.txt
-.venv/bin/python -m pytest -q
+uv sync --locked --inexact --group test
+uv run --no-sync python -m pytest -q
 node --check app/static/app.js
 node tests/check_stream_link.js
 ```
 
-The live checks need Playwright, local Google Chrome and a running stream. They inspect actual WebRTC frames and write screenshots to `output/qa/`:
+The live checks need `uv sync --locked --inexact --group browser`, local Google Chrome and a running stream. They inspect actual WebRTC frames and write screenshots to `output/qa/`:
 
 ```bash
 .venv/bin/python tests/check_live_view.py --width 3840 --height 2160
