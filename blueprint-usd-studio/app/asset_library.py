@@ -24,7 +24,8 @@ def _read_catalog(filename: str, root: Path, overlay: Path | None, structure_typ
         if not full_path.is_relative_to(root) or not full_path.resolve().is_relative_to(root):
             raise ValueError("Invalid SimReady catalog path")
         if full_path.is_file():
-            result.append({**asset, "usd_path": str(full_path), "structure_types": asset.get("structure_types", structure_types)})
+            result.append({**asset, "usd_path": str(full_path), "asset_kind": "NVIDIA SimReady catalog asset",
+                           "structure_types": asset.get("structure_types", structure_types)})
     return result
 
 

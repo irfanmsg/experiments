@@ -88,16 +88,28 @@ function invalidateGenerated() {
   $("generateStatus").textContent = "Plan changed. Create the 3D scene again to include your edits.";
   if (!$("streamPanel").hidden) $("streamPanel").querySelector("p").textContent = "This live view shows the previous scene. Create a new scene and restart the view to see your edits.";
 }
-async function savePlan() {
+let saveQueue = Promise.resolve();
+function savePlan() {
   if (!state.project || !state.plan) return;
-  try {
-    await request(`/api/projects/${state.project}/plan`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(state.plan) });
-    $("saveState").textContent = "Saved";
-  } catch (error) { $("saveState").textContent = "Save failed"; toast(error.message); }
+  const project = state.project, revision = state.revision, body = JSON.stringify(state.plan);
+  // Preserve request order: an older autosave must not overwrite a newer review.
+  saveQueue = saveQueue.then(async () => {
+    try {
+      await request(`/api/projects/${project}/plan`, { method: "PUT", headers: { "Content-Type": "application/json" }, body });
+      if (state.project === project && state.revision === revision) $("saveState").textContent = "Saved";
+      return true;
+    } catch (error) {
+      if (state.project === project && state.revision === revision) { $("saveState").textContent = "Save failed"; toast(error.message); }
+      return false;
+    }
+  });
+  return saveQueue;
 }
 async function setProject(data) {
   state.project = data.id; state.plan = data.plan; state.styles = data.styles || [];
   state.suggestions = []; state.suggesting = false;
+  state.furnishing = false;
+  $('furnitureStatus').textContent = 'Confirm scale and room outlines to suggest full-size furnishings. Name home rooms, such as Living or Bedroom, to guide the choices.';
   $('suggestions').replaceChildren(); $('suggestions').hidden = true; $('acceptSuggestions').hidden = true;
   $('suggestionStatus').textContent = state.plan.rooms?.length ? 'Review these rooms. You can rename them or adjust the outlines.' : 'Looking for room outlines…';
   state.editableObjects = data.editable_objects || {};
@@ -367,13 +379,13 @@ function refreshReconstructionReview() {
 function updateCreateReady() {
   const measured = !!calibration();
   const outlined = state.plan?.footprint?.polygon?.length >= 3 || (state.plan?.rooms || []).some(room => room.polygon?.length >= 3);
-  const ready = measured && outlined;
+  const ready = measured && outlined && !state.furnishing;
   $("generateButton").disabled = !ready; $("allStylesButton").disabled = !ready;
   if (!measured) $("generateStatus").textContent = "Mark one known distance to set the scale first.";
   else if (!outlined) $("generateStatus").textContent = "Accept a suggested room, or draw an outline, to create a 3D scene.";
   else if (!state.generated && ["Mark one known distance", "Accept a suggested room"].some(text => $("generateStatus").textContent.startsWith(text))) $("generateStatus").textContent = "";
 }
-function refreshAll() { updateSteps(); refreshRooms(); refreshPlacements(); refreshMeasurements(); refreshReconstructionReview(); updateCreateReady(); updateSuggestionReady(); draw(); }
+function refreshAll() { updateSteps(); refreshRooms(); refreshPlacements(); refreshMeasurements(); refreshReconstructionReview(); updateCreateReady(); updateSuggestionReady(); refreshFurnitureReview(); draw(); }
 
 function drawPolygon(points, stroke, fill, width = 3, label = "") {
   if (!points || points.length < 2) return;
@@ -446,6 +458,7 @@ function createRoom(polygon, category = "room", suggestedName = null) {
       source:state.plan.source, parameters:{room_id:room.id, polygon_m:polygon, calibration:state.plan.calibration}, status:'user-reviewed outline; dimensions need review'});
   }
   $("roomName").value = ""; markChanged(); toast(`${name} added`);
+  queueMicrotask(() => suggestFurniture(true));
 }
 function finishOutline() {
   if (state.points.length < 3) { toast("Mark at least three corners"); return; }
@@ -619,12 +632,12 @@ function renderStyles() {
   });
 }
 async function generate(all = false) {
-  if (!state.project) return;
+  if (!state.project || state.furnishing) return;
   const projectId = state.project;
   const revision = state.revision;
   const selectedStyle = state.style;
   try {
-    await savePlan();
+    if (!await savePlan()) throw new Error('Save the plan successfully before creating the scene.');
     if (state.project !== projectId || state.revision !== revision) throw new Error("The plan changed. Create the scene again when edits are saved.");
     $("generateStatus").textContent = all ? "Creating all design and finish files…" : "Creating a measured USD scene…";
     $("generateButton").disabled = true; $("allStylesButton").disabled = true;
@@ -696,7 +709,7 @@ function renderAssets() {
   const category = state.plan?.structure_type || "home";
   const entries = state.assets.filter(asset => (asset.structure_types || ["home", "office", "showroom", "other"]).includes(category));
   $("starterFurniture").hidden = state.plan?.example !== "B1-1502" || !entries.length;
-  if (!entries.length) { list.textContent = "No SimReady objects are installed for this space yet."; return; }
+  if (!entries.length) { list.textContent = "No compatible USD assets are installed for this building type yet."; return; }
   entries.forEach(asset => {
     const button = document.createElement("button"); button.type = "button";
     const name = document.createElement("span"); name.textContent = asset.name;
@@ -706,6 +719,49 @@ function renderAssets() {
     list.append(button);
   });
 }
+function refreshFurnitureReview() {
+  updateCreateReady();
+  $('suggestFurniture').disabled = !!state.furnishing || !calibration() || !state.plan?.rooms?.length;
+  const decisions = (state.plan?.reconstruction_decisions || []).filter(item => item.kind === 'furniture_placement');
+  $('furnitureReview').hidden = !decisions.length;
+  $('furnitureDecisions').replaceChildren();
+  for (const decision of decisions) {
+    const row = document.createElement('li');
+    const room = state.plan.rooms.find(item => item.id === decision.room_id);
+    row.textContent = `${room?.name || decision.room_id}: ${decision.summary}`;
+    $('furnitureDecisions').append(row);
+  }
+}
+async function suggestFurniture(automatic = false) {
+  if (!state.project || state.furnishing || !calibration() || !state.plan.rooms?.length) return;
+  if (automatic && state.plan.asset_placements?.length) return;
+  const project = state.project, plan = state.plan, revision = state.revision;
+  state.furnishing = true; refreshFurnitureReview();
+  $('furnitureStatus').textContent = 'Checking installed assets at their physical size…';
+  try {
+    clearTimeout(state.saveTimer);
+    if (!await savePlan()) throw new Error('Save the plan successfully before suggesting furnishings.');
+    if (state.project !== project || state.plan !== plan) return;
+    if (state.revision !== revision) { $('furnitureStatus').textContent = 'The layout changed while saving. Select Suggest furnishings to try the updated layout.'; return; }
+    const result = await request(`/api/projects/${project}/suggest-furniture?style=${encodeURIComponent(state.style)}`, {method:'POST'});
+    if (state.project !== project || state.plan !== plan) return;
+    if (state.revision !== revision) { $('furnitureStatus').textContent = 'The layout changed during placement. Select Suggest furnishings to try the updated layout.'; return; }
+    if (result.runtime_trace) renderLibraryTrace(result.runtime_trace);
+    plan.asset_placements ||= [];
+    plan.asset_placements.push(...result.placements);
+    const previous = plan.reconstruction_decisions || [];
+    const decisions = result.decisions.filter(item => !(item.status === 'skipped' && previous.some(old => old.kind === 'furniture_placement' && old.id === item.id && old.status === 'proposed')))
+      .map(item => ({...item, kind:'furniture_placement', basis:'Installed asset bounds, selected building type and reviewed room labels; furniture symbols in the drawing were not recognized.'}));
+    const ids = new Set(decisions.map(item => item.id));
+    plan.reconstruction_decisions = previous.filter(item => item.kind !== 'furniture_placement' || !ids.has(item.id)).concat(decisions);
+    markChanged();
+    $('furnitureStatus').textContent = result.placements.length
+      ? `${result.placements.length} proposed furnishings added at their source size. Review their placement; move or remove any item. Unavailable assets and assumptions are listed below.`
+      : 'No additional furnishings placed. Review the reasons below; a room purpose, suitable installed asset or more space may be needed.';
+  } catch (error) { if (state.project === project) { $('furnitureStatus').textContent = error.message; toast(error.message); } }
+  finally { if (state.project === project && state.plan === plan) { state.furnishing = false; refreshFurnitureReview(); } }
+}
+$('suggestFurniture').onclick = () => suggestFurniture();
 async function loadAssets() {
   try {
     const data = await request("/api/assets");
@@ -733,7 +789,7 @@ canvas.addEventListener("pointermove", handleCanvasMove);
 canvas.addEventListener("pointerup", handleCanvasUp);
 canvas.addEventListener('pointercancel', () => { if (state.draggingPlacement) { editPlacement(state.draggingPlacement, {position:state.dragOriginal}); state.draggingPlacement = null; draw(); } });
 canvas.addEventListener("dblclick", event => { event.preventDefault(); if (["room-polygon", "perimeter", "balcony"].includes(state.tool)) finishOutline(); });
-$("structureType").onchange = event => { if (!state.plan) return; state.plan.structure_type = event.target.value; state.selectedAsset = null; renderStyles(); renderAssets(); markChanged(); };
+$("structureType").onchange = event => { if (!state.plan) return; state.plan.structure_type = event.target.value; state.selectedAsset = null; renderStyles(); renderAssets(); markChanged(); suggestFurniture(true); };
 $("heightInput").onchange = event => {
   if (!state.plan) return;
   const height = Number(event.target.value); if (!(height >= 1.5 && height <= 15)) { toast("Wall height must be between 1.5 and 15 metres"); return; }
@@ -775,7 +831,7 @@ async function findRoomSuggestions() {
       name.oninput = () => { suggestion.reviewName = name.value; };
       row.append(check, name); container.append(row);
     });
-    if (!state.suggestions.length) $('suggestionStatus').textContent = 'No clear enclosed rooms were found in this image. Try a cleaner plan or use the manual outline tools below.';
+    if (!state.suggestions.length) $('suggestionStatus').textContent = 'No reliable wall-enclosed outlines could be separated. Furniture, open doorways and exterior gaps can make this drawing ambiguous. Rooms still need tracing; use the manual outline tools below. Furniture symbols are not room boundaries.';
     updateSuggestionReady(); draw();
   } catch (error) { if (state.project === project && state.plan === plan) $('suggestionStatus').textContent = `Room detection could not finish: ${error.message}. You can still use the manual outline tools.`; }
   finally { if (state.project === project && state.plan === plan) { state.suggesting = false; $('suggestButton').disabled = false; $('suggestButton').textContent = 'Find room outlines again'; } }

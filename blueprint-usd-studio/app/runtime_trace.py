@@ -24,6 +24,9 @@ _PACKAGES = (
 # These are source mappings, not evidence of execution. Observations are added
 # only after the corresponding operation returns successfully.
 _ACTIONS = (
+    ('furniture_suggestion', 'Propose full-size furnishings around existing objects', ['openusd'],
+     ['Usd.Stage.Open', 'UsdGeom.BBoxCache.ComputeWorldBound', 'UsdGeom.GetStageMetersPerUnit', 'UsdGeom.GetStageUpAxis'],
+     'app/auto_furnish.py:furniture_layout', 'The current scene is inspected and an installed-asset placement proposal completes.'),
     ('asset_upload', 'Import a self-contained USD asset into the library', ['openusd'],
      ['Sdf.Layer.FindOrOpen', 'Sdf.Layer.GetExternalReferences', 'Usd.Stage.Open', 'UsdGeom.BBoxCache.ComputeWorldBound'],
      'app/asset_uploads.py:import_asset', 'An uploaded USD or USDZ passes dependency and model validation.'),

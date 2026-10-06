@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 import hashlib
+import math
 import socket
 import shutil
 import subprocess
 import sys
+import tempfile
 import uuid
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -19,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from PIL import Image
 
 from .asset_library import b1_starter_furniture, catalog
+from .auto_furnish import furniture_layout
 from .geometry import measured_scale_audit, validate_plan
 from .usd_builder import PALETTES, build_style_variants, build_usd
 from .vision import suggest_rooms
@@ -440,6 +443,50 @@ def get_style_pack(project_id: str):
 @app.get("/api/assets")
 def assets():
     return catalog()
+
+
+@app.post("/api/projects/{project_id}/suggest-furniture")
+def suggest_furniture(project_id: str, style: str = 'contemporary'):
+    plan = _read_plan(project_id)
+    if style not in PALETTES:
+        raise HTTPException(400, 'Unknown style')
+    calibration = plan.get('calibration') or {}
+    if not isinstance(calibration, dict):
+        calibration = {}
+    scale = next((calibration[key] for key in ('pixels_per_meter', 'pixels_per_metre', 'px_per_m', 'scale_px_per_m') if key in calibration), 0)
+    try:
+        scaled = math.isfinite(float(scale)) and float(scale) > 0
+    except (ValueError, TypeError):
+        scaled = False
+    if not scaled and not plan.get('dimension_model'):
+        raise HTTPException(400, 'Confirm one printed measurement before placing physical-size assets.')
+    errors = validate_plan(plan)
+    if errors:
+        raise HTTPException(400, {'errors': errors})
+    # Propose only; the editor applies this snapshot after checking for newer edits.
+    try:
+        from pxr import Usd, UsdGeom
+        # Reuse the scene builder to include current procedural furnishings and
+        # their edits. Saved object lists may belong to an older layout or style.
+        obstacles = []
+        with tempfile.TemporaryDirectory(prefix='blueprint-furnishing-') as directory:
+            path = Path(directory) / 'review.usda'
+            build_usd(plan, path, style)
+            stage = Usd.Stage.Open(str(path))
+            bounds = UsdGeom.BBoxCache(Usd.TimeCode.Default(), ['default', 'render'])
+            for prim in stage.Traverse():
+                if not (prim.GetCustomDataByKey('assumedFixture') or prim.GetCustomDataByKey('interiorDecor')):
+                    continue
+                box = bounds.ComputeWorldBound(prim).ComputeAlignedBox()
+                low, high = box.GetMin(), box.GetMax()
+                if not box.IsEmpty() and high[2] > .05 and low[2] < 1.8:
+                    obstacles.append({'id': str(prim.GetPath()), 'name': prim.GetName(),
+                                      'bounds_xy_m': [low[0], low[1], high[0], high[1]]})
+            result = furniture_layout(plan, catalog()['assets'], occupied_objects=obstacles)
+            result['runtime_trace'] = runtime_trace(executed=('usd_authoring', 'furniture_suggestion'), openusd_version=Usd.GetVersion())
+            return result
+    except (ValueError, TypeError, KeyError, IndexError, RuntimeError) as exc:
+        raise HTTPException(400, 'Review the room boundaries, openings and asset positions before furnishing.') from exc
 
 
 @app.post("/api/projects/{project_id}/starter-furniture")
