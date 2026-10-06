@@ -51,6 +51,24 @@ def test_crop_retry_keeps_conflicting_digit_readings_ambiguous():
     assert len(dimension['readings']) == 3
 
 
+def test_partial_room_names_are_traceable_inferences_not_repaired_ocr(tmp_path, monkeypatch):
+    import cv2
+    import numpy as np
+    from types import SimpleNamespace
+
+    path = tmp_path / 'partial-labels.png'
+    cv2.imwrite(str(path), np.full((400, 400), 255, dtype=np.uint8))
+    tsv = 'block_num\tpar_num\tline_num\tleft\ttop\twidth\theight\tconf\ttext\n1\t1\t1\t100\t100\t70\t20\t90\tTOILE\n'
+    monkeypatch.setattr(drawing_text.shutil, 'which', lambda name: '/test/tesseract')
+    monkeypatch.setattr(drawing_text, '_engine_version', lambda engine: 'test')
+    monkeypatch.setattr(drawing_text.subprocess, 'run', lambda *args, **kwargs: SimpleNamespace(stdout=tsv))
+    result = drawing_text.extract_drawing_text(path)
+    assert result['room_labels']
+    assert all(label['name'] == 'Toilet' and label['name_inferred'] and label['text'] == 'TOILE'
+               and 'verify' in label['review_note'] for label in result['room_labels'])
+    assert not result['dimensions'], 'Partial room labels cannot create dimension evidence'
+
+
 _PRIVATE = Path(__file__).resolve().parents[1] / 'uploads/b8c1fbd8870c/plan.png'
 
 
@@ -61,6 +79,11 @@ def test_actual_drawing_exposes_kitchen_scale_anchor_in_original_pixels():
     assert result['engine_version']
     assert result['image_size'] == [1290, 2796]
     assert len(result['room_labels']) >= 8
+    names = [item['name'] for item in result['room_labels']]
+    assert 'Entrance Lobby' in names
+    assert sum('Balcony' in name for name in names) == 4
+    assert names.count('Toilet') == 5
+    assert 'Powder Room' in names
     kitchen = next(item for item in result['dimensions'] if item.get('room_label', '').lower() == 'kitchen' and item['dimensions_m'])
     assert kitchen['dimensions_m'] == pytest.approx([2.7432, 4.0894])
     x0, y0, x1, y1 = kitchen['bbox']

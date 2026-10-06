@@ -19,6 +19,8 @@ _ROOM = re.compile(r'\b(?:master\s+bedroom|bedroom\s*\d*|kitchen|living|dining|d
                    r'theater\s*/?\s*den|theatre\s*/?\s*den|den|mandir|puja|walk\s*in|'
                    r'office|study|store|storage|showroom|warehouse|workshop|utility|laundry|lift|stairs)\b', re.I)
 _PUNCTUATION = str.maketrans({'′': "'", '’': "'", '‘': "'", '″': '"', '“': '"', '”': '"'})
+_PARTIAL_ROOM = re.compile(r'\b(TOILE|BALCO|POW|ENTRANCE)\b', re.I)
+_PARTIAL_NAMES = {'TOILE': 'Toilet', 'BALCO': 'Balcony', 'POW': 'Powder Room', 'ENTRANCE': 'Entrance Lobby'}
 
 
 def _parts(text):
@@ -131,6 +133,41 @@ def _retry_captions(original, dimensions, engine):
             _apply_readings(dimension, readings)
 
 
+def _recover_label_crops(original, lines, engine):
+    """Read labels above orphan dimension captions; retain source pixel boxes."""
+    recovered = []
+    with tempfile.TemporaryDirectory(prefix='drawing-label-') as directory:
+        for line in lines:
+            if line.get('preprocessing') != 'normalized' or line['rotation_deg']:
+                continue
+            parts = _parts(line['text'])
+            if len(parts) != 2 or not all(re.search(r'\d', part) for part in parts):
+                continue
+            x0, y0, x1, y1 = line['bbox']
+            height = y1-y0
+            if any(_ROOM.search(other['text']) and abs((other['bbox'][0]+other['bbox'][2]-x0-x1)/2) < max(45, height*4)
+                   and abs(other['bbox'][3]-y0) < height*4 for other in lines):
+                continue
+            left, top = max(0, int(x0-height)), max(0, int(y0-1.5*height))
+            crop = original[top:min(original.shape[0], math.ceil(y0)), left:min(original.shape[1], math.ceil(x1+height))]
+            if not crop.size:
+                continue
+            filename = Path(directory) / 'label.png'
+            cv2.imwrite(str(filename), cv2.resize(crop, None, fx=6, fy=6, interpolation=cv2.INTER_CUBIC))
+            try:
+                output = subprocess.run([engine, str(filename), 'stdout', '-l', 'eng', '--psm', '6', 'tsv'],
+                                        capture_output=True, text=True, check=True, timeout=10)
+            except (OSError, subprocess.SubprocessError):
+                continue
+            for word in csv.DictReader(io.StringIO(output.stdout), delimiter='\t', quoting=csv.QUOTE_NONE):
+                if not word.get('text', '').strip() or float(word['conf']) < 40 or not _ROOM.fullmatch(word['text']):
+                    continue
+                box = _original_bbox([word['left'], word['top'], word['width'], word['height']], 0, 0, 0, 6)
+                recovered.append({'text': word['text'], 'bbox': [box[0]+left, box[1]+top, box[2]+left, box[3]+top],
+                                  'confidence': float(word['conf'])/100, 'rotation_deg': 0, 'preprocessing': 'caption_neighbour_crop'})
+    return recovered
+
+
 def extract_drawing_text(path):
     """Return labels, parsed/ambiguous dimensions and compact native OCR evidence.
 
@@ -155,13 +192,15 @@ def extract_drawing_text(path):
     with tempfile.TemporaryDirectory(prefix='drawing-ocr-') as directory:
         # Rotation recovers vertical room captions; a second contrast pass
         # recovers text lost against textured floor/background graphics.
-        for rotation, threshold in ((0, False), (90, False), (270, False), (0, True)):
+        for rotation, preprocessing in ((0, 'grayscale'), (90, 'grayscale'), (270, 'grayscale'), (0, 'threshold'), (0, 'normalized')):
             view = original
             if rotation:
                 view = cv2.rotate(view, cv2.ROTATE_90_CLOCKWISE if rotation == 90 else cv2.ROTATE_90_COUNTERCLOCKWISE)
-            if threshold:
+            if preprocessing == 'threshold':
                 view = cv2.threshold(view, 125, 255, cv2.THRESH_BINARY)[1]
             view = cv2.resize(view, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+            if preprocessing == 'normalized':
+                view = cv2.divide(view, cv2.GaussianBlur(view, (0, 0), 21), scale=255)
             filename = Path(directory) / 'ocr.png'
             cv2.imwrite(str(filename), view)
             try:
@@ -176,25 +215,39 @@ def extract_drawing_text(path):
                 if row.get('text', '').strip() and float(row['conf']) >= 0:
                     groups[(row['block_num'], row['par_num'], row['line_num'])].append(row)
             for words in groups.values():
+                if preprocessing == 'normalized':
+                    # Large nearby symbols can join a dimension line. Drop only
+                    # leading symbol tokens, never digits or unit punctuation.
+                    while len(words) > 1 and not re.search(r'[A-Za-z0-9]', words[0]['text']):
+                        words = words[1:]
                 left, top = min(int(w['left']) for w in words), min(int(w['top']) for w in words)
                 right = max(int(w['left'])+int(w['width']) for w in words)
                 bottom = max(int(w['top'])+int(w['height']) for w in words)
                 line = {'text': ' '.join(w['text'] for w in words),
                         'bbox': _original_bbox([left, top, right-left, bottom-top], rotation, width, height, scale),
                         'confidence': round(sum(float(w['conf']) for w in words)/len(words)/100, 3),
-                        'rotation_deg': rotation, 'preprocessing': 'threshold' if threshold else 'grayscale'}
+                        'rotation_deg': rotation, 'preprocessing': preprocessing}
                 lines.append(line)
+    lines.extend(_recover_label_crops(original, lines, engine))
     # Keep observed text, not file paths, commands or environment values.
     result['raw_lines'] = [line for line in lines if line['confidence'] >= .25]
     for line in lines:
         match = _ROOM.search(line['text'])
+        partial = _PARTIAL_ROOM.search(line['text']) if not match else None
+        if partial and line['confidence'] >= .4:
+            # Semantic completion is an explicit suggestion, never repaired OCR
+            # or dimension evidence. Wall support is still required downstream.
+            label = {**line, 'name': _PARTIAL_NAMES[partial[0].upper()], 'label_fraction': len(partial[0])/len(line['text']),
+                     'name_inferred': True, 'review_note': f"Room name inferred from partial OCR '{line['text']}'; verify the source label."}
+            if not any(_overlap(old['bbox'], label['bbox']) > .5 for old in result['room_labels']):
+                result['room_labels'].append(label)
         if match and line['confidence'] >= .4:
             name = re.sub(r'(?<=[A-Za-z])(?=\d)', ' ', match[0]).title()
             label = {**line, 'name': name, 'label_fraction': len(match[0])/len(line['text'])}
             duplicate = next((old for old in result['room_labels'] if _overlap(old['bbox'], label['bbox']) > .5), None)
             if duplicate is None:
                 result['room_labels'].append(label)
-            elif (label['label_fraction'], label['confidence']) > (duplicate['label_fraction'], duplicate['confidence']):
+            elif duplicate.get('name_inferred') or (label['label_fraction'], label['confidence']) > (duplicate['label_fraction'], duplicate['confidence']):
                 result['room_labels'][result['room_labels'].index(duplicate)] = label
         parts = _parts(line['text'])
         if len(parts) != 2 or not all(re.search(r'\d', part) for part in parts):
@@ -215,7 +268,7 @@ def extract_drawing_text(path):
         duplicate = next((old for old in result['dimensions'] if _overlap(old['bbox'], dimension['bbox']) > .5), None)
         if duplicate is None:
             result['dimensions'].append(dimension)
-        elif (bool(values), dimension['confidence']) > (bool(duplicate['dimensions_m']), duplicate['confidence']):
+        elif line['preprocessing'] != 'normalized' and (bool(values), dimension['confidence']) > (bool(duplicate['dimensions_m']), duplicate['confidence']):
             result['dimensions'][result['dimensions'].index(duplicate)] = dimension
     for dimension in result['dimensions']:
         x0, y0, x1, y1 = dimension['bbox']
@@ -240,4 +293,6 @@ def extract_drawing_text(path):
     result['dimensions'].sort(key=lambda item: (item['bbox'][1], item['bbox'][0]))
     if any(item['status'] == 'ambiguous' for item in result['dimensions']):
         result['warnings'].append('Some dimension captions have missing punctuation or impossible digits; they remain ambiguous and cannot establish scale.')
+    if any(item.get('name_inferred') for item in result['room_labels']):
+        result['warnings'].append('Some room names are inferred from partial OCR; original label text is retained for review.')
     return result
