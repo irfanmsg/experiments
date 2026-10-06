@@ -10,7 +10,11 @@ The adapter uses Python's standard HTTP library, not an agent framework.
 2. Open **AI-assisted outlines** under room review.
 3. Enter your key in the password field. **List available models** requests IDs
    from `/v1/models`; it does not certify their vision capabilities.
-4. Select an image-capable model, confirm image sharing and request outlines.
+4. **GPT 6.1 Sol** (`openai/openai/gpt-6.1-sol`) is preselected. Keep it or
+   choose another image-capable model, confirm image sharing and request outlines.
+   Listing models preserves your selection and warns if your key cannot see it;
+   there is no automatic substitution. API requests that omit `model` use GPT 6.1
+   Sol; explicit model IDs are honored, while blank/null IDs are rejected.
 5. Read the evidence and assumptions, then show the proposals on the plan.
    They start unchecked. Confirm scale separately, inspect each proposal and
    explicitly select the outlines you want to accept.
@@ -56,3 +60,13 @@ A live check on 2026-10-06 authenticated against the Hub and ran
 and missed spaces. No proposals were applied. This confirms connectivity and the
 review path, not reconstruction accuracy or improvement over the local detector.
 Model selection and held-out evaluation remain necessary before trusting geometry.
+
+The same image and prompt were also tested with `openai/openai/gpt-6.1-sol`.
+It returned 24 proposals and passed the existing inside/outside-point and area
+checks for Bedroom 3, Kitchen, Bedroom 2 and Servant room. Nemotron passed none
+of those four complete geometry checks. GPT 6.1 still included the lift, so its
+proposals require scope review. This limited single-drawing comparison motivates
+the preferred model; it is not a held-out accuracy benchmark or proof that every
+boundary is correct. Both tests left the saved layout unchanged. The adapter
+sends the same image/prompt regardless of model and records the selected model
+in each accepted outline's evidence.

@@ -12,7 +12,7 @@
       <label for="inferenceModel">Vision-capable model ID</label>
       <input id="inferenceModel" type="text" list="inferenceModelList" placeholder="Choose a model that accepts images" autocomplete="off">
       <datalist id="inferenceModelList"></datalist>
-      <p class="helper">The Hub's text-only example model cannot read blueprints. Check image support in the model's documentation.</p>
+      <p id="inferenceModelHelp" class="helper">Choose a model with documented image input support.</p>
       <label><input id="inferenceConsent" type="checkbox"> Send this project's current blueprint image to NVIDIA Inference Hub using my key. I have selected a model that accepts images.</label>
       <p class="helper">Supporting files are not sent in this version. Your key is never saved in the project and is cleared after an outline request.</p>
       <button id="inferenceRun" type="button">Propose AI room outlines</button>
@@ -42,7 +42,10 @@
       const data = await request('/api/inference/models', {method:'POST', headers:auth});
       const list = $('inferenceModelList'); list.replaceChildren();
       for (const id of data.models) { const option = document.createElement('option'); option.value = id; list.append(option); }
-      status(`${data.models.length} model IDs loaded. Choose one with documented image support.`);
+      const selected = $('inferenceModel').value.trim();
+      status(data.models.includes(selected)
+        ? `${data.models.length} model IDs loaded. Your selected model is available; selection retained.`
+        : `${data.models.length} model IDs loaded. Your selected model was not listed for this key. Choose an available vision model; no automatic substitution is made.`);
     } catch (error) { status(error.message); }
     finally { setBusy(false); }
   };
@@ -58,7 +61,7 @@
       const model = $('inferenceModel').value.trim();
       if (!model) throw new Error('Choose a vision-capable model ID.');
       const auth = headers(); sent = true; setBusy(true); pending = null; $('inferenceReview').hidden = true;
-      $('inferenceTrace').hidden = true; status('Reading the blueprint with your selected model…');
+      $('inferenceTrace').hidden = true; status(`Reading the blueprint with ${model}…`);
       const data = await request(`/api/projects/${project}/inference/outlines`, {
         method:'POST', headers:auth, body:JSON.stringify({model, consent:true})
       });
@@ -82,6 +85,8 @@
   };
   request('/api/inference/config').then(config => {
     secure = config.secure_transport === true;
+    if (!$('inferenceModel').value.trim()) $('inferenceModel').value = config.default_model || '';
+    if (config.default_model_label) $('inferenceModelHelp').textContent = `Preferred: ${config.default_model_label}. You can choose another vision model. Every outline still needs review.`;
     $('inferenceTransport').textContent = secure
       ? `Connected to ${config.base_url}. Your key is sent only when you request models or outlines.`
       : 'Personal-key entry requires HTTPS on the hosted portal. Open the same service at http://127.0.0.1:8001 on this machine for local key use, or configure HTTPS for remote users.';

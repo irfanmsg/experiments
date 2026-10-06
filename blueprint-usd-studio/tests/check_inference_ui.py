@@ -7,6 +7,8 @@ from pathlib import Path
 from PIL import Image
 from playwright.sync_api import sync_playwright
 
+DEFAULT_MODEL = 'openai/openai/gpt-6.1-sol'
+
 BASE = os.environ.get('BLUEPRINT_STUDIO_URL', 'http://10.46.71.211:18001')
 
 
@@ -30,22 +32,34 @@ def main():
         page.locator('#inferencePanel summary').first.click()
         page.wait_for_function("document.querySelector('#inferenceTransport').textContent.includes('HTTPS')")
         assert page.locator('#inferenceKey').is_disabled()
+        assert page.locator('#inferenceModel').input_value() == DEFAULT_MODEL
+        assert 'GPT 6.1 Sol' in page.locator('#inferenceModelHelp').inner_text()
         # Emulate a trusted HTTPS deployment for frontend-only checks.
-        page.route('**/api/inference/config', lambda route: route.fulfill(json={'secure_transport':True,'base_url':'https://inference-api.nvidia.com/v1/'}))
+        page.route('**/api/inference/config', lambda route: route.fulfill(json={'secure_transport':True,'base_url':'https://inference-api.nvidia.com/v1/', 'default_model':DEFAULT_MODEL, 'default_model_label':'GPT 6.1 Sol'}))
         calls = []
-        trace = {'provider':'NVIDIA Inference Hub','model':'test/vision','basis':'Visible wall lines','assumptions':['Doorway gap closed at wall line'],'prompt_version':'test'}
+        trace = {'provider':'NVIDIA Inference Hub','model':DEFAULT_MODEL,'basis':'Visible wall lines','assumptions':['Doorway gap closed at wall line'],'prompt_version':'test'}
         suggestion = {'name':'AI study','label':'AI study','pixel_polygon':[[100,100],[400,100],[400,400],[100,400]],'ai_generated':True,'confidence':'needs-review','inference':trace}
         def inference(route):
             calls.append(route.request)
             assert route.request.headers['authorization'] == 'Bearer fake-ui-key'
-            assert route.request.post_data_json == {'model':'test/vision','consent':True}
+            assert route.request.post_data_json == {'model':DEFAULT_MODEL,'consent':True}
             route.fulfill(json={'suggestions':[suggestion], 'trace':trace})
         page.route('**/inference/outlines', inference)
         page.reload()
         page.wait_for_function('state.image && !state.suggesting')
         page.locator('#inferencePanel summary').first.click()
         page.locator('#inferenceKey').fill('fake-ui-key')
+        assert page.locator('#inferenceModel').input_value() == DEFAULT_MODEL
+        page.route('**/api/inference/models', lambda route: route.fulfill(json={'models':[DEFAULT_MODEL,'test/vision']}))
         page.locator('#inferenceModel').fill('test/vision')
+        page.locator('#inferenceModels').click()
+        page.wait_for_function("document.querySelector('#inferenceStatus').textContent.includes('selection retained')")
+        assert page.locator('#inferenceModel').input_value() == 'test/vision'
+        page.locator('#inferenceModel').fill('unlisted/vision')
+        page.locator('#inferenceModels').click()
+        page.wait_for_function("document.querySelector('#inferenceStatus').textContent.includes('not listed')")
+        assert page.locator('#inferenceModel').input_value() == 'unlisted/vision'
+        page.locator('#inferenceModel').fill(DEFAULT_MODEL)
         page.locator('#inferenceRun').click()
         assert not calls
         page.locator('#inferenceConsent').check()
@@ -80,7 +94,7 @@ def main():
         target = Path(__file__).resolve().parents[1] / 'output/qa/inference-review.png'
         target.parent.mkdir(exist_ok=True, parents=True)
         page.screenshot(path=str(target), full_page=True)
-        print(json.dumps({'project':project, 'checks':'HTTP gate, consent, opt-in, evidence persistence, scale retained, key cleared, stale review rejected', 'browser_errors':errors}))
+        print(json.dumps({'project':project, 'checks':'GPT 6.1 default and trace, explicit alternate selection retained, HTTP gate, consent, opt-in, evidence persistence, scale retained, key cleared, stale review rejected', 'browser_errors':errors}))
         browser.close()
 
 

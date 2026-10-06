@@ -31,7 +31,8 @@ def room(**overrides):
             'basis': 'Visible external walls; furniture excluded', 'assumptions': ['Open entry edge inferred'], **overrides}
 
 
-def test_outline_request_sends_only_scaled_primary_image_and_returns_reviewable_evidence(tmp_path, monkeypatch):
+@pytest.mark.parametrize('requested_model', [None, 'vision-model'])
+def test_outline_request_sends_only_scaled_primary_image_and_returns_reviewable_evidence(tmp_path, monkeypatch, requested_model):
     from app import main
     monkeypatch.setattr(main, 'UPLOADS', tmp_path)
     folder = tmp_path / 'sample'; folder.mkdir()
@@ -39,11 +40,12 @@ def test_outline_request_sends_only_scaled_primary_image_and_returns_reviewable_
     (folder / 'plan.json').write_text('{"untouched":true}')
     (folder / 'private-supporting-file.txt').write_text('never send supporting material')
     calls = []
+    expected_model = requested_model or 'openai/openai/gpt-6.1-sol'
     def hub(endpoint, token, payload=None):
         calls.append(endpoint)
         assert token == KEY
         assert endpoint == 'chat/completions'
-        assert payload['model'] == 'vision-model'
+        assert payload['model'] == expected_model
         content = payload['messages'][0]['content']
         assert len(content) == 2 and content[0]['text'] == inference.PROMPT
         encoded = content[1]['image_url']['url'].split(',', 1)[1]
@@ -53,7 +55,10 @@ def test_outline_request_sends_only_scaled_primary_image_and_returns_reviewable_
         assert 'never send supporting material' not in json.dumps(payload)
         return {'model':'vision-model-revision-2', 'choices': [{'message': {'content': json.dumps({'rooms': [room()]})}}]}
     monkeypatch.setattr(inference, '_hub_json', hub)
-    result = asyncio.run(inference.outlines('sample', request({'model':'vision-model', 'consent': True})))
+    body = {'consent': True}
+    if requested_model is not None:
+        body['model'] = requested_model
+    result = asyncio.run(inference.outlines('sample', request(body)))
     assert calls == ['chat/completions']
     assert result['suggestions'][0]['pixel_polygon'] == [[300,150],[2100,150],[2100,750],[300,750]]
     assert result['suggestions'][0]['ai_generated'] is True
@@ -64,6 +69,8 @@ def test_outline_request_sends_only_scaled_primary_image_and_returns_reviewable_
     assert len(result['trace']['image_sha256']) == 64
     assert result['trace']['prompt_version'] == inference.PROMPT_VERSION
     assert result['trace']['model_reported'] == 'vision-model-revision-2'
+    assert result['trace']['model'] == expected_model
+    assert result['suggestions'][0]['inference']['model'] == expected_model
     assert result['trace']['client']['library'] == 'Python urllib.request'
     assert KEY not in json.dumps(result)
     assert (folder / 'plan.json').read_text() == '{"untouched":true}'
@@ -86,7 +93,7 @@ def test_transport_uses_actual_peer_not_forwarded_headers(scheme, peer, allowed)
 
 
 @pytest.mark.parametrize('body', [{'model':'vision'}, {'model':'vision','consent':'true'},
-    {'model':'vision','consent':1}, {'model':'','consent':True}, {'model':'x\nsecret','consent':True},
+    {'model':'vision','consent':1}, {'model':'','consent':True}, {'model':None,'consent':True}, {'model':'x\nsecret','consent':True},
     {'model':KEY,'consent':True}, ['not an object'], {'model':'vision','consent':True, 'excess':'x'*4096}])
 def test_invalid_request_never_calls_provider(monkeypatch, body):
     monkeypatch.setattr(inference, '_hub_json', lambda *args: pytest.fail('Should not contact Hub'))
@@ -187,3 +194,11 @@ def test_non_token68_credentials_rejected_before_provider(monkeypatch, value):
 def test_token68_credential_punctuation_and_padding_are_valid():
     token = 'abc.ABC_123-~+/=='
     assert inference._token(request(headers={'authorization':'Bearer ' + token})) == token
+
+
+def test_config_exposes_preferred_model_without_requiring_credentials():
+    result = inference.config(request(headers={'authorization':''}))
+    assert result['default_model'] == 'openai/openai/gpt-6.1-sol'
+    assert result['default_model_label'] == 'GPT 6.1 Sol'
+    assert result['provider'] == 'NVIDIA Inference Hub'
+    assert result['base_url'] == 'https://inference-api.nvidia.com/v1/'

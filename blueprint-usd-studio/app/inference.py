@@ -20,6 +20,7 @@ from starlette.concurrency import run_in_threadpool
 
 router = APIRouter()
 BASE_URL = 'https://inference-api.nvidia.com/v1/'
+DEFAULT_MODEL = 'openai/openai/gpt-6.1-sol'
 PROVIDER = 'NVIDIA Inference Hub'
 PROMPT_VERSION = 'blueprint-outline-v1'
 MAX_RESPONSE_BYTES = 1024 * 1024
@@ -201,7 +202,8 @@ def validate_proposals(content: str, size: tuple[int, int], trace: dict) -> list
 
 @router.get('/api/inference/config')
 def config(request: Request):
-    return {'secure_transport': secure_transport(request), 'provider': PROVIDER, 'base_url': BASE_URL}
+    return {'secure_transport': secure_transport(request), 'provider': PROVIDER, 'base_url': BASE_URL,
+            'default_model': DEFAULT_MODEL, 'default_model_label': 'GPT 6.1 Sol'}
 
 
 @router.post('/api/inference/models')
@@ -228,7 +230,7 @@ async def outlines(project_id: str, request: Request):
     body = await _body(request)
     if body.get('consent') is not True:
         raise HTTPException(400, 'Confirm that you want to send this blueprint image to Inference Hub.')
-    model = _model(body.get('model'), token)
+    model = _model(body.get('model', DEFAULT_MODEL), token)
     size, sent_size, source_hash, raw = await run_in_threadpool(_image, project_id)
     trace = {'provider': PROVIDER, 'base_url': BASE_URL, 'model': model, 'prompt_version': PROMPT_VERSION,
              'image_sha256': source_hash, 'image_dimensions': list(size), 'sent_dimensions': list(sent_size),
