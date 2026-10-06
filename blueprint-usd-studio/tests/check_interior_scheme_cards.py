@@ -38,13 +38,14 @@ def main():
             assert response.ok, response.status
             before = response.json()
             schemes = [style for style in before['styles'] if style.get('is_design_scheme')]
-            assert len(schemes) == 3, schemes
+            assert len(schemes) == 5, schemes
+            assert {'indian_contemporary', 'bohemian'} <= {style['id'] for style in schemes}
             previews = [style for style in schemes if style.get('preview_url')]
             assert previews, 'Render a scheme first: this check requires a real PNG preview.'
             page.goto(f'{origin}/?project={args.project}')
             page.wait_for_function('state.image && state.plan && state.styles.length')
             cards = page.locator('#schemeChoices .scheme-card')
-            assert cards.count() == 3
+            assert cards.count() == len(schemes)
             assert page.locator('#interiorSchemes').is_visible()
             assert page.locator('#finishPresets').is_visible()
             assert page.locator('#finishChoices [role=radio]').count() >= 1
@@ -93,7 +94,7 @@ def main():
                 clearTimeout(state.saveTimer);
             }''')
             assert page.locator('#schemeChoices img').count() == 0
-            assert page.locator('#schemeChoices .scheme-preview-pending:visible').count() == 3
+            assert page.locator('#schemeChoices .scheme-preview-pending:visible').count() == len(schemes)
             assert page.request.get(f'{origin}/api/projects/{args.project}').json()['plan'] == before['plan']
             assert not errors and not writes, {'errors': errors, 'writes': writes}
             report = {'passed': True, 'project': args.project, 'schemes': [style['id'] for style in schemes],

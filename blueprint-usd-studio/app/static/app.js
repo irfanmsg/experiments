@@ -162,18 +162,32 @@ function refreshPlacements() {
     const details = document.createElement("div"); details.className = "placement-details";
     const name = document.createElement("strong"); name.textContent = placement.name || placement.id || "Furnishing";
     const controls = document.createElement("div"); controls.className = "placement-controls";
+    for (const [label, axis, unit] of [["X", 0, "metres"], ["Y", 1, "metres"], ["Rotation", null, "degrees"]]) {
+      const field = document.createElement("label"); field.textContent = `${label} ${unit === "metres" ? "(m)" : "(°)"} `;
+      const input = document.createElement("input"); input.type = "number"; input.step = axis === null ? "1" : "0.01"; input.className = "placement-coordinate";
+      const value = axis === null ? placement.rotation_deg || 0 : placement.position?.[axis] || 0;
+      input.value = value; input.setAttribute("aria-label", `${label} of ${name.textContent} in ${unit}`);
+      input.onchange = () => {
+        const next = input.valueAsNumber;
+        if (!Number.isFinite(next)) { input.value = value; toast(`${label} must be a finite number`); return; }
+        if (axis === null) placement.rotation_deg = next;
+        else { placement.position ||= [0, 0, 0]; placement.position[axis] = next; }
+        markChanged();
+      };
+      field.append(input); controls.append(field);
+    }
     const movableLabel = document.createElement("label");
     const movable = document.createElement("input"); movable.type = "checkbox"; movable.checked = placement.physics_mode === "dynamic";
-    movable.setAttribute("aria-label", `Move ${name.textContent} in simulation`);
+    movable.setAttribute("aria-label", `Dynamic physics for ${name.textContent}`);
     movable.onchange = () => { placement.physics_mode = movable.checked ? "dynamic" : "static"; if (!movable.checked) placement.position[2] = 0; markChanged(); };
-    movableLabel.append(movable, " Movable in simulation"); controls.append(movableLabel);
+    movableLabel.append(movable, " Dynamic physics"); controls.append(movableLabel);
     if (movable.checked) {
       const heightLabel = document.createElement("label"); heightLabel.textContent = "Start height ";
       const height = document.createElement("input"); height.type = "number"; height.min = "0"; height.max = "20"; height.step = "0.1"; height.value = Number(placement.position?.[2] || 0).toFixed(1); height.setAttribute("aria-label", `Starting height of ${name.textContent} in metres`);
       height.onchange = () => { const z = Number(height.value); if (!Number.isFinite(z) || z < 0 || z > 20) { toast("Starting height must be between 0 and 20 metres"); return; } placement.position[2] = z; markChanged(); };
       heightLabel.append(height, " m"); controls.append(heightLabel);
     }
-    const remove = document.createElement("button"); remove.type = "button"; remove.textContent = "Remove";
+    const remove = document.createElement("button"); remove.type = "button"; remove.textContent = "Remove"; remove.setAttribute("aria-label", `Remove furnishing ${name.textContent}`);
     remove.onclick = () => { state.plan.asset_placements.splice(index, 1); markChanged(); };
     details.append(name, controls); row.append(details, remove); list.append(row);
   });

@@ -43,6 +43,13 @@ These are decor schemes derived from observations. They do not authorize changes
 
 ## Direction for the studio
 
+### Additional requested schemes, 6 October 2026
+
+- **Contemporary Indian** (`indian_contemporary`): a proposed apartment scheme informed by Studio Lotus's Quadrant House. The designer documents Indian-inspired rug motifs, patterned textiles, crafted furniture and contemporary Indian art. The implementation adds geometric rug borders, a timber lattice cabinet front, brass pendant shades and ochre/indigo accents. The lattice, brass choices, patterns and dimensions are our design proposals, not a replica or a claim of one universal Indian style. The regional labels in the supplied reel remain distinct reference directions.
+- **Bohemian** (`bohemian`): an interpretation of the saved natural-material reference from hirals_homey_home, adding a second patterned rug layer, a modeled knotted wall hanging, woven shades and mixed indigo/terracotta textiles. The source supports woven materials, plants and warm textiles; the bohemian label, wall hanging and rug layering are proposed here, not attributed to the creator.
+
+Both schemes retain the example's documented flooring categories and geometry. Their proposed features are recorded separately from observed cues. They currently use the example-specific furnishing layout; supporting arbitrary room geometry is part of the generic workflow work still to do.
+
 Keep specified flooring, wet-area finishes and door connections fixed. Develop a contemporary Indian apartment through crafted timber, textiles, artwork, plants and layered lighting, selecting a coherent regional influence rather than combining every example. Real furniture dimensions, usable routes and the source-drawn arrangement must govern placement; photographs provide visual intent, not scale.
 
 Record added decor, chosen colours, light settings, furniture models and inferred placements as illustrative decisions. Reference photography is for review and inspiration; no project photograph or reel frame has been added as an application texture or presented as this apartment's rendering.

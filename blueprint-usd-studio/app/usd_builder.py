@@ -212,6 +212,26 @@ INTERIOR_SCHEMES = {
         'metal': (.45, .32, .19), 'light_kelvin': 3000, 'sky': 310, 'sun': 1600,
         'features': ['cane headboards and cabinet fronts', 'terracotta and botanical cushions', 'woven lamp shades', 'small framed gallery', 'linen curtains', 'woven rug', 'layered plants'],
     },
+    'indian_contemporary': {
+        'label': 'Contemporary Indian', 'url': 'https://www.studiolotus.in/projects/the-quadrant-house',
+        'reference_context': 'Studio Lotus project; contemporary Indian interpretation',
+        'description': 'Crafted timber, geometric textile borders, a lattice cabinet front and warm brass pendants',
+        'wall': (.89, .83, .72), 'wood': (.32, .16, .07), 'textile': (.80, .70, .51),
+        'accent': (.57, .16, .10), 'rug': (.74, .62, .41), 'ink': (.13, .25, .29),
+        'metal': (.66, .44, .15), 'light_kelvin': 3100, 'sky': 310, 'sun': 1600,
+        'features': ['geometric textile borders', 'timber lattice cabinet front', 'brass pendant shades', 'ochre and indigo cushions', 'framed geometric art', 'timber and greenery'],
+        'observed_features': ['Indian-inspired rug motifs', 'patterned textiles', 'crafted timber furnishings', 'contemporary Indian art'],
+    },
+    'bohemian': {
+        'label': 'Bohemian', 'url': 'https://www.instagram.com/p/DYi4XJVod1V/',
+        'reference_context': 'Saved natural-material reference; proposed bohemian interpretation',
+        'description': 'Layered patterned rugs, knotted wall hanging, woven shades and mixed indigo and terracotta textiles',
+        'wall': (.90, .86, .76), 'wood': (.46, .27, .12), 'textile': (.84, .76, .61),
+        'accent': (.66, .25, .13), 'rug': (.67, .52, .32), 'ink': (.13, .22, .35),
+        'metal': (.47, .34, .19), 'light_kelvin': 3000, 'sky': 310, 'sun': 1600,
+        'features': ['layered patterned rugs', 'knotted textile wall hanging', 'woven pendant shades', 'mixed indigo and terracotta cushions', 'clay accents', 'layered plants'],
+        'observed_features': ['woven shades', 'natural-fibre furniture', 'terracotta textiles', 'plants'],
+    },
 }
 for scheme_id, scheme in INTERIOR_SCHEMES.items():
     PALETTES[scheme_id] = {**PALETTES['home_specification'],
@@ -689,9 +709,10 @@ def _interior_scheme(stage, plan, style, materials, modules):
     root.SetCustomDataByKey('scheme', style)
     root.SetCustomDataByKey('referenceURL', scheme['url'])
     decisions = [{'id': style, 'kind': 'reference-inspired', 'interior_scheme': style,
-        'source': {'url': scheme['url'], 'collection': 'Instagram Saved / Design', 'role': 'Aesthetic cues only'},
+        'source': {'url': scheme['url'], 'collection': scheme.get('reference_context', 'Instagram Saved / Design'), 'role': 'Aesthetic cues only'},
         'summary': scheme['description']+'. Procedural interpretation, not a measured replica; source flooring and construction retained.',
-        'parameters': {'observed_features': scheme['features'], 'light_temperature_k': scheme['light_kelvin'],
+        'parameters': {'observed_features': scheme.get('observed_features', scheme['features']),
+                       'proposed_features': scheme['features'], 'light_temperature_k': scheme['light_kelvin'],
                        'colours_rgb': {key: list(scheme[key]) for key in ('wall', 'wood', 'textile', 'accent', 'rug', 'ink', 'metal')},
                        'lighting_values': 'assumed visualization settings', 'image_authenticity': 'not established'},
         'status': 'needs-review'}]
@@ -795,6 +816,15 @@ def _interior_scheme(stage, plan, style, materials, modules):
     if style != 'saved_linen_timber':
         for i in range(9):
             part(rug, 'Graphic_'+str(i), ((i-4)*.37, -1.20, .0048), (.15, .08, .001), 'ink' if i%2 else 'accent')
+    if style in {'indian_contemporary', 'bohemian'}:
+        for sign in (-1, 1):
+            for i in range(11):
+                part(rug, 'Diamond_'+str(sign)+'_'+str(i), ((i-5)*.29, sign*1.04, .006),
+                     (.095, .095, .002), 'ink' if i%2 else 'accent', rotate=(0, 0, 45))
+    if style == 'bohemian':
+        part(rug, 'LayeredRunner', (0, 0, .009), (2.7, 1.55, .008), 'accent')
+        for i in range(17):
+            part(rug, 'RunnerStripe_'+str(i), ((i-8)*.15, 0, .014), (.045, 1.49, .002), 'ink' if i%3 else 'paper')
     finish(rug)
 
     # Gathered panels sit outside each source slider's access span.
@@ -835,10 +865,25 @@ def _interior_scheme(stage, plan, style, materials, modules):
             part(art, 'Motif_'+str(i)+'_'+str(j), (x+(j-1)*.09,-.026,(j-1)*.12), (.20,.005,.12 if style == 'saved_evening_lounge' else .22), 'ink' if j%2 else 'accent', 'Sphere', (0,0,j*28))
     finish(art)
 
+    if style == 'bohemian':
+        textile = assembly('KnottedWallHanging', 'woven_wall_hanging', (living_x-1.40, y1-.07, 1.82), role='wall')
+        part(textile, 'TimberRod', (0, 0, .36), (.62, .025, .025), 'cabinet')
+        for i in range(19):
+            length = .40+.22*(1-abs(i-9)/9)
+            part(textile, 'Cord_'+str(i), ((i-9)*.027, -.016, .34-length/2), (.008, .008, length), 'paper')
+            for j in range(3):
+                part(textile, 'Knot_'+str(i)+'_'+str(j), ((i-9)*.027, -.021, .25-j*.09), (.017, .015, .02), 'paper', 'Sphere')
+        finish(textile)
+
     console = assembly('TimberMediaConsole', 'media_console', (living_x,y0+.26,0), role='floor')
     part(console, 'Body', (0,0,.32), (1.60,.40,.40), 'cabinet')
     for i in range(3):
         part(console, 'Front_'+str(i), ((i-1)*.52,.207,.32), (.50,.016,.36), 'door')
+    if style == 'indian_contemporary':
+        for i in range(25):
+            part(console, 'LatticeVertical_'+str(i), ((i-12)*.06,.220,.32), (.012,.012,.32), 'cabinet')
+        for i in range(6):
+            part(console, 'LatticeHorizontal_'+str(i), (0,.227,.17+i*.06), (1.48,.012,.012), 'metal')
     for i, (x,y) in enumerate([(-.65,-.13),(-.65,.13),(.65,-.13),(.65,.13)]):
         part(console, 'Leg_'+str(i), (x,y,.06), (.04,.04,.12), 'cabinet')
     part(console, 'Screen', (0,-.07,.98), (1.05,.035,.59), 'black')
@@ -852,7 +897,8 @@ def _interior_scheme(stage, plan, style, materials, modules):
         low, high = bounds.GetMin(), bounds.GetMax()
         cushions = assembly('TerracottaCushions' if style == 'saved_botanical_cane' else 'LoungeCushions', 'cushions', (0,0,0))
         for i in range(3):
-            part(cushions, 'Pillow_'+str(i), (living_x+(i-1)*.70, high[1]-.30, .63), (.42,.14,.36), 'accent' if i != 1 else 'upholstery', 'Sphere', (-12,0,0))
+            colour = 'ink' if style in {'indian_contemporary', 'bohemian'} and i == 1 else 'accent' if i != 1 else 'upholstery'
+            part(cushions, 'Pillow_'+str(i), ((low[0]+high[0])/2+(i-1)*.70, high[1]-.30, .63), (.42,.14,.36), colour, 'Sphere', (-12,0,0))
         finish(cushions)
     table = stage.GetPrimAtPath('/World/Assets/living_table')
     if table:
@@ -926,7 +972,7 @@ def _interior_scheme(stage, plan, style, materials, modules):
         dining = stage.GetPrimAtPath('/World/Assets/dining_table')
         center = cache.ComputeWorldBound(dining).ComputeAlignedBox().GetMidpoint() if dining else Gf.Vec3d(x0+2.38,(y0+y1)/2,0)
         for i in range(2):
-            woven = style == 'saved_botanical_cane'
+            woven = style in {'saved_botanical_cane', 'bohemian'}
             lamp = assembly(('WovenPendant_' if woven else 'ConePendant_')+str(i), 'lamp', (center[0]+(i-.5)*.68,center[1],0), role='overhead')
             part(lamp, 'Suspension', (0,0,height-.25), (.012,.012,.48), 'metal', 'Cylinder')
             if woven:
@@ -935,7 +981,7 @@ def _interior_scheme(stage, plan, style, materials, modules):
                     part(lamp, 'WovenRib_'+str(j), (.23*math.cos(angle),.23*math.sin(angle),height-.60), (.018,.018,.27), 'cabinet')
                 part(lamp, 'ShadeTop', (0,0,height-.45), (.49,.49,.025), 'cabinet', 'Cylinder')
             else:
-                part(lamp, 'ConeShade', (0,0,height-.60), (.46,.46,.30), 'accent', 'Cone')
+                part(lamp, 'ConeShade', (0,0,height-.60), (.46,.46,.30), 'metal' if style == 'indian_contemporary' else 'accent', 'Cone')
             part(lamp, 'Bulb', (0,0,height-.73), (.10,.10,.085), 'glow', 'Sphere')
             light(lamp, 'PracticalLight', (0,0,height-.73), 210)
             finish(lamp)

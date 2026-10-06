@@ -10,6 +10,7 @@
 .placement-controls label{display:inline-flex;align-items:center;gap:3px;cursor:pointer}
 .placement-controls input[type=checkbox]{accent-color:#267ca8}
 .placement-controls input[type=number]{width:42px;min-width:42px;padding:2px 3px;font-size:10px;border:1px solid #dce5e9;border-radius:5px}
+.placement-controls input.placement-coordinate{width:70px;min-width:70px}
 .asset-list button small{font-size:9px;color:#617b80;flex:0 1 120px;text-align:right;line-height:1.4}
 .reconstruction-review{margin-top:15px;border-top:1px solid #e2e9ec;padding-top:13px;font-size:11px;color:#536579}
 .reconstruction-review summary{cursor:pointer;font-size:12px;font-weight:750;color:#287b6f}

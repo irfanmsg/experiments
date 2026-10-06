@@ -32,7 +32,8 @@ def test_reference_schemes_preserve_scale_and_add_real_dressing_and_lights(tmp_p
     rooms = {room['id']: Polygon(room['polygon']) for room in plan['rooms']}
     doors = unary_union([LineString([o['start'], o['end']]).buffer(.55, cap_style=2) for o in plan['openings']])
     signatures = set()
-    assert len(INTERIOR_SCHEMES) == 3
+    assert {'indian_contemporary', 'bohemian'} <= INTERIOR_SCHEMES.keys()
+    assert len(INTERIOR_SCHEMES) == 5
     for name in INTERIOR_SCHEMES:
         report = build_usd(plan, tmp_path / (name+'.usda'), name)
         stage = Usd.Stage.Open(report['usd_path'])
@@ -81,5 +82,5 @@ def test_reference_schemes_preserve_scale_and_add_real_dressing_and_lights(tmp_p
         assert json.loads(stage.GetDefaultPrim().GetCustomDataByKey('presentationDecisions')) == decisions
         assert stage.GetDefaultPrim().GetCustomDataByKey('isDesignScheme')
         assert not any(d.get('status') == 'not-placed' and d.get('interior_scheme') == name for d in decisions)
-        signatures.add(tuple((p.GetName(), p.GetCustomDataByKey('decorType')) for p in decor))
-    assert len(signatures) == 3
+        signatures.add(tuple((str(p.GetPath()), p.GetTypeName()) for p in Usd.PrimRange(stage.GetPrimAtPath('/World/Interiors'))))
+    assert len(signatures) == len(INTERIOR_SCHEMES)
