@@ -168,6 +168,21 @@ def _save_rendered_preview(prepared: dict, frame) -> None:
     temporary.replace(metadata)
 
 
+def _set_ceiling_visibility(stage, ceiling_paths: list[str], visible: bool, ordinal: int) -> None:
+    if not ceiling_paths:
+        return
+    import numpy as np
+    import ovstage
+    # RTX consumes the populated world visibility column; authored USD
+    # visibility writes do not recompute it in this native runtime.
+    with ovstage.PathDictionary(stage) as paths:
+        with paths.create_path_list_from_strings(ceiling_paths) as prims:
+            with stage.query_from_path_list(prims) as query:
+                stage.write_attribute(query, '_worldVisibility', ordinal=ordinal,
+                                      tensors=np.full(len(ceiling_paths), visible, dtype=np.bool_),
+                                      is_array=False).wait()
+
+
 def _render(prepared: dict, args: argparse.Namespace) -> None:
     if wp is None:
         raise RuntimeError("warp-lang is missing; run ./omni_setup/setup.sh runtime")
@@ -217,6 +232,11 @@ def _render(prepared: dict, args: argparse.Namespace) -> None:
             stage, prepared["scene"], ordinal=ordinal,
             domains=(ovstage.PopulationDomain.ALL if args.physics
                      else ovstage.PopulationDomain.RENDERING))
+        stage.advance_write_floor(ordinal, ovstage.Scope.ALL).wait()
+        ceiling_paths = prepared.get('ceiling_paths', [])
+        ceilings_visible = False
+        ordinal += 1
+        _set_ceiling_visibility(stage, ceiling_paths, ceilings_visible, ordinal)
         stage.advance_write_floor(ordinal, ovstage.Scope.ALL).wait()
         if args.physics:
             physx = PhysX()
@@ -298,6 +318,10 @@ def _render(prepared: dict, args: argparse.Namespace) -> None:
                     while args.max_frames == 0 or frame_count < args.max_frames:
                         frame_start = time.monotonic()
                         ordinal += 1
+                        show_ceilings = controller.state()['view'] == 'interior'
+                        if show_ceilings != ceilings_visible:
+                            _set_ceiling_visibility(stage, ceiling_paths, show_ceilings, ordinal)
+                            ceilings_visible = show_ceilings
                         camera_matrix = controller.matrix(frame_start - start)
                         tensor = ovstage.make_dltensor(
                             camera_matrix.ravel(),

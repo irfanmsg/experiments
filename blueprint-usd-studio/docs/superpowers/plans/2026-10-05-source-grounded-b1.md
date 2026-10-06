@@ -24,6 +24,6 @@
 - [x] Presentation agent: add the specified-finish preset, room-specific surfaces, kitchen and bathroom fixtures, beds and wardrobes; verify physical fit.
 - [x] Reference agent: record all supplied files, hashes, applicability, dimension conflicts and finish specifications; update usage documentation.
 - [x] Root: integrate reference review/trace, make the preset labels honest, align real SimReady furniture to the illustrated layout, and preserve older projects.
-- [ ] Root: run focused and full checks, use Playwright for editor placement and 4K playback, inspect rendered rooms, and leave the corrected app running.
+- [x] Root: run focused and full checks, use Playwright for editor placement and 4K playback, inspect rendered rooms, and leave the corrected app running.
 
 The user requested intermittent checkpoint commits on 5 October 2026. Commit verified chunks with Irfan's configured author identity.

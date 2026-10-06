@@ -189,6 +189,8 @@ def prepare_scene(source: Path, destination: Path, width: int, height: int) -> d
         "radius": radius,
         "plan_radius": plan_radius,
         "rooms": rooms,
+        "ceiling_paths": [str(prim.GetPath()) for prim in Usd.PrimRange(model.GetPrim())
+                          if prim.IsA(UsdGeom.Mesh) and prim.GetParent().GetName() == 'Ceilings'],
         "footprint": footprint,
         "walls": json.loads(root.GetCustomDataByKey('wallTrace') or '[]'),
         "calibration": json.loads(root.GetCustomDataByKey('traceCalibration') or '{}'),

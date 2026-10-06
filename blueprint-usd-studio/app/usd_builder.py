@@ -7,6 +7,7 @@ ovrtx, and ovstream consume the resulting scene at runtime.
 from __future__ import annotations
 
 import json
+import hashlib
 import math
 import os
 from pathlib import Path
@@ -184,6 +185,41 @@ PALETTES = {
         "metal": ((0.36, 0.49, 0.57), 0.22, 0.89),
     },
 }
+
+
+INTERIOR_SCHEMES = {
+    'saved_linen_timber': {
+        'label': 'Linen & light timber', 'url': 'https://www.instagram.com/p/DclJJ7wmeQX/',
+        'description': 'Cream textiles, timber display, linen folds, woven rug and warm cone pendants',
+        'wall': (.91, .88, .80), 'wood': (.54, .34, .16), 'textile': (.88, .83, .72),
+        'accent': (.65, .49, .29), 'rug': (.67, .60, .47), 'ink': (.34, .39, .33),
+        'metal': (.61, .43, .22), 'light_kelvin': 3100, 'sky': 290, 'sun': 1800,
+        'features': ['cream upholstery', 'timber display and books', 'pleated linen curtains', 'woven rug', 'cone pendants', 'framed geometric art', 'plants'],
+    },
+    'saved_evening_lounge': {
+        'label': 'Warm evening lounge', 'url': 'https://www.instagram.com/p/Dce9CWFqgnn/',
+        'description': 'Olive beige upholstery, graphic posters, timber console and pools of warm practical light',
+        'wall': (.77, .74, .65), 'wood': (.34, .20, .10), 'textile': (.45, .47, .34),
+        'accent': (.64, .30, .15), 'rug': (.77, .73, .63), 'ink': (.10, .13, .12),
+        'metal': (.20, .18, .14), 'light_kelvin': 2700, 'sky': 95, 'sun': 240,
+        'features': ['olive beige upholstery', 'graphic rug and posters', 'opal globe floor lamp', 'mushroom and amber table lamps', 'timber media console', 'books and greenery'],
+    },
+    'saved_botanical_cane': {
+        'label': 'Botanical cane & terracotta', 'url': 'https://www.instagram.com/p/DYi4XJVod1V/',
+        'description': 'Cane details, terracotta cushions, botanical accents, woven shades and layered greenery',
+        'wall': (.89, .87, .79), 'wood': (.43, .27, .13), 'textile': (.83, .80, .70),
+        'accent': (.64, .27, .14), 'rug': (.70, .60, .40), 'ink': (.24, .35, .18),
+        'metal': (.45, .32, .19), 'light_kelvin': 3000, 'sky': 310, 'sun': 1600,
+        'features': ['cane headboards and cabinet fronts', 'terracotta and botanical cushions', 'woven lamp shades', 'small framed gallery', 'linen curtains', 'woven rug', 'layered plants'],
+    },
+}
+for scheme_id, scheme in INTERIOR_SCHEMES.items():
+    PALETTES[scheme_id] = {**PALETTES['home_specification'],
+        'label': scheme['label'], 'description': scheme['description'],
+        'wall': (scheme['wall'], .82, 0), 'door': (scheme['wood'], .52, 0),
+        'metal': (scheme['metal'], .30, .72),
+        'requires_reference': True, 'is_design_scheme': True,
+        'design_features': scheme['features'], 'reference_urls': [scheme['url']]}
 
 
 def _pxr():
@@ -636,15 +672,339 @@ def _specified_home(stage, plan, materials, modules):
     return decisions
 
 
+def _interior_scheme(stage, plan, style, materials, modules):
+    """Dress the measured home using observed saved-design cues and assumed objects."""
+    from shapely.geometry import LineString, Polygon, box
+    from shapely.ops import unary_union
+
+    Gf, _, Usd, UsdGeom, UsdLux, _, UsdShade = modules
+    scheme = INTERIOR_SCHEMES[style]
+    rooms = {room['id']: room for room in plan['rooms']}
+    living = rooms['living_dining']
+    x0, y0, x1, y1 = bbox([living['polygon']])
+    living_x = x1-2.5
+    height = float(plan.get('room_height_m') or 2.8)
+    base = '/World/Interiors'
+    root = UsdGeom.Xform.Define(stage, base).GetPrim()
+    root.SetCustomDataByKey('scheme', style)
+    root.SetCustomDataByKey('referenceURL', scheme['url'])
+    decisions = [{'id': style, 'kind': 'reference-inspired', 'interior_scheme': style,
+        'source': {'url': scheme['url'], 'collection': 'Instagram Saved / Design', 'role': 'Aesthetic cues only'},
+        'summary': scheme['description']+'. Procedural interpretation, not a measured replica; source flooring and construction retained.',
+        'parameters': {'observed_features': scheme['features'], 'light_temperature_k': scheme['light_kelvin'],
+                       'colours_rgb': {key: list(scheme[key]) for key in ('wall', 'wood', 'textile', 'accent', 'rug', 'ink', 'metal')},
+                       'lighting_values': 'assumed visualization settings', 'image_authenticity': 'not established'},
+        'status': 'needs-review'}]
+    for key, spec in {
+        'upholstery': (scheme['textile'], .93, 0), 'rug': (scheme['rug'], .98, 0),
+        'rug_thread': (tuple(v*.86 for v in scheme['rug']), .99, 0),
+        'accent': (scheme['accent'], .94, 0), 'ink': (scheme['ink'], .87, 0),
+        'curtain': ((.92, .89, .81), .95, 0), 'leaf': ((.15, .29, .10), .73, 0),
+        'leaf_light': ((.28, .40, .16), .81, 0), 'pot': (scheme['accent'], .85, 0),
+        'paper': ((.91, .87, .76), .94, 0), 'glow': ((1, .85, .62), .31, 0),
+    }.items():
+        materials[key] = _make_material(stage, '/World/Looks/Interior/'+key, spec, modules)
+    UsdShade.Shader.Get(stage, str(materials['curtain'].GetPath())+'/PBR').CreateInput('opacity', modules[1].ValueTypeNames.Float).Set(.72)
+    UsdShade.Shader.Get(stage, str(materials['glow'].GetPath())+'/PBR').CreateInput('emissiveColor', modules[1].ValueTypeNames.Color3f).Set(Gf.Vec3f(1, .73, .37))
+
+    # Expand only the scene's material-bearing instances. Vendor files and mesh
+    # transforms stay untouched; source units/physical dimensions are retained.
+    assets = stage.GetPrimAtPath('/World/Assets')
+    if assets:
+        for prim in Usd.PrimRange(assets):
+            if prim.IsInstance():
+                prim.SetInstanceable(False)
+        for prim in Usd.PrimRange(assets):
+            if not prim.IsA(UsdGeom.Mesh):
+                continue
+            material, _ = UsdShade.MaterialBindingAPI(prim).ComputeBoundMaterial()
+            if material and 'leather' in material.GetPrim().GetName():
+                _bind(prim, materials['upholstery'], modules)
+            elif 'cabinet_b01' in str(prim.GetPath()) and material:
+                _bind(prim, materials['cabinet'], modules)
+
+    door_shapes = [LineString([o['start'], o['end']]).buffer(.55, cap_style=2) for o in plan['openings']]
+    transforms = UsdGeom.XformCache()
+    for opening in plan['openings']:
+        leaf = stage.GetPrimAtPath('/World/Building/Openings/'+safe_name(opening['id'])+'/Leaf')
+        if leaf:
+            transform = transforms.GetLocalToWorldTransform(leaf)
+            corners = [transform.Transform(Gf.Vec3d(x*.5, y*.5, 0)) for x, y in [(-1,-1),(1,-1),(1,1),(-1,1)]]
+            door_shapes.append(Polygon([(p[0], p[1]) for p in corners]))
+    doors = unary_union(door_shapes)
+
+    def part(parent, name, center, size, material, shape='Cube', rotate=(0, 0, 0)):
+        path = str(parent.GetPath())+'/'+safe_name(name)
+        if shape == 'Cube':
+            return _box(stage, path, center, size, rotate[2], materials[material], modules, collision=False)
+        primitive = getattr(UsdGeom, shape).Define(stage, path)
+        primitive.CreateRadiusAttr(1)
+        if shape != 'Sphere':
+            primitive.CreateHeightAttr(2)
+            primitive.CreateAxisAttr('Z')
+        xf = UsdGeom.Xformable(primitive.GetPrim())
+        xf.AddTranslateOp().Set(Gf.Vec3d(*center))
+        xf.AddRotateXYZOp().Set(Gf.Vec3f(*rotate))
+        xf.AddScaleOp().Set(Gf.Vec3f(*(v/2 for v in size)))
+        _bind(primitive.GetPrim(), materials[material], modules)
+        return primitive.GetPrim()
+
+    def assembly(name, kind, position, room='living_dining', role='surface'):
+        prim = UsdGeom.Xform.Define(stage, base+'/'+name).GetPrim()
+        UsdGeom.Xformable(prim).AddTranslateOp().Set(Gf.Vec3d(*position))
+        for key, value in {'interiorDecor': True, 'decorType': kind, 'roomId': room,
+                           'clearanceRole': role, 'provenance': 'Reference-inspired; exact dimensions, form, colour and placement assumed'}.items():
+            prim.SetCustomDataByKey(key, value)
+        return prim
+
+    def finish(prim):
+        bound = UsdGeom.BBoxCache(Usd.TimeCode.Default(), ['default', 'render']).ComputeWorldBound(prim).ComputeAlignedBox()
+        low, high = bound.GetMin(), bound.GetMax()
+        footprint = box(low[0], low[1], high[0], high[1])
+        role = prim.GetCustomDataByKey('clearanceRole')
+        valid = role != 'floor' or (Polygon(rooms[prim.GetCustomDataByKey('roomId')]['polygon']).buffer(1e-7).covers(footprint)
+                                  and footprint.intersection(doors).area < 1e-8)
+        decisions.append({'id': str(prim.GetPath()), 'kind': 'assumed', 'interior_scheme': style,
+            'source': {'url': scheme['url'], 'role': 'Decor cues; no measured item dimensions'},
+            'summary': prim.GetCustomDataByKey('provenance'), 'status': 'needs-review' if valid else 'not-placed',
+            'parameters': {'room_id': prim.GetCustomDataByKey('roomId'), 'decor_type': prim.GetCustomDataByKey('decorType'),
+                           'size_xyz_m': [float(v) for v in bound.GetSize()],
+                           'bounds_min_m': [float(v) for v in low], 'bounds_max_m': [float(v) for v in high],
+                           'clearance_role': role}})
+        if not valid:
+            stage.RemovePrim(prim.GetPath())
+
+    def light(parent, name, center, intensity=160):
+        lamp = UsdLux.SphereLight.Define(stage, str(parent.GetPath())+'/'+name)
+        lamp.CreateRadiusAttr(.045)
+        lamp.CreateIntensityAttr(intensity)
+        lamp.CreateEnableColorTemperatureAttr(True)
+        lamp.CreateColorTemperatureAttr(float(scheme['light_kelvin']))
+        UsdGeom.Xformable(lamp.GetPrim()).AddTranslateOp().Set(Gf.Vec3d(*center))
+
+    # Actual woven/graphic surface geometry, with a six-millimetre rug skin.
+    rug = assembly('LivingRug', 'rug', (living_x, y0+1.95, .015), role='floor')
+    part(rug, 'Backing', (0, 0, 0), (3.6, 2.8, .006), 'rug')
+    for i in range(37):
+        part(rug, 'Weft_'+str(i), ((i-18)*.095, 0, .0038), (.003, 2.76, .0015), 'rug_thread')
+    for i in range(29):
+        part(rug, 'Warp_'+str(i), (0, (i-14)*.096, .0039), (3.56, .003, .0015), 'rug_thread')
+    for i in range(30):
+        for sign in (-1, 1):
+            part(rug, 'Fringe_'+str(i)+'_'+str(sign), ((i-14.5)*.116, sign*1.425, .001), (.009, .07, .003), 'rug_thread')
+    if style != 'saved_linen_timber':
+        for i in range(9):
+            part(rug, 'Graphic_'+str(i), ((i-4)*.37, -1.20, .0048), (.15, .08, .001), 'ink' if i%2 else 'accent')
+    finish(rug)
+
+    # Gathered panels sit outside each source slider's access span.
+    for opening in plan['openings']:
+        if opening['type'] != 'sliding_door':
+            continue
+        a, b = opening['start'], opening['end']
+        length = segment_length(a, b)
+        ux, uy = (b[0]-a[0])/length, (b[1]-a[1])/length
+        room_id = opening['space_id']
+        centroid = Polygon(rooms[room_id]['polygon']).centroid
+        sign = 1 if -uy*(centroid.x-a[0])+ux*(centroid.y-a[1]) >= 0 else -1
+        nx, ny = -uy*sign, ux*sign
+        curtains = assembly('Curtains_'+opening['id'], 'curtains', (0,0,0), room_id, 'wall')
+        for panel, endpoint, offset in [(0, a, -.20), (1, b, .20)]:
+            points = []
+            for z in (.025, height-.16):
+                for i in range(25):
+                    along = offset+(i/24-.5)*.24
+                    fold = .17+math.sin(i*math.pi/2)*.035
+                    points.append(Gf.Vec3f(endpoint[0]+ux*along+nx*fold, endpoint[1]+uy*along+ny*fold, z))
+            mesh = UsdGeom.Mesh.Define(stage, str(curtains.GetPath())+'/Pleats_'+str(panel))
+            mesh.CreatePointsAttr(points)
+            mesh.CreateFaceVertexCountsAttr([4]*24)
+            mesh.CreateFaceVertexIndicesAttr([j for i in range(24) for j in (i,i+1,i+26,i+25)])
+            mesh.CreateSubdivisionSchemeAttr('none')
+            mesh.CreateDoubleSidedAttr(True)
+            _bind(mesh.GetPrim(), materials['curtain'], modules)
+        finish(curtains)
+
+    art = assembly('GraphicPosters' if style == 'saved_evening_lounge' else 'BotanicalGallery' if style == 'saved_botanical_cane' else 'TimberGallery', 'art', (living_x, y1-.045, 1.80), role='wall')
+    for i in range(2 if style == 'saved_evening_lounge' else 3):
+        x = (i-.5)*.80 if style == 'saved_evening_lounge' else (i-1)*.57
+        width, tall = (.65, .90) if style == 'saved_evening_lounge' else (.48, .66)
+        part(art, 'Frame_'+str(i), (x,0,0), (width,.032,tall), 'ink' if style == 'saved_evening_lounge' else 'cabinet')
+        part(art, 'Paper_'+str(i), (x,-.020,0), (width-.045,.008,tall-.045), 'paper')
+        for j in range(3):
+            part(art, 'Motif_'+str(i)+'_'+str(j), (x+(j-1)*.09,-.026,(j-1)*.12), (.20,.005,.12 if style == 'saved_evening_lounge' else .22), 'ink' if j%2 else 'accent', 'Sphere', (0,0,j*28))
+    finish(art)
+
+    console = assembly('TimberMediaConsole', 'media_console', (living_x,y0+.26,0), role='floor')
+    part(console, 'Body', (0,0,.32), (1.60,.40,.40), 'cabinet')
+    for i in range(3):
+        part(console, 'Front_'+str(i), ((i-1)*.52,.207,.32), (.50,.016,.36), 'door')
+    for i, (x,y) in enumerate([(-.65,-.13),(-.65,.13),(.65,-.13),(.65,.13)]):
+        part(console, 'Leg_'+str(i), (x,y,.06), (.04,.04,.12), 'cabinet')
+    part(console, 'Screen', (0,-.07,.98), (1.05,.035,.59), 'black')
+    part(console, 'ScreenStand', (0,-.07,.58), (.20,.10,.12), 'metal')
+    finish(console)
+
+    cache = UsdGeom.BBoxCache(Usd.TimeCode.Default(), ['default','render'])
+    sofa = stage.GetPrimAtPath('/World/Assets/living_sofa')
+    if sofa:
+        bounds = cache.ComputeWorldBound(sofa).ComputeAlignedBox()
+        low, high = bounds.GetMin(), bounds.GetMax()
+        cushions = assembly('TerracottaCushions' if style == 'saved_botanical_cane' else 'LoungeCushions', 'cushions', (0,0,0))
+        for i in range(3):
+            part(cushions, 'Pillow_'+str(i), (living_x+(i-1)*.70, high[1]-.30, .63), (.42,.14,.36), 'accent' if i != 1 else 'upholstery', 'Sphere', (-12,0,0))
+        finish(cushions)
+    table = stage.GetPrimAtPath('/World/Assets/living_table')
+    if table:
+        bounds = cache.ComputeWorldBound(table).ComputeAlignedBox()
+        mid = bounds.GetMidpoint()
+        books = assembly('CoffeeTableBooks', 'book_accents', (mid[0],mid[1],bounds.GetMax()[2]+.003))
+        for i in range(3):
+            part(books, 'Pages_'+str(i), (0,0,i*.025+.011), (.24,.18,.019), 'paper')
+            part(books, 'Cover_'+str(i), (0,0,i*.025+.022), (.25,.19,.003), 'accent' if i%2 else 'ink')
+        part(books, 'Vase', (.37,0,.10), (.13,.13,.20), 'pot', 'Sphere')
+        finish(books)
+    cabinet = stage.GetPrimAtPath('/World/Assets/den_cabinet')
+    if cabinet:
+        bounds = cache.ComputeWorldBound(cabinet).ComputeAlignedBox()
+        mid = bounds.GetMidpoint()
+        books = assembly('TimberDisplayBooks', 'book_accents', (mid[0],mid[1],.008), 'wfh', 'furniture-overlay')
+        for shelf in range(4):
+            for i in range(5):
+                part(books, 'Book_'+str(shelf)+'_'+str(i), (.025,(i-2)*.045,shelf*.39+.23), (.22,.039,.24+(i%2)*.025), 'ink' if i%3==0 else 'accent' if i%3==1 else 'paper')
+        finish(books)
+
+    def plant(name, x, y, room='living_dining'):
+        parent = assembly(name, 'plant', (x,y,.014), room, 'floor')
+        part(parent, 'Pot', (0,0,.19), (.30,.30,.38), 'pot', 'Cone')
+        part(parent, 'Stem', (0,0,.65), (.025,.025,.95), 'cabinet', 'Cylinder')
+        for i in range(9):
+            angle = i*2.4
+            part(parent, 'Leaf_'+str(i), (.16*math.cos(angle),.16*math.sin(angle),.56+i*.075), (.31,.14,.032), 'leaf' if i%2 else 'leaf_light', 'Sphere', (18, -18, math.degrees(angle)))
+        finish(parent)
+    plant('CornerPlant', living_x+1.73, y1-.40)
+    if style != 'saved_evening_lounge':
+        plant('TimberSidePlant', living_x-1.73, y1-.95)
+    if style == 'saved_botanical_cane':
+        dx0,dy0,dx1,dy1 = bbox([rooms['wfh']['polygon']])
+        plant('DenGreenery', dx1-1.05, dy0+.48, 'wfh')
+        for prim in list(stage.Traverse()):
+            if prim.GetCustomDataByKey('fixtureType') not in {'bed','wardrobe'}:
+                continue
+            panel = UsdGeom.Xform.Define(stage, str(prim.GetPath())+'/CaneWeave').GetPrim()
+            panel.SetCustomDataByKey('provenance', 'Cane visual detail inspired by saved reference; material, weave and dimensions assumed')
+            if prim.GetCustomDataByKey('fixtureType') == 'bed':
+                for i in range(21):
+                    part(panel, 'Vertical_'+str(i), (-.978,(i-10)*.07,.55), (.006,.007,.70), 'accent')
+                for i in range(11):
+                    part(panel, 'Horizontal_'+str(i), (-.974,0,.20+i*.07), (.006,1.47,.007), 'cabinet')
+            else:
+                for i in range(23):
+                    part(panel, 'Vertical_'+str(i), ((i-11)*.07,-.289,1.05), (.007,.005,1.74), 'accent')
+                for i in range(25):
+                    part(panel, 'Horizontal_'+str(i), (0,-.292,.21+i*.07), (1.60,.005,.007), 'cabinet')
+
+    if style == 'saved_evening_lounge':
+        lamp = assembly('OpalFloorGlobe', 'lamp', (living_x-1.73,y1-.95,.014), role='floor')
+        part(lamp, 'Base', (0,0,.025), (.34,.34,.05), 'metal', 'Cylinder')
+        part(lamp, 'Stem', (0,0,.69), (.026,.026,1.30), 'metal', 'Cylinder')
+        part(lamp, 'OpalGlobe', (0,0,1.48), (.40,.40,.36), 'glow', 'Sphere')
+        light(lamp, 'PracticalLight', (0,0,1.48), 420)
+        finish(lamp)
+        lamp = assembly('MushroomSideLamp', 'lamp', (living_x+1.50,y1-.90,.014), role='floor')
+        part(lamp, 'TimberSideTable', (0,0,.25), (.38,.40,.50), 'cabinet')
+        part(lamp, 'Stem', (0,0,.62), (.055,.055,.23), 'porcelain', 'Cylinder')
+        part(lamp, 'OpalDome', (0,0,.77), (.32,.32,.18), 'glow', 'Sphere')
+        light(lamp, 'PracticalLight', (0,0,.73), 220)
+        finish(lamp)
+        lamp = assembly('AmberConsoleLamp', 'lamp', (living_x+.56,y0+.28,.53))
+        part(lamp, 'Base', (0,0,.035), (.14,.14,.07), 'metal', 'Cylinder')
+        part(lamp, 'AmberShade', (0,0,.20), (.24,.24,.27), 'glow', 'Sphere')
+        light(lamp, 'PracticalLight', (0,0,.20), 160)
+        finish(lamp)
+    else:
+        dining = stage.GetPrimAtPath('/World/Assets/dining_table')
+        center = cache.ComputeWorldBound(dining).ComputeAlignedBox().GetMidpoint() if dining else Gf.Vec3d(x0+2.38,(y0+y1)/2,0)
+        for i in range(2):
+            woven = style == 'saved_botanical_cane'
+            lamp = assembly(('WovenPendant_' if woven else 'ConePendant_')+str(i), 'lamp', (center[0]+(i-.5)*.68,center[1],0), role='overhead')
+            part(lamp, 'Suspension', (0,0,height-.25), (.012,.012,.48), 'metal', 'Cylinder')
+            if woven:
+                for j in range(24):
+                    angle = j*math.tau/24
+                    part(lamp, 'WovenRib_'+str(j), (.23*math.cos(angle),.23*math.sin(angle),height-.60), (.018,.018,.27), 'cabinet')
+                part(lamp, 'ShadeTop', (0,0,height-.45), (.49,.49,.025), 'cabinet', 'Cylinder')
+            else:
+                part(lamp, 'ConeShade', (0,0,height-.60), (.46,.46,.30), 'accent', 'Cone')
+            part(lamp, 'Bulb', (0,0,height-.73), (.10,.10,.085), 'glow', 'Sphere')
+            light(lamp, 'PracticalLight', (0,0,height-.73), 210)
+            finish(lamp)
+
+    # Faces point down; the streaming viewer hides them for cutaway views.
+    ceiling_lights = []
+    for room in rooms.values():
+        if room.get('category') == 'balcony':
+            continue
+        mesh = UsdGeom.Mesh.Define(stage, base+'/Ceilings/'+safe_name(room['id']))
+        mesh.CreatePointsAttr([Gf.Vec3f(x,y,height) for x,y in room['polygon']])
+        faces = triangulate(room['polygon'])
+        mesh.CreateFaceVertexCountsAttr([3]*len(faces))
+        mesh.CreateFaceVertexIndicesAttr([index for face in faces for index in reversed(face)])
+        mesh.CreateDoubleSidedAttr(False)
+        mesh.CreateSubdivisionSchemeAttr('none')
+        _bind(mesh.GetPrim(), materials['wall'], modules)
+        mesh.GetPrim().SetCustomDataByKey('provenance', 'Assumed visualization ceiling at plan height; downward single-sided faces for cutaway top view')
+        center = Polygon(room['polygon']).representative_point()
+        centers = [(center.x, center.y)]
+        if room['id'] == 'living_dining':
+            centers.append((living_x, y0+1.95))
+        for index, (x, y) in enumerate(centers):
+            lamp = UsdLux.RectLight.Define(stage, base+'/CeilingLights/'+safe_name(room['id'])+'_'+str(index))
+            lamp.CreateWidthAttr(.6)
+            lamp.CreateHeightAttr(.6)
+            lamp.CreateIntensityAttr(3500 if style == 'saved_evening_lounge' else 5000)
+            lamp.CreateEnableColorTemperatureAttr(True)
+            lamp.CreateColorTemperatureAttr(float(scheme['light_kelvin']))
+            UsdGeom.Xformable(lamp.GetPrim()).AddTranslateOp().Set(Gf.Vec3d(x, y, height-.03))
+            ceiling_lights.append({'room_id': room['id'], 'position_m': [x, y, height-.03],
+                                   'size_m': [.6, .6], 'intensity': lamp.GetIntensityAttr().Get(),
+                                   'temperature_k': scheme['light_kelvin']})
+    footprint = plan.get('footprint', {})
+    if footprint.get('polygon'):
+        circulation = Polygon(footprint['polygon'], footprint.get('holes', [])).difference(
+            unary_union([Polygon(room['polygon']) for room in rooms.values()]))
+        for index, polygon in enumerate(getattr(circulation, 'geoms', [circulation])):
+            if polygon.area < .02:
+                continue
+            infill = _slab(stage, base+'/Ceilings/Circulation_'+str(index), list(polygon.exterior.coords),
+                           materials['wall'], modules, top=height+.03, depth=.03,
+                           holes=[list(ring.coords)[:-1] for ring in polygon.interiors])
+            infill.RemoveAPI(modules[5].CollisionAPI)
+    decisions.append({'id': style+'_ceiling', 'kind': 'assumed', 'interior_scheme': style,
+        'summary': 'Add a downward single-sided visualization ceiling; height remains unverified by a section.',
+        'parameters': {'height_m': height, 'single_sided': True,
+                       'lights': ceiling_lights,
+                       'circulation_infill': 'Assumed ceiling over the remaining footprint, excluding all room and balcony polygons; follows the provisional footprint',
+                       'ceiling_lights': 'Assumed 0.6 m square lights per room, with separate living and dining lights; positions and intensities are visualization choices'}, 'status': 'needs-review'})
+    return decisions
+
+
 def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") -> dict:
     """Build one style; return paths and measured/declared area notes."""
     if style not in PALETTES:
         raise ValueError(f"Unknown style: {style}")
-    if style == 'home_specification' and plan.get('source', {}).get('primary_crop') != 'agreement_unit_crop.jpg':
+    if (style == 'home_specification' or PALETTES[style].get('requires_reference')) and plan.get('source', {}).get('primary_crop') != 'agreement_unit_crop.jpg':
         raise ValueError('B1-1502 specified finishes require the demarcated agreement reference')
     errors = validate_plan(plan)
     if errors:
         raise ValueError("; ".join(errors))
+    if style in INTERIOR_SCHEMES:
+        room_ids = {room['id'] for room in plan.get('rooms', [])}
+        required = {'living_dining'} | ({'wfh'} if style == 'saved_botanical_cane' else set())
+        required.update(opening.get('space_id') for opening in plan.get('openings', [])
+                        if opening.get('type') == 'sliding_door')
+        if required - room_ids:
+            raise ValueError('This interior scheme references rooms removed from the layout. Restore those rooms or choose a finish preset.')
     modules = _pxr()
     Gf, _, Usd, UsdGeom, UsdLux, UsdPhysics, _ = modules
     output_path = Path(output_path)
@@ -666,6 +1026,8 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
     world.GetPrim().SetCustomDataByKey('referenceManifest', json.dumps(plan.get('reference_manifest', {}), ensure_ascii=False))
     world.GetPrim().SetCustomDataByKey("heightStatus", str(plan.get("height_status", "user provided or assumed")))
     world.GetPrim().SetCustomDataByKey("style", style)
+    world.GetPrim().SetCustomDataByKey('planFingerprint', hashlib.sha256(json.dumps(plan, sort_keys=True, separators=(',', ':')).encode()).hexdigest())
+    world.GetPrim().SetCustomDataByKey('isDesignScheme', bool(PALETTES[style].get('is_design_scheme')))
     world.GetPrim().SetCustomDataByKey('traceCalibration', json.dumps(plan.get('calibration', {})))
     world.GetPrim().SetCustomDataByKey('wallTrace', json.dumps(plan.get('source_wall_segments', plan.get('wall_segments', []))))
     if plan.get("area_schedule_m2"):
@@ -692,6 +1054,10 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
         }.items():
             materials[key] = _make_material(stage, '/World/Looks/'+key, spec, modules)
         _wood_floor_texture(stage, materials['specified_wood'], output_path, modules)
+        if style in INTERIOR_SCHEMES:
+            scheme = INTERIOR_SCHEMES[style]
+            for key, colour in {'cabinet': scheme['wood'], 'linen': scheme['textile'], 'blanket': scheme['accent']}.items():
+                materials[key] = _make_material(stage, '/World/Looks/'+key, (colour, .91 if key != 'cabinet' else .57, 0), modules)
     height = float(plan.get("room_height_m") or 2.9)
     physics_scene = UsdPhysics.Scene.Define(stage, "/World/PhysicsScene")
     physics_scene.CreateGravityDirectionAttr(Gf.Vec3f(0, 0, -1))
@@ -984,10 +1350,16 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
             'floor_anchor': floor_anchor, 'floor_anchor_offset_m': anchor,
             'note': 'Source units and up-axis converted to building metres/Z-up; source transforms and furniture size retained; floor anchoring is an explicit placement assumption'})
     world.GetPrim().SetCustomDataByKey('assetImports', json.dumps(asset_imports, ensure_ascii=False))
+    if style in INTERIOR_SCHEMES:
+        presentation_decisions += _interior_scheme(stage, plan, style, materials, modules)
+        world.GetPrim().SetCustomDataByKey('presentationDecisions', json.dumps(presentation_decisions, ensure_ascii=False))
 
     warm_styles = {"home_specification", "contemporary", "classic", "home_luxury", "warm_office", "executive_office", "luxury_showroom"}
     cool_styles = {"factory", "hightech_factory", "tech_showroom"}
-    if style in warm_styles:
+    if style in INTERIOR_SCHEMES:
+        scheme = INTERIOR_SCHEMES[style]
+        sky_intensity, sky_color, sun_intensity, sun_color = scheme['sky'], (1.0, .94, .85), scheme['sun'], (1.0, .91, .79)
+    elif style in warm_styles:
         sky_intensity, sky_color, sun_intensity, sun_color = 360.0, (1.0, 0.92, 0.82), 2200.0, (1.0, 0.88, 0.75)
     elif style in cool_styles:
         sky_intensity, sky_color, sun_intensity, sun_color = 480.0, (0.79, 0.89, 1.0), 2700.0, (0.89, 0.95, 1.0)
@@ -1031,7 +1403,7 @@ def build_style_variants(plan: dict, output_dir: str | Path) -> dict:
     category = plan.get("structure_type", "home")
     selected_styles = [name for name, spec in PALETTES.items()
                        if (category == "other" or spec["category"] == category)
-                       and (name != 'home_specification' or plan.get('source', {}).get('primary_crop') == 'agreement_unit_crop.jpg')]
+                       and ((name != 'home_specification' and not spec.get('requires_reference')) or plan.get('source', {}).get('primary_crop') == 'agreement_unit_crop.jpg')]
     if not selected_styles:
         raise ValueError(f"No styles available for {category}")
     reports = {style: build_usd(plan, output_dir / f"{style}.usda", style) for style in selected_styles}
