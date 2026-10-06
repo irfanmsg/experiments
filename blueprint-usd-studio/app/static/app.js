@@ -97,6 +97,9 @@ async function savePlan() {
 }
 async function setProject(data) {
   state.project = data.id; state.plan = data.plan; state.styles = data.styles || [];
+  state.suggestions = []; state.suggesting = false;
+  $('suggestions').replaceChildren(); $('suggestions').hidden = true; $('acceptSuggestions').hidden = true;
+  $('suggestionStatus').textContent = state.plan.rooms?.length ? 'Review these rooms. You can rename them or adjust the outlines.' : 'Looking for room outlines…';
   state.editableObjects = data.editable_objects || {};
   $('sourceFilesInput').disabled = false;
   loadSupportingSources();
@@ -134,12 +137,14 @@ async function setProject(data) {
   $("showLabels").checked = !!state.plan.dimension_model || !state.plan.example;
   const image = new Image();
   image.onload = () => {
+    if (state.project !== data.id || state.plan !== data.plan) return;
     state.image = image; canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
     $("canvasArea").hidden = false; $("emptyState").hidden = true;
     $("calibrateButton").disabled = !!state.plan.dimension_model; $("suggestButton").disabled = !!state.plan.dimension_model;
     document.querySelectorAll(".tool").forEach(button => button.disabled = false);
     if (!state.plan.image_size) state.plan.image_size = [image.naturalWidth, image.naturalHeight];
     renderStyles(); refreshAll();
+    if (!state.plan.rooms?.length && !state.plan.dimension_model) findRoomSuggestions();
     if (state.plan.example && state.plan.footprint?.polygon?.length) requestAnimationFrame(() => {
       const pixels = state.plan.footprint.polygon.map(metresToPixel);
       const centerY = pixels.reduce((sum, point) => sum + point[1], 0) / pixels.length;
@@ -174,10 +179,12 @@ function refreshRooms() {
   (state.plan?.rooms || []).forEach((room, index) => {
     const row = document.createElement("div"); row.className = "room-row";
     const label = document.createElement("div");
-    const strong = document.createElement("strong"); strong.textContent = room.name || `Space ${index + 1}`;
+    const strong = document.createElement('input'); strong.type = 'text'; strong.value = room.name || `Room ${index + 1}`;
+    strong.setAttribute('aria-label', `Name of room ${index + 1}`);
+    strong.onchange = () => { room.name = strong.value.trim() || `Room ${index + 1}`; markChanged(); };
     const small = document.createElement("small"); small.textContent = ` · ${dimensions(room)}`;
     label.append(strong, small);
-    const remove = document.createElement("button"); remove.type = "button"; remove.textContent = "Remove"; remove.setAttribute("aria-label", `Remove ${room.name || "space"}`);
+    const remove = document.createElement("button"); remove.type = "button"; remove.textContent = "Remove"; remove.setAttribute("aria-label", `Remove ${room.name || "room"}`);
     remove.onclick = () => { state.plan.rooms.splice(index, 1); markChanged(); };
     row.append(label, remove); list.append(row);
   });
@@ -245,7 +252,7 @@ function refreshMeasurements() {
   const badges = $("measurementBadges"); badges.replaceChildren();
   if (!state.plan) { $("drawingInfo").hidden = true; return; }
   const area = state.plan.area_schedule_m2;
-  const values = area ? [`${Number(area.carpet).toFixed(2)} m² carpet`, `${Number(area.balcony).toFixed(2)} m² balcony`, `${Number(area.dry_balcony).toFixed(2)} m² dry balcony`, `${Number(area.total).toFixed(2)} m² scheduled total`] : [`${state.plan.rooms?.length || 0} spaces outlined`, cal ? "Measured in metres" : "Scale needs review"];
+  const values = area ? [`${Number(area.carpet).toFixed(2)} m² carpet`, `${Number(area.balcony).toFixed(2)} m² balcony`, `${Number(area.dry_balcony).toFixed(2)} m² dry balcony`, `${Number(area.total).toFixed(2)} m² scheduled total`] : [`${state.plan.rooms?.length || 0} rooms outlined`, cal ? "Measured in metres" : "Scale needs review"];
   values.forEach(value => { const badge = document.createElement("span"); badge.textContent = value; badges.append(badge); });
   $("provenanceText").textContent = area ? `B1-1502 areas come from the printed RERA schedule. Room spans follow the ${state.plan.source?.primary_crop === 'agreement_unit_crop.jpg' ? 'demarcated agreement' : 'approved'} metric dimensions; wall thickness, heights and the detailed balcony curve remain assumptions.` : "Room outlines come from your review. Confirm any unprinted dimension before using the model for construction or purchasing.";
   if (state.plan.example === 'B1-1502' && state.plan.source?.primary_crop !== 'agreement_unit_crop.jpg') $("provenanceText").textContent += ' This is an older B1 reconstruction. Load the B1 example to review the agreement rebuild; this project is preserved.';
@@ -363,10 +370,10 @@ function updateCreateReady() {
   const ready = measured && outlined;
   $("generateButton").disabled = !ready; $("allStylesButton").disabled = !ready;
   if (!measured) $("generateStatus").textContent = "Mark one known distance to set the scale first.";
-  else if (!outlined) $("generateStatus").textContent = "Outline the outer edge or at least one space to make a 3D scene.";
-  else if (!state.generated && ["Mark one known distance", "Outline the outer edge"].some(text => $("generateStatus").textContent.startsWith(text))) $("generateStatus").textContent = "";
+  else if (!outlined) $("generateStatus").textContent = "Accept a suggested room, or draw an outline, to create a 3D scene.";
+  else if (!state.generated && ["Mark one known distance", "Accept a suggested room"].some(text => $("generateStatus").textContent.startsWith(text))) $("generateStatus").textContent = "";
 }
-function refreshAll() { updateSteps(); refreshRooms(); refreshPlacements(); refreshMeasurements(); refreshReconstructionReview(); updateCreateReady(); draw(); }
+function refreshAll() { updateSteps(); refreshRooms(); refreshPlacements(); refreshMeasurements(); refreshReconstructionReview(); updateCreateReady(); updateSuggestionReady(); draw(); }
 
 function drawPolygon(points, stroke, fill, width = 3, label = "") {
   if (!points || points.length < 2) return;
@@ -390,9 +397,16 @@ function draw() {
     for(let y=cal.origin[1]%cal.scale;y<canvas.height;y+=cal.scale){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}
     ctx.fillStyle='#284b35';ctx.font='24px sans-serif';ctx.textAlign='left';ctx.fillText('1 grid square = 1 m × 1 m',35,40);
   } else ctx.drawImage(state.image, 0, 0);
+  state.suggestions.forEach((suggestion, index) => {
+    if (!suggestion.selected) return;
+    const pixels = suggestion.pixel_polygon;
+    ctx.beginPath(); ctx.moveTo(...pixels[0]); pixels.slice(1).forEach(p => ctx.lineTo(...p)); ctx.closePath();
+    ctx.fillStyle = '#f4b64c25'; ctx.strokeStyle = '#ba6a0b'; ctx.lineWidth = Math.max(2, canvas.width / 500); ctx.setLineDash([8, 5]); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+    const [x, y] = centroid(pixels); ctx.font = `${Math.max(14, canvas.width / 65)}px sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = '#713f08'; ctx.fillText(`Proposed room ${index + 1}`, x, y);
+  });
   const footprint = state.plan.footprint?.polygon || [];
   if (footprint.length >= 3) drawPolygon(footprint, "#1caa86", "#41b89917", 5);
-  (state.plan.rooms || []).forEach(room => drawPolygon(room.polygon, "#407daf", "#75b7e224", 2, $("showLabels").checked ? room.name || "Space" : ""));
+  (state.plan.rooms || []).forEach(room => drawPolygon(room.polygon, "#407daf", "#75b7e224", 2, $("showLabels").checked ? room.name || "Room" : ""));
   (state.plan.balconies || []).forEach(balcony => drawPolygon(balcony.polygon, "#50a69a", "#9be1d127", 2, $("showLabels").checked ? balcony.name || "Balcony" : ""));
   (state.plan.wall_segments || []).forEach(wall => {
     const a = metresToPixel(wall.start), b = metresToPixel(wall.end); if (!a || !b) return;
@@ -421,10 +435,16 @@ function draw() {
     ctx.strokeStyle = "#d37136"; ctx.lineWidth = Math.max(3, canvas.width / 550); ctx.strokeRect(state.dragStart[0], state.dragStart[1], state.hover[0] - state.dragStart[0], state.hover[1] - state.dragStart[1]);
   }
 }
-function createRoom(polygon, category = "room") {
-  const name = $("roomName").value.trim() || (category === "balcony" ? "Balcony" : `Room ${state.plan.rooms.length + 1}`);
-  const room = { id: `space_${Date.now()}`, name, category, polygon, confidence: "user-reviewed", geometry_provenance: "traced in Blueprint Studio" };
+function createRoom(polygon, category = "room", suggestedName = null) {
+  const name = (suggestedName === null ? $("roomName").value.trim() : suggestedName.trim()) || (category === "balcony" ? "Balcony" : `Room ${state.plan.rooms.length + 1}`);
+  const room = { id: `space_${Date.now()}_${state.plan.rooms.length}`, name, category, polygon, confidence: "user-reviewed", geometry_provenance: suggestedName === null ? "traced in Blueprint Studio" : "image suggestion accepted by user; scaled using the confirmed distance" };
   state.plan.rooms.push(room);
+  if (suggestedName !== null) {
+    state.plan.reconstruction_decisions ||= [];
+    state.plan.reconstruction_decisions.push({id:`outline_${room.id}`, kind:'image-suggestion',
+      summary:'An image-detected outline was accepted by the user and scaled using one confirmed distance; room labels and printed dimensions were not automatically read.',
+      source:state.plan.source, parameters:{room_id:room.id, polygon_m:polygon, calibration:state.plan.calibration}, status:'user-reviewed outline; dimensions need review'});
+  }
   $("roomName").value = ""; markChanged(); toast(`${name} added`);
 }
 function finishOutline() {
@@ -484,7 +504,7 @@ function handleCanvasDown(event) {
       const px = distance(...state.points);
       if (px < 10) { toast("Choose points farther apart"); state.points = []; return; }
       state.plan.calibration = { pixel_origin: [0, canvas.height], pixels_per_meter: +(px / printed).toFixed(5), reference_dimensions: [{ distance_m: printed, pixel_points: state.points }] };
-      markChanged(); setTool(null); toast("Scale saved. You can now outline spaces.");
+      markChanged(); setTool(null); toast("Measurement saved. You can now use the suggested room outlines.");
     } else draw();
     return;
   }
@@ -618,7 +638,7 @@ async function generate(all = false) {
     $("resultPanel").hidden = false;
     $("streamPanel").hidden = true;
     $("streamPhysics").checked = (state.plan.asset_placements || []).some(item => item.physics_mode === "dynamic");
-    $("resultDetails").textContent = all ? `${Object.keys(result.styles || {}).length} styles share this measured plan. Download the complete style pack.` : `${result.room_count} spaces · ${result.wall_count} wall runs · ${result.height_m.toFixed(2)} m wall height (${result.height_status}).`;
+    $("resultDetails").textContent = all ? `${Object.keys(result.styles || {}).length} styles share this measured plan. Download the complete style pack.` : `${result.room_count} rooms · ${result.wall_count} wall runs · ${result.height_m.toFixed(2)} m wall height (${result.height_status}).`;
     $("downloadLink").href = result.download_url;
     $("downloadLink").textContent = all ? "Download style pack" : "Download USD";
     $("generateStatus").textContent = "Ready";
@@ -728,23 +748,54 @@ $("pageSelect").onchange = async event => {
   try { await setProject(await request(`/api/projects/${state.project}/page`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ page: Number(event.target.value) }) })); }
   catch (error) { toast(error.message); }
 };
-$("suggestButton").onclick = async () => {
-  if (!calibration()) { toast("Set the scale before adding room suggestions"); return; }
+function updateSuggestionReady() {
+  $('acceptSuggestions').hidden = !state.suggestions.length;
+  $('acceptSuggestions').disabled = !calibration() || !state.suggestions.some(item => item.selected);
+  if (state.suggestions.length) $('suggestionStatus').textContent = calibration()
+    ? 'Review the dashed outlines. Uncheck mistakes, then use the selected rooms. Names can be changed later.'
+    : 'Proposed rooms are shown with dashed outlines. Confirm one printed measurement to set their size before using them.';
+}
+async function findRoomSuggestions() {
+  if (!state.project || state.suggesting) return;
+  const project = state.project, plan = state.plan;
+  state.suggesting = true;
+  $('suggestButton').disabled = true; $('suggestButton').textContent = 'Looking for rooms…';
   try {
-    $("suggestButton").disabled = true; $("suggestButton").textContent = "Looking for rooms…";
-    const data = await request(`/api/projects/${state.project}/suggest`);
-    state.suggestions = data.suggestions || [];
-    const container = $("suggestions"); container.replaceChildren(); container.hidden = !state.suggestions.length;
-    state.suggestions.slice(0, 25).forEach((suggestion, index) => {
-      const row = document.createElement("div"); row.className = "suggestion";
-      const text = document.createElement("span"); text.textContent = `Possible space ${index + 1}`;
-      const button = document.createElement("button"); button.type = "button"; button.textContent = "Add";
-      button.onclick = () => { $("roomName").value = `Space ${state.plan.rooms.length + 1}`; createRoom(suggestion.pixel_polygon.map(pixelToMetres)); row.remove(); };
-      row.append(text, button); container.append(row);
+    const data = await request(`/api/projects/${project}/suggest`);
+    if (state.project !== project || state.plan !== plan) return;
+    state.suggestions = (data.suggestions || []).slice(0, 25).map(item => ({...item, selected: true, reviewName: ''}));
+    const container = $('suggestions'); container.replaceChildren(); container.hidden = !state.suggestions.length;
+    state.suggestions.forEach((suggestion, index) => {
+      const row = document.createElement('div'); row.className = 'suggestion';
+      const check = document.createElement('input'); check.type = 'checkbox'; check.checked = true;
+      check.setAttribute('aria-label', `Use proposed room ${index + 1}`);
+      check.onchange = () => { suggestion.selected = check.checked; updateSuggestionReady(); draw(); };
+      const name = document.createElement('input'); name.type = 'text'; name.placeholder = `Room ${index + 1} (optional name)`;
+      name.setAttribute('aria-label', `Name for proposed room ${index + 1}`);
+      name.oninput = () => { suggestion.reviewName = name.value; };
+      row.append(check, name); container.append(row);
     });
-    if (!state.suggestions.length) toast("No enclosed spaces found. You can outline them by hand.");
-  } catch (error) { toast(error.message); }
-  finally { $("suggestButton").disabled = false; $("suggestButton").textContent = "Find likely rooms in the image"; }
+    if (!state.suggestions.length) $('suggestionStatus').textContent = 'No clear enclosed rooms were found in this image. Try a cleaner plan or use the manual outline tools below.';
+    updateSuggestionReady(); draw();
+  } catch (error) { if (state.project === project && state.plan === plan) $('suggestionStatus').textContent = `Room detection could not finish: ${error.message}. You can still use the manual outline tools.`; }
+  finally { if (state.project === project && state.plan === plan) { state.suggesting = false; $('suggestButton').disabled = false; $('suggestButton').textContent = 'Find room outlines again'; } }
+}
+$('suggestButton').onclick = findRoomSuggestions;
+$('acceptSuggestions').onclick = () => {
+  if (!calibration()) return;
+  const selected = state.suggestions.filter(item => item.selected);
+  const before = state.plan.rooms.length;
+  // Review converts pixel outlines to metric rooms; it does not read printed dimensions.
+  for (const suggestion of selected) {
+    const polygon = suggestion.pixel_polygon.map(pixelToMetres);
+    if (polygonArea(polygon) < .1) continue;
+    const center = centroid(polygon);
+    if (state.plan.rooms.some(room => distance(centroid(room.polygon), center) < .01 && Math.abs(polygonArea(room.polygon) - polygonArea(polygon)) < .01)) continue;
+    createRoom(polygon, 'room', suggestion.reviewName);
+  }
+  state.suggestions = []; $('suggestions').replaceChildren(); $('suggestions').hidden = true;
+  $('suggestionStatus').textContent = state.plan.rooms.length > before ? 'Room outlines accepted. Names are optional; review doors and any missed boundaries before refining the model.' : 'No rooms added: these outlines are already included or too small. Review the selected outlines and measurement.';
+  updateSuggestionReady(); draw();
 };
 $("generateButton").onclick = () => generate(false);
 $("allStylesButton").onclick = () => generate(true);

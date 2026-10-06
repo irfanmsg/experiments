@@ -25,8 +25,8 @@
 
       <ol class="steps" aria-label="Workflow">
         <li class="active" id="step-upload"><span>1</span><div><strong>Bring your plan</strong><small>PDF or image</small></div></li>
-        <li id="step-measure"><span>2</span><div><strong>Check the scale</strong><small>One known distance</small></div></li>
-        <li id="step-outline"><span>3</span><div><strong>Review the spaces</strong><small>Rooms, perimeter, openings</small></div></li>
+        <li id="step-measure"><span>2</span><div><strong>Confirm one measurement</strong><small>So furniture and rooms share the right scale</small></div></li>
+        <li id="step-outline"><span>3</span><div><strong>Review the rooms</strong><small>Accept or correct the suggested outlines</small></div></li>
         <li id="step-create"><span>4</span><div><strong>Create and explore</strong><small>Finishes, USD and live view</small></div></li>
       </ol>
 
@@ -41,15 +41,15 @@
       </section>
 
       <section class="card" id="measureCard">
-        <div class="card-heading"><span class="icon">↔</span><div><h2>Make it true to size</h2><p>Click two ends of a printed dimension</p></div></div>
-        <div class="field-row"><label for="distanceInput">Known distance</label><div class="unit-input"><input id="distanceInput" type="number" min="0.01" step="0.01" value="4.03"><span>metres</span></div></div>
+        <div class="card-heading"><span class="icon">↔</span><div><h2>Confirm one measurement</h2><p>Use any room length printed on your plan</p></div></div>
+        <div class="field-row"><label for="distanceInput">Known distance</label><div class="unit-input"><input id="distanceInput" type="number" min="0.01" step="0.01" placeholder="e.g. 4.03"><span>metres</span></div></div>
         <button id="calibrateButton" type="button" class="secondary-button" disabled>Mark the two points</button>
         <p id="scaleSummary" class="helper">Upload a drawing to begin.</p>
       </section>
 
       <section class="card" id="outlineCard">
-        <div class="card-heading"><span class="icon">◇</span><div><h2>Show the spaces</h2><p>Trace only what you want to model</p></div></div>
-        <div class="field-row"><label for="roomName">Space name</label><input id="roomName" type="text" placeholder="e.g. Living room"></div>
+        <div class="card-heading"><span class="icon">◇</span><div><h2>Review your rooms</h2><p>Bedrooms, kitchen, bathrooms, balconies and other areas</p></div></div>
+        <p id="suggestionStatus" class="helper" role="status">Upload a plan and we will look for room outlines. Names are optional.</p><button id="suggestButton" type="button" class="subtle-button" disabled>Find room outlines</button><div id="suggestions" class="suggestions" hidden></div><button id="acceptSuggestions" type="button" class="primary-button" hidden disabled>Use selected room outlines</button><details id="manualTools"><summary>Draw or correct outlines manually</summary><div class="field-row"><label for="roomName">Room name (optional)</label><input id="roomName" type="text" placeholder="e.g. Living room"></div>
         <div class="tool-grid">
           <button class="tool" data-tool="room-rectangle" disabled>▭<span>Room rectangle</span></button>
           <button class="tool" data-tool="room-polygon" disabled>⬠<span>Room outline</span></button>
@@ -60,17 +60,15 @@
         </div>
         <button id="finishOutline" type="button" class="secondary-button" hidden>Finish this outline</button>
         <div id="openingWidthRow" class="field-row" hidden><label for="openingWidth">Opening width</label><div class="unit-input"><input id="openingWidth" type="number" min="0.2" max="6" step="0.05" value="0.9"><span>metres</span></div></div>
-        <button id="suggestButton" type="button" class="subtle-button" disabled>Find likely rooms in the image</button>
-        <p class="helper">Suggestions always need your review. You can edit the plan before creating 3D.</p>
-        <div id="suggestions" class="suggestions" hidden></div>
+        <p class="helper">Draw only rooms or openings that need correction.</p></details>
         <div id="roomList" class="room-list"></div>
       </section>
 
       <section class="card" id="detailCard">
-        <div class="card-heading"><span class="icon">⌂</span><div><h2>Building details</h2><p>Change what the drawing cannot tell us</p></div></div>
-        <div class="field-row"><label for="structureType">This is a</label><select id="structureType"><option value="home">Home</option><option value="factory">Factory</option><option value="office">Office</option><option value="showroom">Showroom</option><option value="other">Other structure</option></select></div>
-        <div class="field-row"><label for="heightInput">Wall height</label><div class="unit-input"><input id="heightInput" type="number" min="1.5" max="15" step="0.05" value="2.9"><span>metres</span></div></div>
-        <p id="heightStatus" class="helper">Wall height defaults to 2.9 m until you confirm it.</p>
+        <div class="card-heading"><span class="icon">⌂</span><div><h2>Furnish your layout</h2><p>Add objects when you are ready</p></div></div>
+        <details id="modelSettings"><summary>Optional: building type and height</summary><p class="helper">You can create 3D without changing these settings. Height gives the walls their vertical size; when the plan has no height, we keep a labeled estimate.</p><div class="field-row"><label for="structureType">This is a</label><select id="structureType"><option value="home">Home</option><option value="factory">Factory</option><option value="office">Office</option><option value="showroom">Showroom</option><option value="other">Other structure</option></select></div>
+        <div class="field-row"><label for="heightInput">Room height</label><div class="unit-input"><input id="heightInput" type="number" min="1.5" max="15" step="0.05" value="2.9"><span>metres</span></div></div>
+        <p id="heightStatus" class="helper">2.9 m is an estimate for the preview, not a measurement from your plan.</p></details>
         <details class="assets-panel" open><summary>Assets: add, move, rotate or remove</summary><p class="helper">Drag an object marker on the plan, or use its Move and coordinate controls. Regenerate to update the 3D view.</p><label class="secondary-button" for="assetImportInput">Import USD / USDZ asset</label><input id="assetImportInput" type="file" accept=".usd,.usda,.usdc,.usdz" hidden><p id="assetImportStatus" class="helper">Package external materials and references inside USDZ. Imported USD is not automatically SimReady.</p><button id="starterFurniture" type="button" class="secondary-button" hidden>Add sample B1-1502 layout</button><div id="assetList" class="asset-list">The asset library is being prepared.</div><div id="placementList" class="room-list"></div><p class="helper">Choose an item, then click where it belongs on the plan. Source materials stay linked. Generated furnishings become editable after creating a scene. To see an imported object fall, enable Dynamic physics, give it a starting height, and enable physics in the live view.</p></details>
       </section>
     </aside>
@@ -81,7 +79,7 @@
         <div class="workspace-actions"><span id="saveState" class="save-state"></span><button id="clearTool" type="button" class="subtle-button" hidden>Exit tool</button></div>
       </div>
       <div id="emptyState" class="empty-state"><div class="empty-graphic"><span class="plan-line"></span><span class="plan-line second"></span><span class="plan-line third"></span><span class="plan-door"></span></div><h3>Picture the space before it is built.</h3><p>Upload your blueprint to start a project, or explore a measured example.</p><button id="emptyExample" class="primary-button" type="button">Explore a sample layout <span>→</span></button></div>
-      <div id="canvasArea" class="canvas-area" hidden><div class="canvas-toolbar"><span id="toolHint">Review the traced plan, or choose a tool on the left.</span><label class="canvas-toggle"><input id="showLabels" type="checkbox" checked> Show labels</label><span id="canvasScale"></span></div><div class="canvas-scroll"><canvas id="planCanvas" aria-label="Blueprint editor"></canvas></div><div class="canvas-footer"><span><i class="legend-swatch perimeter"></i> Perimeter</span><span><i class="legend-swatch room"></i> Spaces</span><span><i class="legend-swatch opening"></i> Openings</span><span>Click a space in the list to remove it</span></div></div>
+      <div id="canvasArea" class="canvas-area" hidden><div class="canvas-toolbar"><span id="toolHint">Review the traced plan, or choose a tool on the left.</span><label class="canvas-toggle"><input id="showLabels" type="checkbox" checked> Show labels</label><span id="canvasScale"></span></div><div class="canvas-scroll"><canvas id="planCanvas" aria-label="Blueprint editor"></canvas></div><div class="canvas-footer"><span><i class="legend-swatch perimeter"></i> Perimeter</span><span><i class="legend-swatch room"></i> Rooms</span><span><i class="legend-swatch opening"></i> Openings</span><span>Review or rename rooms in the list</span></div></div>
       <div id="drawingInfo" class="drawing-info" hidden><div class="info-title">Measurements and source</div><div id="measurementBadges" class="measurement-badges"></div><p id="provenanceText"></p>
         <details id="reconstructionReview" class="reconstruction-review" hidden>
           <summary>Review reconstruction assumptions</summary>

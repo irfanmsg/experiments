@@ -30,3 +30,5 @@
 
 .library-trace{margin:24px;overflow-wrap:anywhere}.library-trace span{font-size:12px}.library-trace code{font-size:11px}#placementList{max-height:540px;overflow:auto}.placement-details>small{display:block;color:#657b77;margin:4px 0}.assets-panel>p{line-height:1.5}#planCanvas{touch-action:none}
 .feedback-link{font-size:12px;white-space:nowrap;text-underline-offset:3px}@media(max-width:600px){.feedback-link{display:none}}
+
+#modelSettings{margin-bottom:16px}#manualTools{margin-top:14px}#suggestions .suggestion{display:flex;gap:8px;align-items:center}#suggestions input[type=text]{width:100%;min-width:0}#roomList input[type=text]{width:100%;min-width:0}#acceptSuggestions{width:100%;margin:10px 0}#roomList .room-row>div{min-width:0}

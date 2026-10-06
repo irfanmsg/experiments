@@ -33,7 +33,7 @@ Supporting evidence has different roles. A finish schedule can establish a floor
 | Capability | Current implementation |
 | --- | --- |
 | Bring your own blueprint | Upload a primary PDF or image and select a PDF page. Attach up to 20 supporting PDFs/images with a role and notes; each file is limited to 200 MB. PNG, JPEG, WebP and TIFF are supported. |
-| Set scale and trace a plan | Mark one known distance in metres; trace room rectangles/polygons, perimeter, balconies, doors and windows. Image-assisted room suggestions require review. |
+| Set scale and trace a plan | Room outlines are proposed automatically after upload. Confirm one known distance, review the highlighted candidates and accept selected rooms; names are optional. Manual tracing remains available for corrections. |
 | Generate OpenUSD | Author building geometry, openings, PBR finishes, lighting and referenced assets in metres with Z up; export a scene or style variants. |
 | Furnish a layout | Add, move, rotate and remove individual objects from the installed SimReady gallery. X/Y controls use metres; rotation uses degrees. |
 | Explore the model | Optional RTX/WebRTC viewer with orbit, zoom, top and room views; 720p, 1080p, 1440p and 4K output. |
@@ -112,8 +112,10 @@ The furniture pack download is about 9 GiB. Overlay preparation requires the ins
 ## Use your own blueprint
 
 1. Upload a PDF or image and choose the relevant page.
-2. Enter a printed distance **in metres**, then mark its two endpoints. Convert feet/inches before entering the value; the current field does not parse imperial notation.
-3. Trace the spaces, perimeter and openings. Review any suggested rooms and set opening widths and wall height. A distorted scan may need more than one measurement to validate the result.
+2. Review the proposed room outlines, then enter one printed distance **in metres** and mark its two endpoints. Convert feet/inches before entering the value; the current field does not parse imperial notation.
+3. Uncheck incorrect proposals and choose **Use selected room outlines**. Room names are optional and can be edited later. Use the manual tools for missed rooms, doors, windows or boundary corrections. A distorted scan may need more than one measurement to validate the result.
+
+   **Room height is optional.** A new uploaded plan starts with an explicitly assumed 2.9 m height for the preview; it is not extracted from the drawing. Change it only when known under **Optional: building type and height**. Existing project heights are retained. Room detection suggests enclosed regions; it does not read every room label, dimension or doorway.
 4. Choose the building category, add available furnishings, and choose a scheme for a home or a category-specific finish preset.
 5. Generate the scene, download USD or open the live view at the desired resolution. Review scale, access and placement before refining the layout.
 
