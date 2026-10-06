@@ -195,6 +195,8 @@ INTERIOR_SCHEMES = {
         'accent': (.65, .49, .29), 'rug': (.67, .60, .47), 'ink': (.34, .39, .33),
         'metal': (.61, .43, .22), 'light_kelvin': 3100, 'sky': 290, 'sun': 1800,
         'features': ['cream upholstery', 'timber display and books', 'pleated linen curtains', 'woven rug', 'cone pendants', 'framed geometric art', 'plants'],
+        'generic_description': 'Cream walls, a woven rug, a pale cone floor lamp and greenery',
+        'generic_features': ['cream wall finish', 'woven rug', 'pale cone floor lamp', 'potted greenery'],
     },
     'saved_evening_lounge': {
         'label': 'Warm evening lounge', 'url': 'https://www.instagram.com/p/Dce9CWFqgnn/',
@@ -203,6 +205,8 @@ INTERIOR_SCHEMES = {
         'accent': (.64, .30, .15), 'rug': (.77, .73, .63), 'ink': (.10, .13, .12),
         'metal': (.20, .18, .14), 'light_kelvin': 2700, 'sky': 95, 'sun': 240,
         'features': ['olive beige upholstery', 'graphic rug and posters', 'opal globe floor lamp', 'mushroom and amber table lamps', 'timber media console', 'books and greenery'],
+        'generic_description': 'Warm neutral walls, a graphic rug, a globe floor lamp and greenery',
+        'generic_features': ['warm neutral wall finish', 'graphic rug', 'globe floor lamp', 'potted greenery'],
     },
     'saved_botanical_cane': {
         'label': 'Botanical cane & terracotta', 'url': 'https://www.instagram.com/p/DYi4XJVod1V/',
@@ -211,6 +215,8 @@ INTERIOR_SCHEMES = {
         'accent': (.64, .27, .14), 'rug': (.70, .60, .40), 'ink': (.24, .35, .18),
         'metal': (.45, .32, .19), 'light_kelvin': 3000, 'sky': 310, 'sun': 1600,
         'features': ['cane headboards and cabinet fronts', 'terracotta and botanical cushions', 'woven lamp shades', 'small framed gallery', 'linen curtains', 'woven rug', 'layered plants'],
+        'generic_description': 'Natural colours, a patterned rug, a woven floor lamp and terracotta plant pots',
+        'generic_features': ['natural wall finish', 'patterned rug', 'woven floor lamp', 'terracotta plant pots'],
     },
     'indian_contemporary': {
         'label': 'Contemporary Indian', 'url': 'https://www.studiolotus.in/projects/the-quadrant-house',
@@ -221,6 +227,8 @@ INTERIOR_SCHEMES = {
         'metal': (.66, .44, .15), 'light_kelvin': 3100, 'sky': 310, 'sun': 1600,
         'features': ['geometric textile borders', 'timber lattice cabinet front', 'brass pendant shades', 'ochre and indigo cushions', 'framed geometric art', 'timber and greenery'],
         'observed_features': ['Indian-inspired rug motifs', 'patterned textiles', 'crafted timber furnishings', 'contemporary Indian art'],
+        'generic_description': 'Warm walls, geometric rug motifs, a brass-tone floor lamp and greenery',
+        'generic_features': ['warm wall finish', 'geometric rug motifs', 'brass-tone floor lamp', 'potted greenery'],
     },
     'bohemian': {
         'label': 'Bohemian', 'url': 'https://www.instagram.com/p/DYi4XJVod1V/',
@@ -231,6 +239,8 @@ INTERIOR_SCHEMES = {
         'metal': (.47, .34, .19), 'light_kelvin': 3000, 'sky': 310, 'sun': 1600,
         'features': ['layered patterned rugs', 'knotted textile wall hanging', 'woven pendant shades', 'mixed indigo and terracotta cushions', 'clay accents', 'layered plants'],
         'observed_features': ['woven shades', 'natural-fibre furniture', 'terracotta textiles', 'plants'],
+        'generic_description': 'Layered patterned rugs, a woven floor lamp and terracotta plant pots',
+        'generic_features': ['warm wall finish', 'layered patterned rugs', 'woven floor lamp', 'terracotta plant pots'],
     },
 }
 for scheme_id, scheme in INTERIOR_SCHEMES.items():
@@ -239,6 +249,8 @@ for scheme_id, scheme in INTERIOR_SCHEMES.items():
         'wall': (scheme['wall'], .82, 0), 'door': (scheme['wood'], .52, 0),
         'metal': (scheme['metal'], .30, .72),
         'requires_reference': False, 'is_design_scheme': True,
+        'generic_description': scheme['generic_description']+'; decor added only where a safe candidate fits',
+        'generic_design_features': scheme['generic_features'],
         'design_features': scheme['features'], 'reference_urls': [scheme['url']]}
 
 
@@ -1051,8 +1063,8 @@ def _generic_interior_scheme(stage, plan, style, materials, modules):
              'opening, wall and existing asset clearance; limited candidate search, not a circulation audit')
     decisions = [{'id': style, 'kind': 'reference-inspired', 'interior_scheme': style,
                   'source': {'url': scheme['url'], 'role': 'Aesthetic cues only'},
-                  'summary': scheme['description']+'. Procedural suggestions, not automatic reconstruction.',
-                  'parameters': {'placement_basis': basis, 'proposed_features': scheme['features'],
+                  'summary': scheme['generic_description']+'. Procedural suggestions, not automatic reconstruction.',
+                  'parameters': {'placement_basis': basis, 'proposed_features': scheme['generic_features'],
                                  'light_temperature_k': scheme['light_kelvin'],
                                  'colours_rgb': {key: list(scheme[key]) for key in ('wall', 'wood', 'textile', 'accent', 'rug', 'ink', 'metal')}},
                   'status': 'needs-review'}]
@@ -1616,4 +1628,6 @@ def build_style_variants(plan: dict, output_dir: str | Path) -> dict:
             root.GetReferences().AddReference(f"{style}.usda")
     variants.SetVariantSelection(selected_styles[0])
     stage.GetRootLayer().Save()
-    return {"variants_path": str(variants_path), "styles": reports}
+    from .runtime_trace import runtime_trace
+    trace = runtime_trace(executed=['usd_authoring'] + (['asset_import'] if any(report['asset_imports'] for report in reports.values()) else []))
+    return {"variants_path": str(variants_path), "styles": reports, "runtime_trace": trace}

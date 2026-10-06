@@ -24,6 +24,9 @@ _PACKAGES = (
 # These are source mappings, not evidence of execution. Observations are added
 # only after the corresponding operation returns successfully.
 _ACTIONS = (
+    ('asset_upload', 'Import a self-contained USD asset into the library', ['openusd'],
+     ['Sdf.Layer.FindOrOpen', 'Sdf.Layer.GetExternalReferences', 'Usd.Stage.Open', 'UsdGeom.BBoxCache.ComputeWorldBound'],
+     'app/asset_uploads.py:import_asset', 'An uploaded USD or USDZ passes dependency and model validation.'),
     ('usd_authoring', 'Build or regenerate the USD scene', ['usd_exchange', 'openusd'],
      ['usdex.core.createStage', 'UsdGeom.Mesh.Define', 'UsdGeom.Cube.Define'],
      'app/usd_builder.py:build_usd', None),

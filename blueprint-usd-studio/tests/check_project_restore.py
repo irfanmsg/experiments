@@ -62,9 +62,9 @@ def main():
             loaded(first)
             assert_project_url(first, args.legacy_project)
             notice = first.locator('#legacyProjectNotice')
-            assert notice.is_visible(), 'Older saved layout must explain unavailable schemes'
+            assert notice.is_visible(), 'Older saved layout must explain its source version'
             assert 'older' in notice.inner_text().lower(), notice.inner_text()
-            assert first.locator('#schemeChoices .scheme-card').count() == 0
+            assert first.locator('#schemeChoices .scheme-card').count() == 5
             updated = notice.locator('#updatedExampleLink')
             assert updated.get_attribute('href') == '/?example=b1-1502'
             live_link = notice.locator('#liveProjectLink')

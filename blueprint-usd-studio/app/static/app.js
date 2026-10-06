@@ -97,6 +97,9 @@ async function savePlan() {
 }
 async function setProject(data) {
   state.project = data.id; state.plan = data.plan; state.styles = data.styles || [];
+  state.editableObjects = data.editable_objects || {};
+  $('sourceFilesInput').disabled = false;
+  loadSupportingSources();
   if (state.plan.source?.primary_crop === 'agreement_unit_crop.jpg') state.style = availableStyles().find(style => style.is_design_scheme)?.id || availableStyles().find(style => style.id === 'home_specification')?.id || 'contemporary';
   state.reviewOpening = null;
   state.generated = null; state.selectedAsset = null; state.revision = 0;
@@ -147,7 +150,19 @@ async function setProject(data) {
   image.onerror = () => toast("Could not show this plan image");
   image.src = `${data.image_url}?v=${Date.now()}`;
   $("resultPanel").hidden = true; $("streamPanel").hidden = true;
+  loadSharedStream();
   setTool(null);
+}
+async function loadSharedStream() {
+  const project = state.project;
+  try {
+    const status = await request('/api/stream/status');
+    if (state.project !== project || !status.running || startStream.poller) return;
+    $('streamPanel').hidden = false;
+    $('streamPanel').querySelector('p').textContent = `Shared GPU view: ${status.style} (${status.project_id}). All viewers share the camera. Stop this view before starting another project.`;
+    const link = $('streamLink'); link.hidden = !['ready', 'running', 'client_connected'].includes(status.phase);
+    link.href = `http://${location.hostname}:8088/?signal_port=49100`; link.textContent = link.href;
+  } catch { /* The editor remains available when no stream status can be read. */ }
 }
 function updateSteps() {
   const steps = [$("step-upload"), $("step-measure"), $("step-outline"), $("step-create")];
@@ -167,12 +182,29 @@ function refreshRooms() {
     row.append(label, remove); list.append(row);
   });
 }
+function allPlacements() {
+  const overrides = state.plan?.object_overrides?.[state.style] || {};
+  return [...(state.plan?.asset_placements || []), ...(state.editableObjects?.[state.style] || [])
+    .map(item => ({...item, ...overrides[item.id], procedural: true}))
+    .filter(item => !item.removed)];
+}
+function editPlacement(placement, change) {
+  if (placement.procedural) {
+    state.plan.object_overrides ||= {};
+    state.plan.object_overrides[state.style] ||= {};
+    const edits = state.plan.object_overrides[state.style];
+    edits[placement.id] = {...edits[placement.id], ...change};
+  } else Object.assign(placement, change);
+}
 function refreshPlacements() {
   const list = $("placementList"); list.replaceChildren();
-  (state.plan?.asset_placements || []).forEach((placement, index) => {
+  allPlacements().forEach(placement => {
     const row = document.createElement("div"); row.className = "room-row";
     const details = document.createElement("div"); details.className = "placement-details";
     const name = document.createElement("strong"); name.textContent = placement.name || placement.id || "Furnishing";
+    const kind = document.createElement('small'); kind.textContent = placement.asset_kind || (placement.procedural ? 'Procedural USD' : 'NVIDIA SimReady USD');
+    const move = document.createElement('button'); move.type = 'button'; move.textContent = 'Move'; move.setAttribute('aria-label', `Move ${name.textContent}`);
+    move.onclick = () => { state.movingPlacement = placement; state.tool = 'move-placement'; $('canvasArea').scrollIntoView({block:'center'}); $('toolHint').textContent = `Click the new position for ${name.textContent}, or drag its marker.`; toast(`Click the plan to move ${name.textContent}`); };
     const controls = document.createElement("div"); controls.className = "placement-controls";
     for (const [label, axis, unit] of [["X", 0, "metres"], ["Y", 1, "metres"], ["Rotation", null, "degrees"]]) {
       const field = document.createElement("label"); field.textContent = `${label} ${unit === "metres" ? "(m)" : "(°)"} `;
@@ -182,12 +214,13 @@ function refreshPlacements() {
       input.onchange = () => {
         const next = input.valueAsNumber;
         if (!Number.isFinite(next)) { input.value = value; toast(`${label} must be a finite number`); return; }
-        if (axis === null) placement.rotation_deg = next;
-        else { placement.position ||= [0, 0, 0]; placement.position[axis] = next; }
+        if (axis === null) editPlacement(placement, {rotation_deg: next});
+        else { const position = [...(placement.position || [0, 0, 0])]; position[axis] = next; editPlacement(placement, {position}); }
         markChanged();
       };
       field.append(input); controls.append(field);
     }
+    if (!placement.procedural) {
     const movableLabel = document.createElement("label");
     const movable = document.createElement("input"); movable.type = "checkbox"; movable.checked = placement.physics_mode === "dynamic";
     movable.setAttribute("aria-label", `Dynamic physics for ${name.textContent}`);
@@ -199,9 +232,10 @@ function refreshPlacements() {
       height.onchange = () => { const z = Number(height.value); if (!Number.isFinite(z) || z < 0 || z > 20) { toast("Starting height must be between 0 and 20 metres"); return; } placement.position[2] = z; markChanged(); };
       heightLabel.append(height, " m"); controls.append(heightLabel);
     }
+    }
     const remove = document.createElement("button"); remove.type = "button"; remove.textContent = "Remove"; remove.setAttribute("aria-label", `Remove furnishing ${name.textContent}`);
-    remove.onclick = () => { state.plan.asset_placements.splice(index, 1); markChanged(); };
-    details.append(name, controls); row.append(details, remove); list.append(row);
+    remove.onclick = () => { if (placement.procedural) editPlacement(placement, {removed:true}); else state.plan.asset_placements = state.plan.asset_placements.filter(item => item !== placement); markChanged(); };
+    details.append(name, kind, move, controls); row.append(details, remove); list.append(row);
   });
 }
 function refreshMeasurements() {
@@ -372,7 +406,7 @@ function draw() {
       ctx.strokeStyle = "#206aaf"; ctx.lineWidth = Math.max(3, canvas.width / 450); ctx.stroke();
     }
   });
-  (state.plan.asset_placements || []).forEach(placement => {
+  allPlacements().forEach(placement => {
     const point = metresToPixel(placement.position); if (!point) return;
     ctx.beginPath(); ctx.arc(point[0], point[1], Math.max(8, canvas.width / 170), 0, Math.PI * 2);
     ctx.fillStyle = "#8869c4"; ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
@@ -429,8 +463,18 @@ function nearestWall(metres) {
   return bestDistance < 1.2 ? best : null;
 }
 function handleCanvasDown(event) {
-  if (!state.tool) return;
   const point = getPixel(event);
+  if (state.tool === 'move-placement' && state.movingPlacement) {
+    const [x, y] = pixelToMetres(point), placement = state.movingPlacement;
+    editPlacement(placement, {position: [x, y, placement.position?.[2] || 0]});
+    state.movingPlacement = null; setTool(null); markChanged(); return;
+  }
+  if (!state.tool) {
+    const radius = 15 * canvas.width / canvas.getBoundingClientRect().width;
+    const placement = allPlacements().reverse().find(item => { const p = metresToPixel(item.position); return p && distance(point, p) < radius; });
+    if (placement) { event.preventDefault(); state.draggingPlacement = placement; state.dragOriginal = [...placement.position]; canvas.setPointerCapture(event.pointerId); }
+    return;
+  }
   if (state.tool === "room-rectangle") { state.dragStart = point; canvas.setPointerCapture(event.pointerId); draw(); return; }
   if (state.tool === "calibrate") {
     state.points.push(point);
@@ -459,16 +503,21 @@ function handleCanvasDown(event) {
     } else if (state.tool === "asset") {
       if (!state.selectedAsset) throw new Error("Choose a furnishing first");
       state.plan.asset_placements ||= [];
-      state.plan.asset_placements.push({ id: `asset_${Date.now()}`, name: state.selectedAsset.name, asset_path: state.selectedAsset.usd_path, position: [...metres, 0], rotation_deg: 0 });
+      state.plan.asset_placements.push({ id: `asset_${Date.now()}`, name: state.selectedAsset.name, asset_kind: state.selectedAsset.asset_kind || 'NVIDIA SimReady USD', asset_path: state.selectedAsset.usd_path, position: [...metres, 0], rotation_deg: 0 });
       markChanged(); toast(`${state.selectedAsset.name} placed`);
     }
   } catch (error) { toast(error.message); }
 }
 function handleCanvasMove(event) {
+  if (state.draggingPlacement) {
+    const [x, y] = pixelToMetres(getPixel(event)), placement = state.draggingPlacement;
+    editPlacement(placement, {position:[x, y, state.dragOriginal[2] || 0]}); draw(); return;
+  }
   if (!state.tool) return;
   state.hover = getPixel(event); draw();
 }
 function handleCanvasUp(event) {
+  if (state.draggingPlacement) { state.draggingPlacement = null; markChanged(); return; }
   if (state.tool !== "room-rectangle" || !state.dragStart) return;
   const end = getPixel(event), start = state.dragStart; state.dragStart = null; state.hover = null;
   if (distance(start, end) < 12) { toast("Drag across the room to outline it"); return; }
@@ -491,7 +540,7 @@ function renderStyles() {
   $('finishPresets').hidden = !styles.some(style => !style.is_design_scheme);
   $('designOptionsTitle').textContent = schemes.length ? 'Choose an interior scheme for this layout.' : 'Choose finishes for this layout.';
   $('finishPresetNote').textContent = schemes.length
-    ? 'Room dimensions follow the agreement. Furniture placement, colours and lighting are design proposals; the specified finishes remain available as a preset.'
+    ? (state.plan?.source?.primary_crop === 'agreement_unit_crop.jpg' ? 'Room dimensions follow the agreement. Furniture placement, colours and lighting are design proposals.' : 'Schemes use your reviewed room outlines and physical dimensions. Proposed decor is omitted where it cannot fit; every inferred placement is recorded.')
     : state.plan?.reference_manifest ? 'The B1-1502 specified finishes follow the agreement. Other presets are illustrative materials and lighting.' : 'Presets change surface materials and lighting. Your reviewed room dimensions stay in metres.';
   $('allStylesButton').textContent = schemes.length ? 'Export all options' : 'Export all finishes';
   $('schemeChoices').replaceChildren(); $('finishChoices').replaceChildren();
@@ -536,7 +585,7 @@ function renderStyles() {
     button.onclick = () => {
       if (state.style === style.id) return;
       const restoreFocus = document.activeElement === button;
-      state.style = style.id; state.revision++; invalidateGenerated(); renderStyles();
+      state.style = style.id; state.revision++; invalidateGenerated(); renderStyles(); refreshPlacements(); draw();
       if (restoreFocus) [...$('styleChoices').querySelectorAll('[role="radio"]')].find(radio => radio.dataset.styleId === style.id)?.focus({ preventScroll: true });
     };
     button.onkeydown = event => {
@@ -562,6 +611,9 @@ async function generate(all = false) {
     const result = await request(`/api/projects/${projectId}/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ style: all ? "all" : selectedStyle }) });
     if (state.project !== projectId || state.revision !== revision) throw new Error("The plan changed while the scene was building. Create it again to include your edits.");
     state.generated = { result, style: selectedStyle };
+    if (all) { state.editableObjects ||= {}; Object.entries(result.styles || {}).forEach(([id, report]) => { state.editableObjects[id] = report.editable_objects || []; }); refreshPlacements(); draw(); }
+    if (!all) { state.editableObjects ||= {}; state.editableObjects[selectedStyle] = result.editable_objects || []; refreshPlacements(); draw(); }
+    if (result.runtime_trace) renderLibraryTrace(result.runtime_trace);
     refreshReconstructionReview();
     $("resultPanel").hidden = false;
     $("streamPanel").hidden = true;
@@ -625,7 +677,7 @@ function renderAssets() {
   const entries = state.assets.filter(asset => (asset.structure_types || ["home", "office", "showroom", "other"]).includes(category));
   $("starterFurniture").hidden = state.plan?.example !== "B1-1502" || !entries.length;
   if (!entries.length) { list.textContent = "No SimReady objects are installed for this space yet."; return; }
-  entries.slice(0, 60).forEach(asset => {
+  entries.forEach(asset => {
     const button = document.createElement("button"); button.type = "button";
     const name = document.createElement("span"); name.textContent = asset.name;
     const size = document.createElement("small"); size.textContent = Array.isArray(asset.size_xyz_m) ? `Physical size: ${asset.size_xyz_m.map(n => Number(n).toFixed(2)).join(" × ")} m (X × Y × Z)` : asset.category || "SimReady";
@@ -648,7 +700,7 @@ $("fileInput").addEventListener("change", async event => {
   const form = new FormData(); form.append("file", file);
   try { $("connection").lastChild.textContent = " Uploading…"; await setProject(await request("/api/projects/upload", { method: "POST", body: form })); toast("Drawing uploaded"); }
   catch (error) { toast(error.message); }
-  finally { $("connection").lastChild.textContent = " Ready on this laptop"; event.target.value = ""; }
+  finally { $("connection").lastChild.textContent = " Studio connected"; event.target.value = ""; }
 });
 async function loadExample() { try { await setProject(await request("/api/examples/b1-1502", { method: "POST" })); toast("B1-1502 is ready to explore"); } catch (error) { toast(error.message); } }
 $("exampleButton").onclick = loadExample; $("emptyExample").onclick = loadExample;
@@ -659,6 +711,7 @@ document.querySelectorAll(".tool").forEach(button => button.onclick = () => { if
 canvas.addEventListener("pointerdown", handleCanvasDown);
 canvas.addEventListener("pointermove", handleCanvasMove);
 canvas.addEventListener("pointerup", handleCanvasUp);
+canvas.addEventListener('pointercancel', () => { if (state.draggingPlacement) { editPlacement(state.draggingPlacement, {position:state.dragOriginal}); state.draggingPlacement = null; draw(); } });
 canvas.addEventListener("dblclick", event => { event.preventDefault(); if (["room-polygon", "perimeter", "balcony"].includes(state.tool)) finishOutline(); });
 $("structureType").onchange = event => { if (!state.plan) return; state.plan.structure_type = event.target.value; state.selectedAsset = null; renderStyles(); renderAssets(); markChanged(); };
 $("heightInput").onchange = event => {
@@ -710,6 +763,65 @@ for (const name of ["dragenter", "dragover"]) uploadTarget.addEventListener(name
 for (const name of ["dragleave", "drop"]) uploadTarget.addEventListener(name, event => { event.preventDefault(); uploadTarget.classList.remove("dragging"); });
 uploadTarget.addEventListener("drop", async event => { const file = event.dataTransfer?.files?.[0]; if (!file) return; const form = new FormData(); form.append("file", file); try { await setProject(await request("/api/projects/upload", { method: "POST", body: form })); toast("Drawing uploaded"); } catch (error) { toast(error.message); } });
 loadAssets();
+async function loadSupportingSources() {
+  const project = state.project; if (!project) return;
+  try {
+    const result = await request(`/api/projects/${project}/sources`);
+    if (state.project !== project) return;
+    $('sourceFilesList').replaceChildren();
+    for (const source of result.sources || []) {
+      const row = document.createElement('p'), link = document.createElement('a');
+      link.href = source.download_url; link.textContent = `${source.original_name} · ${source.role}`; link.target = '_blank'; link.rel = 'noopener';
+      row.append(link); if (source.notes) row.append(document.createElement('br'), document.createTextNode(source.notes));
+      $('sourceFilesList').append(row);
+    }
+    $('sourceUploadStatus').textContent = `${result.sources.length} supporting sources · retained for review`;
+  } catch (error) { $('sourceUploadStatus').textContent = error.message; }
+}
+$('sourceFilesInput').onchange = async event => {
+  const project = state.project; if (!project) return;
+  try {
+    for (const file of event.target.files || []) {
+      const form = new FormData(); form.append('file', file); form.append('role', $('sourceRole').value); form.append('notes', $('sourceNotes').value);
+      $('sourceUploadStatus').textContent = `Attaching ${file.name}…`;
+      await request(`/api/projects/${project}/sources`, {method:'POST', body:form});
+    }
+    await loadSupportingSources();
+    if (state.project === project) { state.styles.forEach(style => { style.preview_url = null; }); invalidateGenerated(); renderStyles(); }
+  } catch (error) { $('sourceUploadStatus').textContent = error.message; toast(error.message); }
+  finally { event.target.value = ''; }
+};
+function renderLibraryTrace(trace) {
+  if (state.traceUrl) URL.revokeObjectURL(state.traceUrl);
+  state.traceUrl = URL.createObjectURL(new Blob([JSON.stringify(trace, null, 2)], {type:'application/json'}));
+  $('downloadLibraryTrace').href = state.traceUrl;
+  const container = $('libraryTraceContent'); container.replaceChildren();
+  const note = document.createElement('p'); note.textContent = trace.note; container.append(note);
+  const versions = new Map((trace.libraries || []).map(lib => [lib.id, `${lib.name} ${lib.version || (lib.installed === false ? '(not installed)' : '(version unknown)')}`]));
+  for (const action of trace.actions || []) {
+    const row = document.createElement('p');
+    const title = document.createElement('strong'); title.textContent = `${action.label} · ${action.status} (${action.observed_calls || 0} observed)`;
+    const libraries = document.createElement('span'); libraries.textContent = action.libraries.map(id => versions.get(id) || id).join(' · ');
+    const api = document.createElement('code'); api.textContent = action.apis.join(', ');
+    row.append(title, document.createElement('br'), libraries, document.createElement('br'), api); container.append(row);
+  }
+}
+async function loadLibraryTrace() { try { renderLibraryTrace(await request('/api/runtime-trace')); } catch (error) { $('libraryTraceContent').textContent = error.message; } }
+$('refreshLibraryTrace').onclick = loadLibraryTrace;
+loadLibraryTrace();
+$('assetImportInput').onchange = async event => {
+  const file = event.target.files?.[0]; if (!file) return;
+  const form = new FormData(); form.append('file', file);
+  $('assetImportStatus').textContent = 'Checking units, geometry and packaged dependencies…';
+  try {
+    const asset = await request('/api/assets/import', {method:'POST', body:form});
+    if (asset.runtime_trace) renderLibraryTrace(asset.runtime_trace);
+    await loadAssets(); state.selectedAsset = asset; setTool('asset');
+    $('assetImportStatus').textContent = `${asset.name} imported as USD. Click the plan to place it; SimReady status is not verified.`;
+    $('canvasArea').scrollIntoView({block:'center'});
+  } catch (error) { $('assetImportStatus').textContent = error.message; toast(error.message); }
+  finally { event.target.value = ''; }
+};
 const query = new URLSearchParams(location.search);
 const previousProject = query.get('project') || localStorage.getItem("blueprint-studio-project");
 if (query.get("example") === "b1-1502") loadExample();

@@ -32,7 +32,19 @@ def catalog() -> dict:
     root = Path(os.environ.get("BLUEPRINT_STUDIO_ASSET_ROOT", DEFAULT_ASSET_ROOT)).expanduser().resolve()
     furniture = _read_catalog("simready_catalog.json", root, root / "SimReady_Furniture_Misc_01_overlay", ["home", "office", "showroom", "other"])
     warehouse = _read_catalog("simready_warehouse_catalog.json", root, None, ["factory", "showroom", "other"])
-    return {"asset_root": str(root), "assets": furniture + warehouse}
+    imported = []
+    for manifest in sorted((root / 'UserImports').glob('*/asset.json')):
+        try:
+            asset = json.loads(manifest.read_text())
+            path = manifest.parent / asset['usd_path']
+            if (not path.is_file() or not path.resolve().is_relative_to(manifest.parent.resolve())
+                    or not manifest.parent.resolve().is_relative_to(root)
+                    or path.suffix.lower() not in {'.usd', '.usda', '.usdc'}):
+                continue
+            imported.append({**asset, 'usd_path': str(path)})
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+    return {"asset_root": str(root), "assets": furniture + warehouse + imported}
 
 
 def b1_starter_furniture(plan=None) -> list[dict]:

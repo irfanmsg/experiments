@@ -32,15 +32,15 @@ Supporting evidence has different roles. A finish schedule can establish a floor
 
 | Capability | Current implementation |
 | --- | --- |
-| Bring your own blueprint | Upload one PDF or image per project; select a PDF page. PNG, JPEG, WebP and TIFF are supported, up to 200 MB. |
+| Bring your own blueprint | Upload a primary PDF or image and select a PDF page. Attach up to 20 supporting PDFs/images with a role and notes; each file is limited to 200 MB. PNG, JPEG, WebP and TIFF are supported. |
 | Set scale and trace a plan | Mark one known distance in metres; trace room rectangles/polygons, perimeter, balconies, doors and windows. Image-assisted room suggestions require review. |
 | Generate OpenUSD | Author building geometry, openings, PBR finishes, lighting and referenced assets in metres with Z up; export a scene or style variants. |
 | Furnish a layout | Add, move, rotate and remove individual objects from the installed SimReady gallery. X/Y controls use metres; rotation uses degrees. |
 | Explore the model | Optional RTX/WebRTC viewer with orbit, zoom, top and room views; 720p, 1080p, 1440p and 4K output. |
-| Review supporting evidence | The B1-1502 example has a curated multi-file manifest, conflicting-source comparisons, dimension constraints and assumption trace. These are currently example-specific. |
-| Apply complete interior schemes | The coordinated schemes and fitted room details currently use the B1-1502 room model. Other uploaded plans have category-based finish presets. |
+| Review supporting evidence | Every project can retain supporting files, their roles, notes, original bytes and SHA-256 hashes separately from plan edits. Source conflict resolution and dimension constraints remain curated in the B1-1502 example; new uploads are not automatically interpreted. |
+| Apply interior schemes | Five schemes dress reviewed home layouts with room-aware decor, textiles and lighting. Placements respect room boundaries, openings and imported assets; items that do not fit are skipped and recorded. The B1-1502 example also has fitted details based on its source documents. |
 
-The next step is to make the demonstrated evidence workflow reusable for arbitrary projects: attach multiple sources, assign their roles and precedence, extract and reconcile dimensions, review proposed geometry and missing details, and apply room-aware schemes to different layouts. **Automatic multi-source reconstruction and arbitrary-layout furnishing are not yet implemented.** The generic upload path currently relies on calibration and reviewed tracing; it does not automatically enforce every printed dimension as the worked example does.
+Supporting sources can now be collected and assigned roles for any project. The next step is to apply source precedence, extract and reconcile dimensions, and review proposed geometry and missing details across those files. **Automatic multi-source reconstruction is not yet implemented.** The generic upload path currently relies on calibration and reviewed tracing; it does not automatically enforce every printed dimension as the worked example does. Scheme proposals still need a person to review furniture placement and clearances.
 
 ## Editable assets and SimReady
 
@@ -50,13 +50,19 @@ The importer converts source units and up-axis to the building's metre-based, Z-
 
 **Layout editing and physics movement are separate controls.** An object can be positioned in a design while remaining static during simulation. **Dynamic physics**, a starting height and **Simulate physics** enable dynamic behaviour in the live view. Authored collision variants are used where available; otherwise the app can use a bounds collider. Using a SimReady source asset does not certify the entire generated building or every procedural furnishing as simulation-ready for every application.
 
-The placement controls currently edit imported gallery assets. Generated cabinetry, beds, curtains, rugs and other procedural scheme details are not yet individually editable through those controls. Converting that generated furnishing layer into separately editable placements is part of the generic workflow roadmap.
+The placement controls edit imported assets independently. After generation, procedural furnishings also appear as separate objects with placement and removal controls; their edits are saved for that scheme. Moving an object preserves its dimensions and records a user edit. Review clearances after repositioning generated objects.
 
 The browser editor operates on the saved plan; regenerate and reopen the live view to inspect edits. Direct asset manipulation inside the streamed 3D view is not implemented. Source packs and material dependencies must remain available when a referenced USD scene is moved to another machine.
 
+### Bring in new assets
+
+In **Assets: add, move, rotate or remove**, use **Import USD / USDZ asset** and click the plan to place the imported item. Standalone `.usd`, `.usda` and `.usdc` must be self-contained; package referenced USD layers and textures in `.usdz`. Imports require explicit units, Y/Z up-axis, a default prim and bounded geometry. The importer checks dependency containment before composing the stage and retains imported assets in the host library across restarts.
+
+The installed NVIDIA gallery is sourced from SimReady packs. Uploaded USD is labeled **Imported USD (SimReady not verified)**, and generated furniture is labeled **Procedural USD**. Being editable or carrying physics properties does not establish SimReady compliance. Drag an object marker on the plan or use its **Move**, coordinate and rotation controls; then regenerate the scene.
+
 ## Interior styles
 
-A **finish preset** changes surface materials and lighting. An **interior scheme** coordinates those finishes with textiles, decor, furniture treatment and lighting fixtures. The current example offers:
+A **finish preset** changes surface materials and lighting. An **interior scheme** coordinates those finishes with textiles, decor, furniture treatment and lighting fixtures. All five schemes are available for reviewed home layouts; the B1-1502 example is optional:
 
 - **Linen & light timber** — cream upholstery, pale timber, sheer curtains and a neutral rug.
 - **Warm evening lounge** — beige/olive upholstery, graphic art and pools of warm lamp light.
@@ -66,7 +72,7 @@ A **finish preset** changes surface materials and lighting. An **interior scheme
 
 Contemporary Indian is a named interpretation informed by a documented Indian design project, not a claim to represent every Indian tradition. Regional directions from the supplied reel remain separate references for future schemes. Bohemian adds modeled textile layers and woven decor. The reviewed references, observed features and proposed additions are recorded separately in [the interior reference ledger](docs/interior-references.md).
 
-For supported layouts, select a scheme, choose **Create 3D scene**, then open the live RTX view. A scheme card receives an actual rendered preview after its stream initializes; editing the plan invalidates outdated previews. Exact products, decorative dimensions, colours and lighting are design assumptions, not measurements recovered from reference images.
+Select a scheme, choose **Create 3D scene**, then open the live RTX view. A scheme card receives an actual rendered preview after its stream initializes; editing the plan invalidates outdated previews. Generic layouts receive decor that fits their reviewed geometry; they do not inherit the example apartment's floor specifications or fitted cabinetry. Exact products, decorative dimensions, colours and lighting are design assumptions, not measurements recovered from reference images.
 
 ## Run locally
 
@@ -88,7 +94,7 @@ Open [http://127.0.0.1:8001](http://127.0.0.1:8001). Port 8001 is used on the de
 
 The live renderer requires a compatible NVIDIA GPU/driver and the runtime dependencies. The first shader build may take several minutes. [Omniverse setup](omni_setup/README.md) describes dependencies and asset preparation; [streaming setup](streaming/README.md) covers the renderer and network configuration.
 
-To make the editor reachable on a trusted local network, use `./run.sh --lan --port 8001`. The app has no login yet. Internet use requires HTTPS, authentication, routing and an appropriate STUN/TURN service; do not expose the local editor or signaling port directly. The live view opens through the address supplied by Studio.
+To make the editor reachable on a trusted local network, use `./run.sh --lan --port 8001`. The app has no login yet. The live view opens through the address supplied by Studio. For persistent hosting on this workstation, use the [systemd installation and NVIDIA LAN/VPN instructions](docs/hosting.md); the installer prepares a single-worker service, preserves its environment configuration and defaults to loopback. The internal deployment is a shared pilot with one GPU stream and no account or project isolation. Remote network access still needs to be tested from a colleague's machine.
 
 ### Optional SimReady library
 
@@ -108,14 +114,22 @@ The furniture pack download is about 9 GiB. Overlay preparation requires the ins
 1. Upload a PDF or image and choose the relevant page.
 2. Enter a printed distance **in metres**, then mark its two endpoints. Convert feet/inches before entering the value; the current field does not parse imperial notation.
 3. Trace the spaces, perimeter and openings. Review any suggested rooms and set opening widths and wall height. A distorted scan may need more than one measurement to validate the result.
-4. Choose the building category, add available furnishings, and choose a finish preset.
+4. Choose the building category, add available furnishings, and choose a scheme for a home or a category-specific finish preset.
 5. Generate the scene, download USD or open the live view at the desired resolution. Review scale, access and placement before refining the layout.
+
+Attach additional PDFs/images as supporting sources, assigning a role such as blueprint, detail, measurement, photo, finish or style and adding notes about their relevance. The source manifest retains the original filenames, file hashes and download links independently of plan autosaves. These uploads remain marked **supporting evidence; not automatically extracted**: adding a file does not change the scale, room geometry or source precedence automatically.
 
 A ray-traced view is a way to inspect the authored scene, not proof that its source geometry is complete or construction-verified. Camera navigation currently does not stop at walls. Exact wall construction, heights and other undocumented details require confirmation.
 
+## Libraries, APIs and feedback
+
+Open **Libraries and APIs** in the editor or live viewer to inspect installed library versions and the APIs used for authoring, stage preparation, RTX frames, streaming and optional physics. Each service also exposes `GET /api/runtime-trace`. The trace distinguishes an installed package or source-code mapping from successfully observed operations in that process. A frame submitted to the streaming server does not by itself prove playback in a remote browser; the browser connection observation is reported separately. The vendored browser library has an exact file hash when its package version cannot be established.
+
+This runtime trace complements **Download reconstruction trace**, which records geometry evidence, design assumptions, asset measurements and user edits. Use the relevant trace when reporting an issue, and remove private project details before posting to [the repository's feedback tracker](https://github.com/irfanmsg/experiments/issues/new).
+
 ## Worked example: B1-1502
 
-Use **Open the B1-1502 flat example** in Studio, or visit [the example link](http://127.0.0.1:8001/?example=b1-1502). This fixture demonstrates agreement-based room dimensions, doors and shared walls, source comparisons, fitted details, physical furniture scale and traceable interior schemes.
+Use **Open a measured apartment example** in Studio, or visit [the example link](http://127.0.0.1:8001/?example=b1-1502). This fixture demonstrates agreement-based room dimensions, doors and shared walls, source comparisons, fitted details, physical furniture scale and traceable interior schemes.
 
 The agreement's unit plan governs this example; finish specifications, approved comparison drawings, the furnished brochure and construction photos have distinct recorded roles. Its assumptions and source conflicts remain visible in **Review reconstruction assumptions** and **Download reconstruction trace**. See [the example notes](data/b1_1502/README.md), [source manifest](data/b1_1502/reference_manifest.json), [dimension comparisons](data/b1_1502/source_comparison.json) and [construction-photo review](docs/construction-photo-review.md).
 
@@ -132,6 +146,7 @@ Outputs go under `output/b1-1502/`, including `B1-1502.usd` and `B1-1502-style-p
 The authoring path uses NVIDIA [usd-exchange](https://github.com/NVIDIA-Omniverse/usd-exchange). The optional renderer combines [ovstage](https://github.com/NVIDIA-Omniverse/ovstage), [ovrtx](https://github.com/NVIDIA-Omniverse/ovrtx), [ovstream](https://github.com/NVIDIA-Omniverse/ovstream) and [ovphysx](https://github.com/NVIDIA-Omniverse/PhysX/tree/main/ovphysx). Core and runtime dependencies are pinned separately under `omni_setup/`; do not install `usd-core` into the same environment as `usd-exchange`.
 
 ```bash
+.venv/bin/python -m pip install -r omni_setup/requirements-test.txt
 .venv/bin/python -m pytest -q
 node --check app/static/app.js
 node tests/check_stream_link.js
@@ -143,6 +158,7 @@ The live checks need Playwright, local Google Chrome and a running stream. They 
 .venv/bin/python tests/check_live_view.py --width 3840 --height 2160
 .venv/bin/python tests/check_interior_scheme_cards.py --project PROJECT_ID
 .venv/bin/python tests/check_asset_editing.py
+.venv/bin/python tests/check_generic_workflow.py
 ```
 
 The first command expects a 4K stream; omit the size arguments for the default HD check. The second checks rendered scheme cards after at least one scheme has been streamed. The third creates a scratch project and verifies adding, moving, rotating and removing an installed asset through the editor and exported USD, without resizing it. The detailed reconstruction assertions currently use the B1-1502 fixture. Local GPU/browser testing does not establish compatibility with every GPU or remote client.

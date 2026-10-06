@@ -30,9 +30,10 @@ def main():
         page.goto(f"{BASE}/?project={scratch}")
         page.wait_for_function("state.image && state.assets.length > 0")
         assert page.evaluate("state.project") == scratch
-        page.locator(".assets-panel summary").click()
-        while page.locator("#placementList button").count():
-            page.locator("#placementList button").first.click()
+        if not page.locator(".assets-panel").evaluate("el => el.open"):
+            page.locator(".assets-panel summary").click()
+        while page.locator('#placementList button[aria-label^="Remove furnishing"]').count():
+            page.locator('#placementList button[aria-label^="Remove furnishing"]').first.click()
         page.wait_for_function("document.querySelector('#saveState').textContent === 'Saved'")
         page.get_by_role("button", name="Armchair Physical size:", exact=False).click()
         page.locator("#planCanvas").scroll_into_view_if_needed()

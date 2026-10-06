@@ -22,6 +22,8 @@ from .asset_library import b1_starter_furniture, catalog
 from .geometry import measured_scale_audit, validate_plan
 from .usd_builder import PALETTES, build_style_variants, build_usd
 from .vision import suggest_rooms
+from .runtime_trace import runtime_trace
+from .source_files import router as source_router, source_manifest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,6 +41,7 @@ for directory in (UPLOADS, OUTPUT):
     directory.mkdir(exist_ok=True)
 
 app = FastAPI(title="Blueprint to USD Studio", version="0.1.0")
+app.include_router(source_router)
 app.mount("/static", StaticFiles(directory=ROOT / "app" / "static"), name="static")
 _stream_process: subprocess.Popen | None = None
 _stream_project: str | None = None
@@ -112,6 +115,8 @@ def _read_plan(project_id: str) -> dict:
             shutil.copy2(EXAMPLE / plan['source'].get('primary_crop', 'approved_crop.jpg'), _project_dir(project_id) / 'plan.jpg')
         else:
             raise HTTPException(409, 'This older B1 project has geometry edits. Open the updated B1 example to use dimensioned rooms; your edited project is preserved.')
+    if (_project_dir(project_id) / 'sources' / 'index.json').is_file():
+        plan['supporting_sources'] = source_manifest(project_id)['sources']
     return plan
 
 
@@ -164,13 +169,16 @@ def _preview_urls(project_id: str, plan: dict) -> dict:
 def _project_response(project_id: str) -> dict:
     plan = _read_plan(project_id)
     previews = _preview_urls(project_id, plan)
+    reference = plan.get('source', {}).get('primary_crop') == 'agreement_unit_crop.jpg'
     return {
         "id": project_id,
         "plan": plan,
         "image_url": f"/api/projects/{project_id}/image",
         "page_count": int(plan.get("page_count", 1)),
-        "styles": [{"id": key, "label": value["label"], "category": value["category"], "description": value["description"], "wall_color": value["wall"][0], "floor_color": value["floor"][0],
-                    "is_design_scheme": value.get('is_design_scheme', False), "design_features": value.get('design_features', []),
+        "editable_objects": {path.stem.replace('.objects', ''): json.loads(path.read_text())
+                             for path in (OUTPUT / project_id).glob('*.objects.json')},
+        "styles": [{"id": key, "label": value["label"], "category": value["category"], "description": value["description"] if reference else value.get('generic_description', value['description']), "wall_color": value["wall"][0], "floor_color": value["floor"][0],
+                    "is_design_scheme": value.get('is_design_scheme', False), "design_features": value.get('design_features', []) if reference else value.get('generic_design_features', value.get('design_features', [])),
                     "reference_urls": value.get('reference_urls', []), "requires_reference": value.get('requires_reference', False),
                     "preview_url": previews.get(key)} for key, value in PALETTES.items()],
     }
@@ -184,6 +192,36 @@ def home():
 @app.get("/api/health")
 def health():
     return {"ok": True, "app": "Blueprint to USD Studio", "styles": list(PALETTES)}
+
+
+@app.get("/api/runtime-trace")
+def library_action_trace():
+    from pxr import Usd
+    return runtime_trace(openusd_version='.'.join(map(str, Usd.GetVersion())))
+
+
+@app.post("/api/assets/import")
+async def upload_asset(file: UploadFile = File(...)):
+    from tempfile import TemporaryDirectory
+    from .asset_uploads import import_asset
+    suffix = Path(file.filename or '').suffix.lower()
+    if suffix not in {'.usd', '.usda', '.usdc', '.usdz'}:
+        raise HTTPException(400, 'Import a self-contained USD or USDZ asset with its materials packaged inside')
+    with TemporaryDirectory(prefix='blueprint-asset-') as directory:
+        path = Path(directory) / ('asset' + suffix)
+        total = 0
+        with path.open('wb') as output:
+            while chunk := await file.read(1024 * 1024):
+                total += len(chunk)
+                if total > 200 * 1024 * 1024:
+                    raise HTTPException(413, 'Use an asset smaller than 200 MB')
+                output.write(chunk)
+        try:
+            result = import_asset(path, file.filename or 'Imported asset')
+            result['runtime_trace'] = runtime_trace(executed=['asset_upload'])
+            return result
+        except (ValueError, RuntimeError) as exc:
+            raise HTTPException(400, str(exc)) from exc
 
 
 @app.post("/api/projects/upload")
@@ -274,6 +312,7 @@ def get_project(project_id: str):
 def project_reconstruction_trace(project_id: str):
     plan = _read_plan(project_id)
     trace = {"project_id": project_id, "source": plan.get("source", {}),
+             "supporting_sources": plan.get('supporting_sources', []),
              "dimension_model": plan.get("dimension_model"),
              "decisions": plan.get("reconstruction_decisions", []),
              "scale_audit": measured_scale_audit(plan),
@@ -358,11 +397,16 @@ async def generate(project_id: str, request: Request):
     except (ValueError, RuntimeError) as exc:
         raise HTTPException(400, str(exc)) from exc
     trace = {"style": style, "dimension_model": plan.get("dimension_model"),
+             "supporting_sources": plan.get('supporting_sources', []),
+             "runtime_trace": result.get('runtime_trace', runtime_trace()),
              "asset_imports": result.get("asset_imports", []),
              "presentation_decisions": result.get('presentation_decisions', []),
              "reference_manifest": plan.get('reference_manifest', {}),
              "styles": result.get("styles", {}) if style == "all" else {}}
     (destination / "reconstruction_trace.json").write_text(json.dumps(trace, indent=2))
+    reports = result['styles'] if style == 'all' else {style: result}
+    for name, report in reports.items():
+        (destination / f'{name}.objects.json').write_text(json.dumps(report.get('editable_objects', [])))
     return result
 
 
