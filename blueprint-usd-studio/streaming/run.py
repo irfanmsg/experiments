@@ -31,6 +31,8 @@ except ImportError:
 
 HERE = Path(__file__).resolve().parent
 CLIENT_DIR = HERE / "client"
+sys.path.insert(0, str(HERE.parent))
+from app.runtime_trace import record_execution, runtime_trace
 
 
 if wp is not None:
@@ -58,13 +60,16 @@ class _ClientHandler(SimpleHTTPRequestHandler):
         self.wfile.write(payload)
 
     def do_GET(self):
+        if urlparse(self.path).path == '/api/runtime-trace':
+            self._json(self.server.prepared.get('runtime_trace', {}))
+            return
         if urlparse(self.path).path == '/api/scene':
             prepared = self.server.prepared
             self._json({key: prepared.get(key) for key in
                         ('name', 'rooms', 'footprint', 'walls', 'width', 'height',
                          'geometry_note', 'asset_count', 'calibration', 'up_axis',
                          'reconstruction_decisions', 'scale_audit', 'openings', 'assets',
-                         'presentation_decisions', 'reference_manifest')} |
+                         'presentation_decisions', 'reference_manifest', 'runtime_trace')} |
                        {'camera': self.server.controller.state(),
                         'has_source': bool(prepared.get('source_image'))})
             return
@@ -184,6 +189,8 @@ def _set_ceiling_visibility(stage, ceiling_paths: list[str], visible: bool, ordi
 
 
 def _render(prepared: dict, args: argparse.Namespace) -> None:
+    trace = prepared.setdefault('runtime_trace', runtime_trace())
+    trace['physics_enabled'] = bool(args.physics)
     if wp is None:
         raise RuntimeError("warp-lang is missing; run ./omni_setup/setup.sh runtime")
     try:
@@ -233,6 +240,7 @@ def _render(prepared: dict, args: argparse.Namespace) -> None:
             domains=(ovstage.PopulationDomain.ALL if args.physics
                      else ovstage.PopulationDomain.RENDERING))
         stage.advance_write_floor(ordinal, ovstage.Scope.ALL).wait()
+        record_execution(trace, 'stage_population')
         ceiling_paths = prepared.get('ceiling_paths', [])
         ceilings_visible = False
         ordinal += 1
@@ -267,6 +275,7 @@ def _render(prepared: dict, args: argparse.Namespace) -> None:
         if (width, height) != (args.width, args.height):
             raise RuntimeError("ovrtx output resolution does not match render product")
         del mapping, first_frame, first
+        record_execution(trace, 'rtx_render')
 
         stream_buffer = wp.zeros((height, width, 4), dtype=wp.uint8,
                                  device=gpu_name)
@@ -333,11 +342,13 @@ def _render(prepared: dict, args: argparse.Namespace) -> None:
                             tensors=tensor, is_array=False,
                             semantic=ovstage.AttributeSemantic.MATRIX,
                         ).wait()
+                        record_execution(trace, 'camera_update')
                         if args.physics and (not args.physics_pause_without_client
                                              or connected.is_set()):
                             physics_attributes_written += step_and_write_to_ovstage(
                                 physx, dt=1.0 / args.fps,
                                 output_ordinal=ordinal)
+                            record_execution(trace, 'physics_step')
                         else:
                             stage.advance_write_floor(
                                 ordinal, ovstage.Scope.ALL).wait()
@@ -354,6 +365,7 @@ def _render(prepared: dict, args: argparse.Namespace) -> None:
                             wp.synchronize_stream(draw_stream)
                             del pixels
                         del mapping
+                        record_execution(trace, 'rtx_render')
                         wp.launch(_rgba_to_bgra, dim=(width, height),
                                   inputs=[stream_buffer], device=gpu_name,
                                   stream=draw_stream)
@@ -366,6 +378,7 @@ def _render(prepared: dict, args: argparse.Namespace) -> None:
                         )
                         try:
                             server.stream_video(video)
+                            record_execution(trace, 'webrtc_stream')
                             failed_connected_frames = 0
                         except ovstream.OvstreamError as exc:
                             if connected.is_set():
@@ -471,7 +484,8 @@ def main() -> int:
                 _status("prepared", bounds_min=prepared["bounds_min"],
                         bounds_max=prepared["bounds_max"],
                         up_axis=prepared["up_axis"],
-                        meters_per_unit=prepared["meters_per_unit"])
+                        meters_per_unit=prepared["meters_per_unit"],
+                        runtime_trace=prepared['runtime_trace'])
                 return 0
             _render(prepared, args)
     except KeyboardInterrupt:

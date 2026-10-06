@@ -238,7 +238,7 @@ for scheme_id, scheme in INTERIOR_SCHEMES.items():
         'label': scheme['label'], 'description': scheme['description'],
         'wall': (scheme['wall'], .82, 0), 'door': (scheme['wood'], .52, 0),
         'metal': (scheme['metal'], .30, .72),
-        'requires_reference': True, 'is_design_scheme': True,
+        'requires_reference': False, 'is_design_scheme': True,
         'design_features': scheme['features'], 'reference_urls': [scheme['url']]}
 
 
@@ -1035,16 +1035,155 @@ def _interior_scheme(stage, plan, style, materials, modules):
     return decisions
 
 
+def _generic_interior_scheme(stage, plan, style, materials, modules):
+    """Propose fixed-size decor inside reviewed polygons; omit anything that cannot fit."""
+    from shapely.geometry import LineString, Polygon, box
+    from shapely.ops import unary_union
+
+    Gf, _, Usd, UsdGeom, UsdLux, _, _ = modules
+    scheme = INTERIOR_SCHEMES[style]
+    base = '/World/Interiors'
+    root = UsdGeom.Xform.Define(stage, base).GetPrim()
+    root.SetCustomDataByKey('scheme', style)
+    root.SetCustomDataByKey('referenceURL', scheme['url'])
+    height = float(plan.get('room_height_m') or 2.9)
+    basis = ('Assumed fixed-size decor, positioned from reviewed room polygons with boundary, '
+             'opening, wall and existing asset clearance; limited candidate search, not a circulation audit')
+    decisions = [{'id': style, 'kind': 'reference-inspired', 'interior_scheme': style,
+                  'source': {'url': scheme['url'], 'role': 'Aesthetic cues only'},
+                  'summary': scheme['description']+'. Procedural suggestions, not automatic reconstruction.',
+                  'parameters': {'placement_basis': basis, 'proposed_features': scheme['features'],
+                                 'light_temperature_k': scheme['light_kelvin'],
+                                 'colours_rgb': {key: list(scheme[key]) for key in ('wall', 'wood', 'textile', 'accent', 'rug', 'ink', 'metal')}},
+                  'status': 'needs-review'}]
+    for key in ('wood', 'textile', 'accent', 'rug', 'ink', 'metal'):
+        materials['decor_'+key] = _make_material(stage, '/World/Looks/Interior/'+key,
+                                               (scheme[key], .85, .65 if key == 'metal' else 0), modules)
+    materials['decor_leaf'] = _make_material(stage, '/World/Looks/Interior/leaf', ((.18, .32, .12), .85, 0), modules)
+    cache = UsdGeom.BBoxCache(Usd.TimeCode.Default(), ['default', 'render', 'proxy'])
+    blocked = []
+    # Actual opening assembly bounds include the illustrated open door leaves.
+    for path in ('/World/Assets', '/World/Building/Openings'):
+        group = stage.GetPrimAtPath(path)
+        for prim in group.GetChildren() if group else []:
+            bounds = cache.ComputeWorldBound(prim).ComputeAlignedBox()
+            if not bounds.IsEmpty():
+                low, high = bounds.GetMin(), bounds.GetMax()
+                blocked.append(box(low[0], low[1], high[0], high[1]).buffer(.15 if path.endswith('Assets') else .6))
+    for opening in plan.get('openings', []):
+        if opening.get('start') is not None and opening.get('end') is not None:
+            blocked.append(LineString([opening['start'], opening['end']]).buffer(.65))
+    for wall in plan.get('wall_segments', []):
+        blocked.append(LineString([wall['start'], wall['end']]).buffer(float(wall.get('thickness_m') or .18)/2+.1))
+    footprint = plan.get('footprint', {})
+    outline = Polygon(footprint['polygon'], footprint.get('holes', [])) if footprint.get('polygon') else None
+    for hole in footprint.get('holes', []):
+        blocked.append(Polygon(hole).buffer(.1))
+    occupied = unary_union(blocked)
+
+    def part(parent, name, center, size, material, shape='Cube', yaw=0):
+        path = str(parent.GetPath())+'/'+name
+        if shape == 'Cube':
+            return _box(stage, path, center, size, yaw, materials['decor_'+material], modules, collision=False)
+        mesh = getattr(UsdGeom, shape).Define(stage, path)
+        mesh.CreateRadiusAttr(1)
+        if shape != 'Sphere':
+            mesh.CreateHeightAttr(2)
+            mesh.CreateAxisAttr('Z')
+        xf = UsdGeom.Xformable(mesh.GetPrim())
+        xf.AddTranslateOp().Set(Gf.Vec3d(*center))
+        xf.AddScaleOp().Set(Gf.Vec3f(*(v/2 for v in size)))
+        _bind(mesh.GetPrim(), materials['decor_'+material], modules)
+
+    for index, room in enumerate(plan.get('rooms', [])):
+        room_id = str(room.get('id', f'room_{index}'))
+        room_shape = Polygon(room['polygon'])
+        safe = room_shape.buffer(-.2)
+        if outline is not None:
+            safe = safe.intersection(outline.buffer(-.1))
+        category = str(room.get('category', 'room')).lower()
+        if category in {'bathroom', 'kitchen', 'service', 'balcony', 'corridor', 'hallway', 'stairs', 'toilet'}:
+            decisions.append({'id': room_id, 'kind': 'assumed', 'interior_scheme': style,
+                              'summary': 'Decor omitted for a wet, service, outdoor or circulation room.',
+                              'parameters': {'room_id': room_id, 'category': category}, 'status': 'not-placed'})
+            continue
+        x0, y0, x1, y1 = room_shape.bounds
+        center = room_shape.representative_point()
+        # ponytail: bounded candidate grid can miss a valid fit; skip rather than resize props.
+        candidates = [(center.x, center.y)]+[(x0+(x1-x0)*x/10, y0+(y1-y0)*y/10)
+                                             for x in range(1, 10) for y in range(1, 10)]
+        for kind, width, depth, tall in [('rug', 1.6, 1.1, .05), ('plant', .55, .55, 1.0), ('lamp', .45, .45, 1.7)]:
+            path = base+'/'+safe_name(room_id)+'_'+str(index)+'/'+kind
+            position = next(((x, y) for x, y in candidates
+                             if tall+.02 <= height and safe.covers(box(x-width/2, y-depth/2, x+width/2, y+depth/2))
+                             and not occupied.intersects(box(x-width/2, y-depth/2, x+width/2, y+depth/2))), None)
+            decision = {'id': path, 'kind': 'assumed', 'interior_scheme': style,
+                        'source': {'url': scheme['url'], 'role': 'Decor cues; dimensions and placement assumed'},
+                        'summary': basis, 'status': 'needs-review' if position else 'not-placed',
+                        'parameters': {'room_id': room_id, 'decor_type': kind, 'placement_basis': basis,
+                                       'size_xyz_m': [width, depth, tall], 'category': category}}
+            decisions.append(decision)
+            if position is None:
+                decision['summary'] = 'No safe candidate found; omitted without resizing furniture or changing the plan.'
+                continue
+            x, y = position
+            prim = UsdGeom.Xform.Define(stage, path).GetPrim()
+            UsdGeom.Xformable(prim).AddTranslateOp().Set(Gf.Vec3d(x, y, .02))
+            for key, value in {'interiorDecor': True, 'decorType': kind, 'roomId': room_id,
+                               'clearanceRole': 'floor', 'provenance': basis}.items():
+                prim.SetCustomDataByKey(key, value)
+            if kind == 'rug':
+                part(prim, 'Backing', (0, 0, .004), (1.6, 1.1, .008), 'rug')
+                if style == 'bohemian':
+                    part(prim, 'LayeredRunner', (0, 0, .013), (1.3, .7, .008), 'accent')
+                for i in range(9):
+                    if style == 'indian_contemporary':
+                        part(prim, 'Diamond_'+str(i), ((i-4)*.16, .40, .010), (.08, .08, .003), 'ink', yaw=45)
+                    else:
+                        part(prim, ('Woven_' if style in {'saved_linen_timber', 'saved_botanical_cane'} else 'Stripe_')+str(i),
+                             ((i-4)*.16, 0, .019), (.008 if style == 'saved_linen_timber' else .035, .65, .003),
+                             'textile' if style == 'saved_linen_timber' else 'ink')
+            elif kind == 'plant':
+                part(prim, 'ClayPot', (0, 0, .16), (.30, .30, .32), 'accent', 'Cone')
+                part(prim, 'Stem', (0, 0, .55), (.024, .024, .70), 'wood', 'Cylinder')
+                for i in range(6):
+                    angle = i*2.4
+                    part(prim, 'Leaf_'+str(i), (.13*math.cos(angle), .13*math.sin(angle), .48+i*.075), (.25, .25, .09), 'leaf', 'Sphere')
+            else:
+                part(prim, 'Base', (0, 0, .025), (.35, .35, .05), 'metal', 'Cylinder')
+                part(prim, 'Stem', (0, 0, .72), (.025, .025, 1.4), 'wood' if style == 'bohemian' else 'metal', 'Cylinder')
+                if style in {'saved_botanical_cane', 'bohemian'}:
+                    for i in range(18):
+                        angle = i*math.tau/18
+                        part(prim, 'WovenRib_'+str(i), (.19*math.cos(angle), .19*math.sin(angle), 1.45), (.016, .016, .32), 'wood')
+                else:
+                    part(prim, 'Globe' if style == 'saved_evening_lounge' else 'Shade', (0, 0, 1.45), (.4, .4, .32),
+                         'metal' if style == 'indian_contemporary' else 'textile', 'Sphere' if style == 'saved_evening_lounge' else 'Cone')
+                lamp = UsdLux.SphereLight.Define(stage, path+'/PracticalLight')
+                lamp.CreateRadiusAttr(.04)
+                lamp.CreateIntensityAttr(160)
+                lamp.CreateEnableColorTemperatureAttr(True)
+                lamp.CreateColorTemperatureAttr(float(scheme['light_kelvin']))
+                UsdGeom.Xformable(lamp.GetPrim()).AddTranslateOp().Set(Gf.Vec3d(0, 0, 1.4))
+            bounds = UsdGeom.BBoxCache(Usd.TimeCode.Default(), ['default', 'render']).ComputeWorldBound(prim).ComputeAlignedBox()
+            decision['parameters'].update(bounds_min_m=list(bounds.GetMin()), bounds_max_m=list(bounds.GetMax()))
+            occupied = occupied.union(box(x-width/2, y-depth/2, x+width/2, y+depth/2).buffer(.1))
+    if not plan.get('rooms'):
+        decisions.append({'id': style+'_placement', 'kind': 'assumed', 'interior_scheme': style,
+                          'summary': 'No room polygons supplied; scheme finishes applied and decor omitted.', 'status': 'not-placed'})
+    return decisions
+
+
 def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") -> dict:
     """Build one style; return paths and measured/declared area notes."""
     if style not in PALETTES:
         raise ValueError(f"Unknown style: {style}")
-    if (style == 'home_specification' or PALETTES[style].get('requires_reference')) and plan.get('source', {}).get('primary_crop') != 'agreement_unit_crop.jpg':
+    if style == 'home_specification' and plan.get('source', {}).get('primary_crop') != 'agreement_unit_crop.jpg':
         raise ValueError('B1-1502 specified finishes require the demarcated agreement reference')
     errors = validate_plan(plan)
     if errors:
         raise ValueError("; ".join(errors))
-    if style in INTERIOR_SCHEMES:
+    if style in INTERIOR_SCHEMES and plan.get('source', {}).get('primary_crop') == 'agreement_unit_crop.jpg':
         room_ids = {room['id'] for room in plan.get('rooms', [])}
         required = {'living_dining'} | ({'wfh'} if style == 'saved_botanical_cane' else set())
         required.update(opening.get('space_id') for opening in plan.get('openings', [])
@@ -1397,7 +1536,8 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
             'note': 'Source units and up-axis converted to building metres/Z-up; source transforms and furniture size retained; floor anchoring is an explicit placement assumption'})
     world.GetPrim().SetCustomDataByKey('assetImports', json.dumps(asset_imports, ensure_ascii=False))
     if style in INTERIOR_SCHEMES:
-        presentation_decisions += _interior_scheme(stage, plan, style, materials, modules)
+        dress = _interior_scheme if home_details else _generic_interior_scheme
+        presentation_decisions += dress(stage, plan, style, materials, modules)
         world.GetPrim().SetCustomDataByKey('presentationDecisions', json.dumps(presentation_decisions, ensure_ascii=False))
 
     warm_styles = {"home_specification", "contemporary", "classic", "home_luxury", "warm_office", "executive_office", "luxury_showroom"}
@@ -1423,6 +1563,11 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
     UsdGeom.Xformable(sun.GetPrim()).AddRotateXYZOp().Set(Gf.Vec3f(45, -25, 35))
     stage.SetStartTimeCode(0)
     stage.SetEndTimeCode(0)
+    from .editable_objects import apply_object_edits
+    editable_objects = apply_object_edits(stage, plan, style, presentation_decisions)
+    from .runtime_trace import runtime_trace
+    trace = runtime_trace(executed=['usd_authoring']+(['asset_import'] if asset_imports else []))
+    world.GetPrim().SetCustomDataByKey('libraryTrace', json.dumps(trace))
     stage.GetRootLayer().Save()
     return {
         "usd_path": str(output_path),
@@ -1437,6 +1582,8 @@ def build_usd(plan: dict, output_path: str | Path, style: str = "contemporary") 
         "source": plan.get("source", {}),
         "asset_imports": asset_imports,
         "presentation_decisions": presentation_decisions,
+        "editable_objects": editable_objects,
+        "runtime_trace": trace,
     }
 
 

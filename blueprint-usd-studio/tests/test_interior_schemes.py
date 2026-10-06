@@ -39,7 +39,7 @@ def test_reference_schemes_preserve_scale_and_add_real_dressing_and_lights(tmp_p
         stage = Usd.Stage.Open(report['usd_path'])
         assert UsdGeom.GetStageMetersPerUnit(stage) == 1 and UsdGeom.GetStageUpAxis(stage) == 'Z'
         assert report['asset_imports'] == baseline['asset_imports']
-        assert PALETTES[name]['is_design_scheme'] and PALETTES[name]['requires_reference']
+        assert PALETTES[name]['is_design_scheme'] and not PALETTES[name]['requires_reference']
         assert PALETTES[name]['reference_urls']
         for room in plan['rooms']:
             path = '/World/Spaces/'+room['id']

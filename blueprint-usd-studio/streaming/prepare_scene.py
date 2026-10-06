@@ -11,8 +11,12 @@ import json
 import math
 import itertools
 from pathlib import Path
+import sys
 
 from pxr import Gf, Usd, UsdGeom, UsdLux, UsdRender
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from app.runtime_trace import runtime_trace
 
 
 CAMERA_PATH = "/World/StreamCamera"
@@ -182,6 +186,8 @@ def prepare_scene(source: Path, destination: Path, width: int, height: int) -> d
     if not reopened or not reopened.GetPrimAtPath("/World/Model").IsValid():
         raise RuntimeError("Prepared USD scene did not reopen correctly")
     return {
+        "runtime_trace": runtime_trace(executed=['scene_preparation'],
+                                       openusd_version='.'.join(map(str, Usd.GetVersion()))),
         "scene": str(destination),
         "bounds_min": bounds_min,
         "bounds_max": bounds_max,
