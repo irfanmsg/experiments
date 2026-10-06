@@ -102,6 +102,18 @@ async function setProject(data) {
   state.generated = null; state.selectedAsset = null; state.revision = 0;
   $("generateStatus").textContent = "";
   localStorage.setItem("blueprint-studio-project", data.id);
+  const projectUrl = new URL(location.href);
+  projectUrl.searchParams.set('project', data.id);
+  projectUrl.searchParams.delete('example');
+  history.replaceState(null, '', projectUrl);
+  const isOlderExample = state.plan.example === 'B1-1502' && state.plan.source?.primary_crop !== 'agreement_unit_crop.jpg';
+  $('legacyProjectNotice').hidden = !isOlderExample;
+  $('liveProjectLink').hidden = true;
+  if (isOlderExample) request('/api/stream/status').then(status => {
+    if (state.project !== data.id || !status.running || !status.project_id || status.project_id === data.id) return;
+    $('liveProjectLink').href = `/?project=${encodeURIComponent(status.project_id)}`;
+    $('liveProjectLink').hidden = false;
+  }).catch(() => {});
   $("projectTitle").textContent = state.plan.name || "Untitled project";
   $("projectSubtitle").textContent = state.plan.example ? `Flat B1-1502 · 15th floor · ${state.plan.source?.primary_crop === 'agreement_unit_crop.jpg' ? 'demarcated agreement plan' : 'approved architectural plan'}` : "Review your drawing, then build a measured 3D scene.";
   $("sourceNote").textContent = state.plan.source?.filename || (state.plan.example ? "Approved B1 building plan · unit 1502" : "Your drawing");
