@@ -48,10 +48,10 @@ def main():
 
             page.route('**/api/**', read_only)
             page.goto(f'{origin}/?project={args.reference_project}')
-            page.wait_for_function('state.image && !state.suggesting && document.getElementById("suggestionStatus").textContent.includes("No reliable")')
+            page.wait_for_function('state.image && !state.suggesting && document.getElementById("suggestionStatus").textContent.includes("0 room outlines detected")')
             assert page.evaluate('state.suggestions.length') == 0
             assert page.request.get(f'{origin}/api/projects/{args.reference_project}/suggest').json()['suggestions'] == []
-            assert 'Furniture symbols are not room boundaries' in page.locator('#suggestionStatus').inner_text()
+            assert 'Setting the scale will not create the missing outlines' in page.locator('#suggestionStatus').inner_text()
             assert not writes
             assert page.request.get(f'{origin}/api/projects/{args.reference_project}').json()['plan'] == reference
             capture('#canvasArea', 'furniture-room-detection-after.png')

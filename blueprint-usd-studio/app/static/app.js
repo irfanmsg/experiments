@@ -18,6 +18,16 @@ function toast(message) {
   clearTimeout(toast.timer); toast.timer = setTimeout(() => node.hidden = true, 5000);
 }
 function safeNumber(value, fallback) { const number = Number(value); return Number.isFinite(number) ? number : fallback; }
+function printedLength(value) {
+  const text = value.trim().toLowerCase().replace(/[′’]/g, "'").replace(/[″“”]/g, '"');
+  const metric = text.match(/^(\d+(?:\.\d+)?|\.\d+)\s*(?:m|metres?|meters?)?$/);
+  if (metric) { const length = Number(metric[1]); return Number.isFinite(length) && length > 0 ? length : null; }
+  const imperial = text.match(/^(\d+(?:\.\d+)?)\s*(?:'|ft|feet|foot)\s*(?:(\d+(?:\.\d+)?)\s*(?:"|in|inches?|inch))?$/);
+  if (!imperial) return null;
+  const feet = Number(imperial[1]), inches = Number(imperial[2] || 0);
+  const length = (feet * 12 + inches) * .0254;
+  return inches < 12 && Number.isFinite(length) && length > 0 ? length : null;
+}
 function calibration() {
   if (state.plan?.dimension_model && state.plan.rooms?.length) {
     const points = state.plan.rooms.flatMap(r => r.polygon);
@@ -67,7 +77,7 @@ function setTool(tool) {
   $("clearTool").hidden = !state.tool;
   $("finishOutline").hidden = !["room-polygon", "perimeter", "balcony"].includes(state.tool);
   $("openingWidthRow").hidden = !["door", "window"].includes(state.tool);
-  const hints = { calibrate: "Click the two endpoints of a printed measurement.", "room-rectangle": "Drag a rectangle around one room.", "room-polygon": "Click each corner of a room, then Finish this outline.", perimeter: "Click the outer corners, then Finish this outline.", balcony: "Click the balcony corners, then Finish this outline.", door: "Click where the doorway crosses a wall.", window: "Click where the window crosses a wall.", asset: "Click where the selected furnishing belongs." };
+  const hints = { calibrate: "Step 1 of 2: click the wall face where your entered room length starts.", "room-rectangle": "Drag a rectangle around one room.", "room-polygon": "Click each corner of a room, then Finish this outline.", perimeter: "Click the outer corners, then Finish this outline.", balcony: "Click the balcony corners, then Finish this outline.", door: "Click where the doorway crosses a wall.", window: "Click where the window crosses a wall.", asset: "Click where the selected furnishing belongs." };
   $("toolHint").textContent = hints[state.tool] || "Review the traced plan, or choose a tool on the left.";
   draw();
 }
@@ -109,6 +119,8 @@ async function setProject(data) {
   state.project = data.id; state.plan = data.plan; state.styles = data.styles || [];
   state.suggestions = []; state.suggesting = false;
   state.furnishing = false;
+  const savedLength = state.plan.calibration?.reference_dimensions?.[0];
+  $('distanceInput').value = savedLength?.entered_length || (savedLength?.distance_m ? `${savedLength.distance_m} m` : '');
   $('furnitureStatus').textContent = 'Confirm scale and room outlines to suggest full-size furnishings. Name home rooms, such as Living or Bedroom, to guide the choices.';
   $('suggestions').replaceChildren(); $('suggestions').hidden = true; $('acceptSuggestions').hidden = true;
   $('suggestionStatus').textContent = state.plan.rooms?.length ? 'Review these rooms. You can rename them or adjust the outlines.' : 'Looking for room outlines…';
@@ -259,7 +271,8 @@ function refreshPlacements() {
 }
 function refreshMeasurements() {
   const cal = calibration();
-  $("scaleSummary").textContent = state.plan?.dimension_model ? "Printed meter dimensions enforced. Each grid square is 1 m × 1 m." : cal ? `Scale set: ${cal.scale.toFixed(1)} image pixels = 1 metre.` : state.project ? "Use a dimension printed on the plan. Click its two endpoints." : "Upload a drawing to begin.";
+  const reference = state.plan?.calibration?.reference_dimensions?.[0];
+  $("scaleSummary").textContent = state.plan?.dimension_model ? "Printed meter dimensions enforced. Each grid square is 1 m × 1 m." : cal ? `Scale set${reference?.distance_m ? `: the selected length represents ${Number(reference.distance_m).toFixed(3)} m` : ''}. Rooms and furniture now share this scale. Check another printed dimension if the image is distorted.` : state.project ? "Scale has not been set. Enter a printed length above to begin; setting scale does not detect rooms." : "Upload a drawing to begin.";
   $("canvasScale").textContent = cal ? `1 m ≈ ${cal.scale.toFixed(1)} px` : "Scale not set";
   const badges = $("measurementBadges"); badges.replaceChildren();
   if (!state.plan) { $("drawingInfo").hidden = true; return; }
@@ -512,13 +525,13 @@ function handleCanvasDown(event) {
   if (state.tool === "calibrate") {
     state.points.push(point);
     if (state.points.length === 2) {
-      const printed = Number($("distanceInput").value);
+      const entered = $("distanceInput").value.trim(), printed = printedLength(entered);
       if (!(printed > 0)) { toast("Enter the printed measurement first"); state.points = []; return; }
       const px = distance(...state.points);
       if (px < 10) { toast("Choose points farther apart"); state.points = []; return; }
-      state.plan.calibration = { pixel_origin: [0, canvas.height], pixels_per_meter: +(px / printed).toFixed(5), reference_dimensions: [{ distance_m: printed, pixel_points: state.points }] };
-      markChanged(); setTool(null); toast("Measurement saved. You can now use the suggested room outlines.");
-    } else draw();
+      state.plan.calibration = { pixel_origin: [0, canvas.height], pixels_per_meter: +(px / printed).toFixed(5), reference_dimensions: [{ distance_m: printed, entered_length: entered, pixel_points: state.points, basis: 'Printed length and its endpoints selected by the user; not automatically extracted' }] };
+      markChanged(); setTool(null); toast(state.suggestions.length ? "Scale saved. Review the suggested room outlines next." : "Scale saved. Room outlines still need to be defined.");
+    } else { $("toolHint").textContent = 'Step 2 of 2: click the opposite wall face at the other end of that same length.'; draw(); }
     return;
   }
   if (["room-polygon", "perimeter", "balcony"].includes(state.tool)) {
@@ -780,7 +793,10 @@ $("fileInput").addEventListener("change", async event => {
 });
 async function loadExample() { try { await setProject(await request("/api/examples/b1-1502", { method: "POST" })); toast("B1-1502 is ready to explore"); } catch (error) { toast(error.message); } }
 $("exampleButton").onclick = loadExample; $("emptyExample").onclick = loadExample;
-$("calibrateButton").onclick = () => setTool("calibrate");
+$("calibrateButton").onclick = () => {
+  if (state.tool !== 'calibrate' && !printedLength($("distanceInput").value)) { toast('Enter a positive printed length, for example 13\'3" or 4.03 m.'); $("distanceInput").focus(); return; }
+  setTool("calibrate");
+};
 $("clearTool").onclick = () => setTool(null);
 $("finishOutline").onclick = finishOutline;
 document.querySelectorAll(".tool").forEach(button => button.onclick = () => { if (!calibration()) { toast("Set the scale first"); return; } setTool(button.dataset.tool); });
@@ -831,10 +847,10 @@ async function findRoomSuggestions() {
       name.oninput = () => { suggestion.reviewName = name.value; };
       row.append(check, name); container.append(row);
     });
-    if (!state.suggestions.length) $('suggestionStatus').textContent = 'No reliable wall-enclosed outlines could be separated. Furniture, open doorways and exterior gaps can make this drawing ambiguous. Rooms still need tracing; use the manual outline tools below. Furniture symbols are not room boundaries.';
+    if (!state.suggestions.length) $('suggestionStatus').textContent = '0 room outlines detected. Automatic room reconstruction could not identify reliable boundaries in this drawing. Setting the scale will not create the missing outlines. You can trace them with the manual tools below; repeating detection on this unchanged image will give the same result.';
     updateSuggestionReady(); draw();
   } catch (error) { if (state.project === project && state.plan === plan) $('suggestionStatus').textContent = `Room detection could not finish: ${error.message}. You can still use the manual outline tools.`; }
-  finally { if (state.project === project && state.plan === plan) { state.suggesting = false; $('suggestButton').disabled = false; $('suggestButton').textContent = 'Find room outlines again'; } }
+  finally { if (state.project === project && state.plan === plan) { state.suggesting = false; $('suggestButton').disabled = false; $('suggestButton').textContent = 'Retry automatic detection'; } }
 }
 $('suggestButton').onclick = findRoomSuggestions;
 $('acceptSuggestions').onclick = () => {

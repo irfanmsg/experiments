@@ -25,7 +25,7 @@
 
       <ol class="steps" aria-label="Workflow">
         <li class="active" id="step-upload"><span>1</span><div><strong>Bring your plan</strong><small>PDF or image</small></div></li>
-        <li id="step-measure"><span>2</span><div><strong>Confirm one measurement</strong><small>So furniture and rooms share the right scale</small></div></li>
+        <li id="step-measure"><span>2</span><div><strong>Set the drawing scale</strong><small>Match a printed length to the drawing</small></div></li>
         <li id="step-outline"><span>3</span><div><strong>Review the rooms</strong><small>Accept or correct the suggested outlines</small></div></li>
         <li id="step-create"><span>4</span><div><strong>Create and explore</strong><small>Finishes, USD and live view</small></div></li>
       </ol>
@@ -41,9 +41,11 @@
       </section>
 
       <section class="card" id="measureCard">
-        <div class="card-heading"><span class="icon">↔</span><div><h2>Confirm one measurement</h2><p>Use any room length printed on your plan</p></div></div>
-        <div class="field-row"><label for="distanceInput">Known distance</label><div class="unit-input"><input id="distanceInput" type="number" min="0.01" step="0.01" placeholder="e.g. 4.03"><span>metres</span></div></div>
-        <button id="calibrateButton" type="button" class="secondary-button" disabled>Mark the two points</button>
+        <div class="card-heading"><span class="icon">↔</span><div><h2>Set the drawing scale</h2><p>Tell us how long one line in the image is in real life</p></div></div>
+        <p class="helper" id="measurementHelp">Printed dimensions are not read automatically yet. Enter one room length, then select the wall faces at each end of that same length on the drawing. This keeps the rooms and furniture at the same physical scale.</p>
+        <div class="field-row"><label for="distanceInput">Length printed on the plan</label><input id="distanceInput" type="text" placeholder="e.g. 13'3&quot; or 4.03 m" aria-describedby="measurementHelp distanceFormat"></div>
+        <p id="distanceFormat" class="helper">Use feet and inches (13'3&quot;), feet (13 ft), or metres (4.03 m). A number without a unit means metres.</p>
+        <button id="calibrateButton" type="button" class="secondary-button" disabled>Select this length on the drawing</button>
         <p id="scaleSummary" class="helper">Upload a drawing to begin.</p>
       </section>
 

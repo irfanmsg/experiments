@@ -112,7 +112,7 @@ The furniture pack download is about 9 GiB. Overlay preparation requires the ins
 ## Use your own blueprint
 
 1. Upload a PDF or image and choose the relevant page.
-2. Review the proposed room outlines, then enter one printed distance **in metres** and mark its two endpoints. Convert feet/inches before entering the value; the current field does not parse imperial notation.
+2. Set the drawing scale using one printed room length, such as `13'3"`, `13 ft` or `4.03 m` (a bare number means metres). Select the wall faces at each end of that same length on the drawing, not the printed text. The original entry, converted metres and selected pixel endpoints are retained in the calibration record. Printed dimensions are not automatically extracted yet, and setting scale does not detect room boundaries.
 3. Uncheck incorrect proposals and choose **Use selected room outlines**. Room names are optional and can be edited later. Use the manual tools for missed rooms, doors, windows or boundary corrections. A distorted scan may need more than one measurement to validate the result.
 
    **Room height is optional.** A new uploaded plan starts with an explicitly assumed 2.9 m height for the preview; it is not extracted from the drawing. Change it only when known under **Optional: building type and height**. Existing project heights are retained. Room detection removes thin furniture linework and suggests areas enclosed by substantial dark wall strokes. It does not recognize room labels, dimensions or furniture semantically. Door openings, glazing, thin walls and cropped drawings can prevent suggestions entirely; those plans still require tracing. Complex outlines are never replaced with bounding rectangles.
