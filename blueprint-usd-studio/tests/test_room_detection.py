@@ -178,4 +178,58 @@ def test_grouped_room_covers_label_without_missing_boundary_warning():
     assert not any(warning.startswith('Dining: no sufficiently supported room boundary') for warning in report['warnings'])
     servant = next(item for item in report['suggestions'] if item['name'] == 'Servant Room')
     assert servant['max_dimension_relative_error'] > .075
-    assert any(warning.startswith('Toilet: no sufficiently supported room boundary') for warning in report['warnings'])
+    assert not any(warning.startswith('Toilet: no sufficiently supported room boundary') for warning in report['warnings'])
+    assert sum(item['name'] == 'Toilet' for item in report['suggestions']) == 3
+
+
+def test_labeled_curved_balcony_keeps_railing_curve_and_excludes_furniture(tmp_path):
+    image = np.full((800, 1000, 3), 255, dtype=np.uint8)
+    arc = [[int(500+330*np.cos(t)), int(400+300*np.sin(t))]
+           for t in np.linspace(-np.pi/2, np.pi/2, 40)]
+    cv2.polylines(image, [np.array(arc)], False, (20, 20, 20), 2)
+    cv2.line(image, (500, 100), (500, 700), (20, 20, 20), 10)
+    cv2.circle(image, (670, 420), 40, (20, 20, 20), 2)
+    path = tmp_path / 'curved-balcony.png'
+    cv2.imwrite(str(path), image)
+    text = {'room_labels': [{'name': 'Balcony', 'bbox': [620, 320, 700, 345]}], 'dimensions': [], 'warnings': []}
+    report = vision.analyze_drawing(path, text_data=text)
+    assert len(report['suggestions']) == 1
+    proposal = report['suggestions'][0]
+    shape = Polygon(proposal['pixel_polygon'])
+    assert len(proposal['pixel_polygon']) > 6
+    assert shape.covers(Point(670, 420)), 'Furniture stays inside the room polygon'
+    assert shape.covers(Point(780, 400))
+    assert not shape.covers(Point(780, 160)), 'Curved railing is not replaced by bounding box'
+    assert proposal['wall_evidence']
+    assert any(item.get('boundary_type') == 'thin_line' for item in proposal['wall_evidence'])
+
+
+def test_toilet_outline_includes_shower_basin_and_open_doorway_without_dimensions(tmp_path):
+    image = np.full((800, 700, 3), 255, np.uint8)
+    cv2.rectangle(image, (180, 100), (440, 650), (25,25,25), 16)
+    # Doorway in an outer wall; thin shower and basin lines cross the room.
+    cv2.line(image, (180, 330), (180, 430), (255,255,255), 20)
+    cv2.line(image, (187, 275), (433, 275), (25,25,25), 2)
+    cv2.line(image, (187, 550), (433, 550), (25,25,25), 2)
+    cv2.ellipse(image, (315,600), (60,30), 0, 0,360,(25,25,25),2)
+    path = tmp_path/'toilet-fixtures.png'
+    cv2.imwrite(str(path),image)
+    text = {'room_labels':[{'name':'Toilet','bbox':[250,180,350,210]}], 'dimensions':[], 'warnings':[]}
+    report = vision.analyze_drawing(path,text_data=text)
+    assert len(report['suggestions']) == 1
+    proposal = report['suggestions'][0]
+    shape = Polygon(proposal['pixel_polygon'])
+    assert all(shape.covers(Point(p)) for p in [(300,200),(300,470),(315,600)])
+    assert not shape.covers(Point(120,400))
+    assert proposal['pixel_openings'], 'The doorway is traced as an opening, not filled with a solid wall'
+
+
+@pytest.mark.skipif(not _UPLOADED_PLAN.is_file(), reason='Optional local QA: private upload is not committed')
+def test_uploaded_plan_reconstructs_all_balconies_toilets_and_entrance_lobby():
+    from tests.check_irregular_rooms import check_irregular_rooms
+    report = vision.analyze_drawing(_UPLOADED_PLAN)
+    matched = check_irregular_rooms(report['suggestions'])
+    assert len(matched['lower balcony']['pixel_polygon']) > 4, 'Keep the angled exterior rather than fitting a rectangle'
+    assert matched['main curved balcony']['label_evidence']
+    lobby = matched['entrance lobby']
+    assert lobby['inferred_boundaries'] and lobby['pixel_openings'], 'The open dining boundary needs explicit inference'

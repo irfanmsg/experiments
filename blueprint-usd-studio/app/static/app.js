@@ -908,7 +908,7 @@ async function findRoomSuggestions() {
       const details = document.createElement('div'); details.append(name);
       if (suggestion.dimension_evidence || suggestion.inferred_boundaries?.length) {
         const note = document.createElement('small');
-        note.textContent = [suggestion.dimension_evidence?.text, suggestion.max_dimension_relative_error > .075 ? `Not selected: ${(suggestion.max_dimension_relative_error * 100).toFixed(1)}% disagreement with a printed dimension` : '', suggestion.inferred_boundaries?.length ? `${suggestion.inferred_boundaries.length} inferred boundaries; review against walls and doors` : 'Wall-supported outline; review dimensions'].filter(Boolean).join(' · ');
+        note.textContent = [suggestion.label_evidence?.review_note, suggestion.dimension_evidence?.text, suggestion.max_dimension_relative_error > .075 ? `Not selected: ${(suggestion.max_dimension_relative_error * 100).toFixed(1)}% disagreement with a printed dimension` : '', suggestion.inferred_boundaries?.length ? `${suggestion.inferred_boundaries.length} inferred boundaries; review against walls and doors` : 'Wall-supported outline; review dimensions'].filter(Boolean).join(' · ');
         details.append(note);
       }
       row.append(check, details); container.append(row);
@@ -936,7 +936,7 @@ $('acceptSuggestions').onclick = () => {
       room.geometry_provenance = 'Wall-supported image proposal accepted by user; inferred boundaries and printed readings require review';
       room.printed_dimensions_m = suggestion.dimension_evidence?.dimensions_m || suggestion.dimension_evidence?.dimension_parts_m;
       room.dimension_provenance = 'OCR reading of the source caption; verify against the drawing. Traced geometry has not been forced to these dimensions.';
-      room.source_evidence = {dimension:suggestion.dimension_evidence, walls:suggestion.wall_evidence, inferred_boundaries:suggestion.inferred_boundaries, review_note:suggestion.review_note};
+      room.source_evidence = {label:suggestion.label_evidence, dimension:suggestion.dimension_evidence, walls:suggestion.wall_evidence, inferred_boundaries:suggestion.inferred_boundaries, review_note:suggestion.review_note};
       const decision = state.plan.reconstruction_decisions.find(item => item.id === `outline_${room.id}`);
       decision.summary = 'A wall-supported room outline was accepted, including the recorded inferred boundaries; printed dimensions remain separate from traced geometry.';
       decision.parameters.evidence = room.source_evidence;

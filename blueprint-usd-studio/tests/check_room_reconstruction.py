@@ -10,6 +10,9 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 from shapely.geometry import Point, Polygon
+from shapely.ops import unary_union
+
+from check_irregular_rooms import check_irregular_rooms
 
 
 def assert_reconstructed_rooms(suggestions):
@@ -89,6 +92,14 @@ def main():
             page.wait_for_function('state.image && !state.suggesting && state.scaleProposal && state.suggestions.length > 0', timeout=120000)
             detected = page.evaluate('state.suggestions')
             matched = assert_reconstructed_rooms(detected)
+            irregular = check_irregular_rooms(detected)
+            for candidate in irregular.values():
+                assert candidate['selected'], candidate['name']
+            inferred_names = [item for item in detected if item.get('label_evidence', {}).get('name_inferred')]
+            assert inferred_names, 'Partial source captions should retain their inferred-name trace.'
+            for item in inferred_names:
+                index = detected.index(item)
+                assert item['label_evidence']['review_note'] in page.locator('#suggestions .suggestion').nth(index).inner_text()
             disagreements = [(index, item) for index, item in enumerate(detected)
                              if (item.get('max_dimension_relative_error') or 0) > .075]
             assert disagreements, 'The undersized Servant Room must be flagged for review.'
@@ -122,11 +133,18 @@ def main():
             page.wait_for_function('(previous) => state.project !== previous && state.image && !state.suggesting && state.scaleProposal && state.suggestions.length > 0', arg=args.reference_project, timeout=120000)
             project = page.evaluate('state.project')
             assert_reconstructed_rooms(page.evaluate('state.suggestions'))
+            scratch_irregular = check_irregular_rooms(page.evaluate('state.suggestions'))
             page.locator('#useDetectedScale').click()
             assert page.evaluate('state.plan.calibration.pixels_per_meter') == scale['pixels_per_meter']
             assert page.evaluate('state.points.length') == 0
             assert page.locator('#distanceInput').input_value() == ''
             selected = page.evaluate('state.suggestions.filter(item => item.selected).map(item => item.reviewName)')
+            # Capture the accepted pixel-to-metre conversion before proposals are
+            # cleared. Repeated labels (Toilet/Balcony) are matched by geometry.
+            expected_polygons = {name: page.evaluate('(points) => points.map(pixelToMetres)', item['pixel_polygon'])
+                                 for name, item in scratch_irregular.items()}
+            lobby_probes = page.evaluate('(points) => points.map(pixelToMetres)',
+                                        [[x, 1000] for x in range(240, 311, 2)])
             page.locator('#acceptSuggestions').click()
             page.wait_for_function('state.plan.rooms.length > 0 && !state.furnishing && document.getElementById("saveState").textContent === "Saved"', timeout=60000)
             saved = page.request.get(f'{origin}/api/projects/{project}').json()['plan']
@@ -138,6 +156,14 @@ def main():
                 assert room['printed_dimensions_m'] == (evidence['dimensions_m'] or evidence['dimension_parts_m'])
                 assert 'accepted by user' in room['geometry_provenance']
                 assert 'dimension_mode' not in room, 'OCR readings must not be presented as enforced clear-room dimensions.'
+            irregular_rooms = {}
+            for name, polygon in expected_polygons.items():
+                room = next(item for item in saved['rooms'] if item['polygon'] == polygon)
+                candidate = scratch_irregular[name]
+                assert room['source_evidence']['label'] == candidate['label_evidence'], name
+                assert room['source_evidence']['walls'] == candidate['wall_evidence'], name
+                assert room['source_evidence']['inferred_boundaries'] == candidate['inferred_boundaries'], name
+                irregular_rooms[name] = room
             assert saved['calibration']['basis'].startswith('Printed dimensions matched')
             assert len(saved['calibration']['reference_dimensions']) >= 2
             assert any(item['kind'] == 'drawing-scale' for item in saved['reconstruction_decisions'])
@@ -186,6 +212,43 @@ def main():
             exported_gaps = json.loads(world.GetCustomDataByKey('openingTrace'))
             assert next(item for item in exported_gaps if item['id'] == gap['id']) == saved_gap
             assert json.loads(world.GetCustomDataByKey('scaleAudit'))
+            # Check rendered mesh topology, rather than only exported metadata:
+            # concave balcony notches and the curved perimeter must survive USD.
+            mesh_vertex_counts = {}
+            for name in ['main curved balcony', 'dry balcony', 'upper balcony', 'lower balcony']:
+                room = irregular_rooms[name]
+                index = saved['rooms'].index(room)
+                mesh = UsdGeom.Mesh(stage.GetPrimAtPath(f'/World/Building/Floor_{index:03d}'))
+                assert mesh, name
+                points = mesh.GetPointsAttr().Get()
+                top = max(point[2] for point in points)
+                top_points = [[float(point[0]), float(point[1])] for point in points if abs(point[2]-top) < 1e-6]
+                assert len(top_points) == len(room['polygon']) > 4, (name, top_points)
+                assert all(math.dist(actual, expected) < 1e-5 for actual, expected in zip(top_points, room['polygon'])), name
+                indices = mesh.GetFaceVertexIndicesAttr().Get()
+                offset, faces = 0, []
+                for count in mesh.GetFaceVertexCountsAttr().Get():
+                    face = [points[i] for i in indices[offset:offset+count]]
+                    offset += count
+                    if all(abs(point[2]-top) < 1e-6 for point in face):
+                        faces.append(Polygon([(point[0], point[1]) for point in face]))
+                expected_shape = Polygon(room['polygon'])
+                assert unary_union(faces).symmetric_difference(expected_shape).area < 1e-4, name
+                space = stage.GetPrimAtPath('/World/Spaces/' + room['id'])
+                assert json.loads(space.GetCustomDataByKey('sourceEvidence')) == room['source_evidence']
+                mesh_vertex_counts[name] = len(top_points)
+            # Crossing the lobby-to-dining opening must be clear at body AND
+            # lintel height, including walls contributed by the adjacent room.
+            transforms = UsdGeom.XformCache()
+            wall_cubes = [(prim, transforms.GetLocalToWorldTransform(prim).GetInverse(),
+                           UsdGeom.Cube(prim).GetSizeAttr().Get()/2)
+                          for prim in Usd.PrimRange(stage.GetPrimAtPath('/World/Building/Walls'))
+                          if prim.IsA(UsdGeom.Cube)]
+            for z in [.5, generated['height_m']-.15]:
+                for x, y in lobby_probes:
+                    for prim, inverse, half in wall_cubes:
+                        local = inverse.Transform(Gf.Vec3d(x, y, z))
+                        assert not all(abs(value) < half-1e-5 for value in local), ('Lobby passage blocked', str(prim.GetPath()), x, y, z)
             # A full-height gap must stay empty at both body and lintel height.
             # Transform probe points into each rendered wall cube, so rotated
             # walls cannot make an axis-aligned bounds check falsely pass.
@@ -223,6 +286,9 @@ def main():
                       'accepted_rooms': len(selected), 'dimension_disagreements_unselected': len(disagreements),
                       'manual_scale_points': 0, 'room_evidence_persisted': True,
                       'inferred_openings': len(gaps), 'opening_classification_persisted': True,
+                      'irregular_spaces_checked': list(irregular_rooms),
+                      'balcony_mesh_vertex_counts': mesh_vertex_counts,
+                      'lobby_passage_clear': True, 'inferred_labels_persisted': True,
                       'usd_full_height_gap_verified': True,
                       'usd_room_count': generated['room_count'], 'editable_asset_size_m': imported['size_xyz_m'],
                       'page_errors': errors}

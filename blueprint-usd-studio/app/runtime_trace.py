@@ -30,7 +30,8 @@ _PACKAGES = (
 # only after the corresponding operation returns successfully.
 _ACTIONS = (
     ('room_detection', 'Read printed dimensions and propose wall-supported rooms', ['opencv', 'numpy', 'tesseract'],
-     ['tesseract --psm 11 tsv', 'cv2.morphologyEx', 'cv2.connectedComponentsWithStats'],
+     ['tesseract --psm 11 tsv', 'tesseract --psm 6 tsv', 'cv2.morphologyEx', 'cv2.connectedComponentsWithStats',
+      'cv2.findContours', 'cv2.approxPolyDP', 'cv2.distanceTransform'],
      'app/vision.py:analyze_drawing', 'Image analysis completes; OCR readings and inferred boundaries require review.'),
     ('furniture_suggestion', 'Propose full-size furnishings around existing objects', ['openusd'],
      ['Usd.Stage.Open', 'UsdGeom.BBoxCache.ComputeWorldBound', 'UsdGeom.GetStageMetersPerUnit', 'UsdGeom.GetStageUpAxis'],

@@ -59,6 +59,122 @@ def _enclosed_rooms(image_path: str | Path, max_results: int = 60) -> list[dict]
     return [{**item, 'label': f'Space {i+1}'} for i, item in enumerate(candidates[:max_results])]
 
 
+def _contour_rooms(image, labels, dimensions, accepted, scale, angle):
+    """Trace leftover labeled regions within the observed wall/railing network."""
+    import cv2
+    import numpy as np
+    from shapely.geometry import Point, Polygon
+
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    ink = np.uint8(gray < 150)*255
+    thick = cv2.morphologyEx(ink, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
+    # ponytail: raster stroke topology; ambiguous disconnected boundaries need
+    # user tracing or vector-source geometry rather than guessed closure.
+    # Preserve the exterior of thin railings connected to substantial walls,
+    # while removing internal furniture and text from the floor's geometry.
+    _, components, stats, _ = cv2.connectedComponentsWithStats(ink)
+    structural_pixels = np.bincount(components.ravel(), weights=(thick > 0).ravel())
+    keep = (stats[:, cv2.CC_STAT_AREA] > 200) & (structural_pixels > 50)
+    keep[0] = False
+    network = np.uint8(keep[components])*255
+    contours, _ = cv2.findContours(network, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    footprint = np.zeros_like(ink)
+    cv2.drawContours(footprint, contours, -1, 255, cv2.FILLED)
+    # Bridge collinear wall stubs across openings, never close the whole wall
+    # mask (which would erase narrow bathrooms between parallel walls).
+    rotation = cv2.getRotationMatrix2D((gray.shape[1]/2, gray.shape[0]/2), angle, 1)
+    aligned = cv2.warpAffine(thick, rotation, (gray.shape[1],gray.shape[0]))
+    bridges = np.zeros_like(thick)
+    reach = max(30,round((scale or min(gray.shape)/12)*1.7))
+    stub = max(12,round((scale or min(gray.shape)/12)*.18))
+    for axis in (0,1):
+        strokes = cv2.morphologyEx(aligned, cv2.MORPH_OPEN, np.ones((stub,3) if axis==0 else (3,stub),np.uint8))
+        bridges |= cv2.morphologyEx(strokes,cv2.MORPH_CLOSE,np.ones((reach,1) if axis==0 else (1,reach),np.uint8))
+    bridges=cv2.warpAffine(bridges,cv2.invertAffineTransform(rotation),(gray.shape[1],gray.shape[0]))
+    mask = thick | bridges | (255-footprint)
+    for room in accepted:
+        cv2.fillPoly(mask, [np.array(room['pixel_polygon'], np.int32)], 255)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
+    _, regions, stats, _ = cv2.connectedComponentsWithStats(255-mask)
+    strong = cv2.dilate(thick, np.ones((11,11), np.uint8)) > 0
+    weak = cv2.dilate(ink, np.ones((7,7), np.uint8)) > 0
+    covered = [Polygon(room['pixel_polygon']) for room in accepted]
+    seen, proposals = set(), []
+    h,w = gray.shape
+    for label in labels:
+        x0,y0,x1,y1 = label['bbox']
+        center = (int((x0+x1)/2), int((y0+y1)/2))
+        if any(shape.covers(Point(center)) for shape in covered):
+            continue
+        # A caption may cross a remaining text stroke. Sample around its box,
+        # but require the resulting contour to cover the caption itself.
+        ids, counts = np.unique(regions[max(0,int(y0)-4):min(h,int(y1)+5),
+                                        max(0,int(x0)-4):min(w,int(x1)+5)], return_counts=True)
+        for region in ids[np.argsort(-counts)]:
+            if not region or region in seen:
+                continue
+            x,y,rw,rh,area = stats[region]
+            if area < max(600, h*w*.0003) or area > h*w*.3 or min(x,y)<=1 or x+rw>=w-1 or y+rh>=h-1:
+                continue
+            crop = np.uint8(regions[y:y+rh,x:x+rw] == region)*255
+            contours,_ = cv2.findContours(crop, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contour = max(contours,key=cv2.contourArea)
+            contour[:,:,0] += x
+            contour[:,:,1] += y
+            perimeter = cv2.arcLength(contour,True)
+            simple = cv2.approxPolyDP(contour, max(2.,perimeter*.002), True)[:,0,:]
+            if not 3<=len(simple)<=128:
+                continue
+            shape = Polygon(simple)
+            if not shape.is_valid or not shape.covers(Point(center)):
+                continue
+            occupants = [other for other in labels if shape.covers(Point((np.array(other['bbox'][:2])+other['bbox'][2:])/2))]
+            if len(occupants)>1:
+                continue
+            if any(shape.intersection(other).area/min(shape.area,other.area)>.03 for other in covered):
+                continue
+            evidence, inferred, openings = [],[],[]
+            for i,(p0,p1) in enumerate(zip(simple,np.roll(simple,-1,axis=0))):
+                length = np.linalg.norm(p1-p0)
+                samples = np.linspace(p0,p1,max(2,int(length))).round().astype(int)
+                solid, drawn = strong[samples[:,1],samples[:,0]],weak[samples[:,1],samples[:,0]]
+                thin = bool(solid.mean()<.35 and drawn.mean()>=.7)
+                item = {'side': f'edge-{i+1}', 'pixel_start':p0.tolist(),'pixel_end':p1.tolist(),
+                        'structural_wall_support':round(float(solid.mean()),3),'all_line_support':round(float(drawn.mean()),3),
+                        'boundary_type':'thin_line' if thin else 'wall' if solid.mean()>=.85 else 'inferred_gap',
+                        'inferred':bool(solid.mean()<.85),
+                        'basis':'Traced exterior contour of connected wall/railing strokes; interior furniture ignored'}
+                if item['inferred']:
+                    inferred.append(item)
+                missing=np.flatnonzero(np.diff(np.r_[False,~solid,False]))
+                runs = [(0,len(solid))] if thin else zip(missing[::2],missing[1::2])
+                item['do_not_assume_solid_wall'] = thin
+                gaps=[]
+                for a,b in runs:
+                    if not thin and b-a < max(15,(scale or min(w,h)/12)*.35):
+                        continue
+                    a0,a1=samples[a].astype(float),samples[min(b,len(samples)-1)].astype(float)
+                    gap={'pixel_start':a0.tolist(),'pixel_end':a1.tolist(),'pixel_center':((a0+a1)/2).tolist(),
+                         'width_px':round(float(np.linalg.norm(a1-a0)),1),'side':item['side'],'type':'opening','no_header':True,
+                         'confidence':'needs-review','basis':'Thin boundary may be railing/glazing; no solid wall assumed' if thin
+                          else 'Missing structural stroke at traced boundary, possibly an opening or inferred room division'}
+                    gaps.append(gap)
+                    openings.append(gap)
+                item['gaps']=gaps
+                evidence.append(item)
+            dimension=next((d for d in dimensions if d.get('room_label_bbox')==label['bbox']),{})
+            proposals.append({'name':label['name'],'label':label['name'],'pixel_polygon':simple.tolist(),
+                              'pixel_area':round(shape.area),'confidence':'needs-review',
+                              'detection_basis':'OCR label inside traced connected wall/railing contour, retaining curved and concave boundaries',
+                              'wall_evidence':evidence,'inferred_boundaries':inferred,'pixel_openings':openings,
+                              'dimension_evidence':dict(dimension),'label_evidence':label,'max_dimension_relative_error':None,
+                              'review_note':'Curved and thin boundaries follow drawn strokes; opening/railing classification and heights require review.'})
+            covered.append(shape)
+            seen.add(int(region))
+            break
+    return proposals
+
+
 def analyze_drawing(image_path: str | Path, max_results: int = 60, *, text_data=None) -> dict:
     """Combine text anchors and wall evidence into explicitly inferred room outlines."""
     import cv2
@@ -95,6 +211,7 @@ def analyze_drawing(image_path: str | Path, max_results: int = 60, *, text_data=
     strong_near = cv2.dilate(thick, np.ones((9,9), np.uint8)) > 0
     weak_near = cv2.dilate(ink, np.ones((5,5), np.uint8)) > 0
     integral = cv2.integral(np.uint8(thick > 0))
+    wall_depth = cv2.dilate(cv2.distanceTransform(thick, cv2.DIST_L2, 5), np.ones((15,15), np.uint8))
 
     def point(x, y, matrix=transform):
         return matrix @ np.array([x, y, 1.])
@@ -140,6 +257,17 @@ def analyze_drawing(image_path: str | Path, max_results: int = 60, *, text_data=
                    and line['start']-margin <= other <= line['end']+margin]
         before = sorted({line['hi']+1 for line in options if line['hi'] < c-10}, reverse=True)
         after = sorted({line['lo']-1 for line in options if line['lo'] > c+10})
+        # Multiple threshold passes often report the same stroke a few pixels
+        # apart. Count distinct wall positions, not those duplicate readings,
+        # or nearby fixture lines exhaust the search before the outer wall.
+        def distinct(values):
+            result=[]
+            for value in values:
+                if not result or abs(value-result[-1])>max(3,min(w,h)*.006):
+                    result.append(value)
+            return result[:6]
+        if anchor['label']['name'].lower() in {'toilet', 'bathroom', 'powder room'}:
+            return distinct(before), distinct(after)
         return before[:6], after[:6]
 
     observations = []
@@ -185,7 +313,13 @@ def analyze_drawing(image_path: str | Path, max_results: int = 60, *, text_data=
 
     proposals, unmatched_anchors = [], []
     for anchor in anchors:
+        # Balcony railings often curve or meet angled exterior walls. Trace
+        # their observed contour rather than selecting a plausible rectangle.
+        if 'balcony' in anchor['label']['name'].lower():
+            unmatched_anchors.append(anchor)
+            continue
         dimensions = anchor['dimensions']
+        sanitary = anchor['label']['name'].lower() in {'toilet', 'bathroom', 'powder room'}
         margin = scale*1.3 if scale else min(w,h)*.08
         xs, xe = sides(anchor, 0, margin)
         ys, ye = sides(anchor, 1, margin)
@@ -215,17 +349,22 @@ def analyze_drawing(image_path: str | Path, max_results: int = 60, *, text_data=
                 continue
             if any(strength[i]<.25 and thin[i]<.8 and (not scale or not dimensions[0 if i<2 else 1]) for i in range(4)):
                 continue
-            if any(strength[i]<.35 and not dimensions[0 if i<2 else 1] for i in range(4)):
+            if any(strength[i]<.35 and thin[i]<.8 and not dimensions[0 if i<2 else 1] for i in range(4)):
                 continue
             # A room rectangle may bridge openings but must not cross another wall.
             a,b,c,d = int(left+9),int(top+9),int(right-9),int(bottom-9)
             wall_fraction = float(integral[d,c]-integral[b,c]-integral[d,a]+integral[b,a])/max(1,(c-a)*(d-b))
-            if wall_fraction > .028:
+            if wall_fraction > (.085 if sanitary else .028):
                 continue
             enclosed_labels = [other for other in anchors if left<other['center'][0]<right and top<other['center'][1]<bottom]
             if len(enclosed_labels)>1 and not all(other['label']['name'].lower() in {'living','dining','lounge','family room'} for other in enclosed_labels):
                 continue
             score = sum(strength)+.25*sum(thin)-3*sum(errors)-wall_fraction*30
+            if sanitary:
+                # Shower screens and basin outlines can enclose the caption.
+                # Prefer outer structural strokes on every side to a thin
+                # fixture partition, including the open doorway in that span.
+                score += .12*min(support(wall_depth,*edge) for edge in bounds)
             if best is None or score>best[0]:
                 best = (score,(left,right,top,bottom),strength,thin,enclosed_labels)
         if best is None:
@@ -290,7 +429,7 @@ def analyze_drawing(image_path: str | Path, max_results: int = 60, *, text_data=
                 report['warnings'].append(f'{name}: proposed walls differ from a printed dimension by more than 7.5%; verify the outline and image distortion.')
         proposals.append({'label': name, 'name': name, 'pixel_polygon': polygon, 'pixel_area': round((right-left)*(bottom-top)),
                           'confidence': 'needs-review', 'detection_basis': 'OCR room label anchored to aligned structural walls and readable dimensions',
-                          'dimension_evidence': dimension_evidence, 'wall_evidence': evidence, 'inferred_boundaries': inferred,
+                          'dimension_evidence': dimension_evidence, 'label_evidence': anchor['label'], 'wall_evidence': evidence, 'inferred_boundaries': inferred,
                           'pixel_openings': openings, 'max_dimension_relative_error': max_dimension_error,
                           'review_note': 'Proposed wall-aligned outline. Door/window gaps and any open-plan boundary are inferred; verify against the drawing.',
                           'deskew_degrees': angle})
@@ -301,6 +440,7 @@ def analyze_drawing(image_path: str | Path, max_results: int = 60, *, text_data=
         if any(polygon.intersection(Polygon(other['pixel_polygon'])).area/min(polygon.area,other['pixel_area']) > .03 for other in report['suggestions']):
             continue
         report['suggestions'].append(proposal)
+    report['suggestions'].extend(_contour_rooms(image, labels, text.get('dimensions', []), report['suggestions'], scale, angle))
     report['suggestions'] = report['suggestions'][:max_results]
     if not report['suggestions']:
         report['suggestions'] = _enclosed_rooms(image_path, max_results)
